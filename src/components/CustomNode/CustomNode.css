@@ -1,0 +1,103 @@
+.custom-node {
+  background: white;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  min-width: 180px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s;
+}
+
+.custom-node.selected {
+  border-color: #1890ff;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+}
+
+.custom-node.running {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  50% {
+    box-shadow: 0 2px 12px rgba(24, 144, 255, 0.4);
+  }
+}
+
+.node-header {
+  padding: 6px 12px;
+  border-radius: 6px 6px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: white;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.node-icon {
+  font-size: 14px;
+}
+
+.node-type {
+  opacity: 0.9;
+}
+
+.node-body {
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.node-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.status-icon {
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.status-icon.running {
+  color: #1890ff;
+  animation: rotate 1s linear infinite;
+}
+
+.status-icon.success {
+  color: #52c41a;
+}
+
+.status-icon.error {
+  color: #f5222d;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.custom-handle {
+  width: 10px;
+  height: 10px;
+  background: #1890ff;
+  border: 2px solid white;
+}
+
+.custom-handle:hover {
+  background: #40a9ff;
+}
