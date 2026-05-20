@@ -9,6 +9,27 @@ const apiClient = axios.create({
   },
 });
 
+// 请求拦截器：自动附加token
+apiClient.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = token;
+  }
+  return config;
+});
+
+// 响应拦截器：处理401
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // 不强制跳转登录，允许游客模式
+    if (error.response && error.response.status === 401) {
+      console.warn('未登录或登录已过期');
+    }
+    return Promise.reject(error);
+  }
+);
+
 // 工作流执行相关
 export const workflowAPI = {
   // 触发工作流

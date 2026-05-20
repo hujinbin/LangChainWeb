@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { nodeAPI } from '../../services/api';
 import { CATEGORY_LABELS, CATEGORY_COLORS } from '../../constants';
+import { DEFAULT_NODE_TYPES } from '../../constants/nodeTypes';
 import './NodePanel.css';
 
 const NodePanel = () => {
-  const [nodeTypes, setNodeTypes] = useState([]);
+  const [nodeTypes, setNodeTypes] = useState(DEFAULT_NODE_TYPES);
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedCategories, setExpandedCategories] = useState({});
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     fetchNodeTypes();
@@ -15,19 +16,22 @@ const NodePanel = () => {
 
   const fetchNodeTypes = async () => {
     try {
+      setLoading(true);
       const response = await nodeAPI.getNodeTypes();
-      setNodeTypes(response.data);
-      
+      if (response.data && response.data.length > 0) {
+        setNodeTypes(response.data);
+      }
+    } catch (error) {
+      // 后端不可用时使用内置节点数据
+      console.warn('Using built-in node types (backend unavailable)');
+    } finally {
+      setLoading(false);
       // 默认展开所有分类
       const categories = {};
-      response.data.forEach(node => {
+      nodeTypes.forEach(node => {
         categories[node.category] = true;
       });
       setExpandedCategories(categories);
-    } catch (error) {
-      console.error('Failed to fetch node types:', error);
-    } finally {
-      setLoading(false);
     }
   };
 

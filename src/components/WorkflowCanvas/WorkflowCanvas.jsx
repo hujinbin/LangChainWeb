@@ -21,9 +21,11 @@ const defaultEdgeOptions = {
   type: 'smoothstep',
   markerEnd: {
     type: MarkerType.ArrowClosed,
+    color: '#6c63ff',
   },
   style: {
     strokeWidth: 2,
+    stroke: '#4a4a6a',
   },
 };
 
@@ -160,7 +162,7 @@ const WorkflowCanvas = () => {
         snapGrid={[15, 15]}
         attributionPosition="bottom-right"
       >
-        <Background color="#aaa" gap={15} />
+        <Background color="#2a2a4a" gap={15} />
         <Controls />
         <MiniMap
           nodeColor={(node) => {
@@ -170,7 +172,7 @@ const WorkflowCanvas = () => {
             return color;
           }}
           style={{
-            backgroundColor: '#f5f5f5',
+            backgroundColor: '#16213e',
           }}
         />
       </ReactFlow>

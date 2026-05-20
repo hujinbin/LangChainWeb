@@ -3,6 +3,8 @@ import './App.css';
 import { BrowserRouter as Router, Routes, Route, Link, useNavigate, useParams } from 'react-router-dom';
 import WorkflowList from './pages/WorkflowList/WorkflowList';
 import WorkflowEditor from './pages/WorkflowEditor/WorkflowEditor';
+import Login from './pages/Login/Login';
+import useAuthStore from './store/authStore';
 
 function Dashboard() {
   const [records, setRecords] = useState([]);
@@ -144,6 +146,14 @@ function RecordDetail() {
 }
 
 function Navigation() {
+  const { user, isLoggedIn, logout } = useAuthStore();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
   return (
     <div style={{ padding: 12, background: '#001529', color: 'white', display: 'flex', alignItems: 'center', gap: 24 }}>
       <Link to="/" style={{ color: 'white', textDecoration: 'none', fontWeight: 600 }}>
@@ -155,6 +165,25 @@ function Navigation() {
       <Link to="/" style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>
         执行记录
       </Link>
+      <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12 }}>
+        {isLoggedIn ? (
+          <>
+            <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13 }}>
+              {user?.nickname || user?.mobile || '用户'}
+            </span>
+            <button
+              onClick={handleLogout}
+              style={{ background: 'none', border: '1px solid rgba(255,255,255,0.3)', color: 'rgba(255,255,255,0.7)', padding: '4px 12px', borderRadius: 4, cursor: 'pointer', fontSize: 12 }}
+            >
+              退出
+            </button>
+          </>
+        ) : (
+          <Link to="/login" style={{ color: '#3b82f6', textDecoration: 'none', fontSize: 13 }}>
+            登录
+          </Link>
+        )}
+      </div>
     </div>
   );
 }
@@ -166,6 +195,7 @@ export default function App() {
         <Navigation />
         <div style={{ flex: 1, overflow: 'auto' }}>
           <Routes>
+            <Route path="/login" element={<Login />} />
             <Route path="/" element={<Dashboard />} />
             <Route path="/executions/:id" element={<RecordDetail />} />
             <Route path="/workflows" element={<WorkflowList />} />

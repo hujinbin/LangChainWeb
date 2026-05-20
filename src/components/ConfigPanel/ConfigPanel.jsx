@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import useWorkflowStore from '../../store/workflowStore';
 import { nodeAPI } from '../../services/api';
+import { DEFAULT_NODE_TYPES } from '../../constants/nodeTypes';
 import './ConfigPanel.css';
 
 const ConfigPanel = () => {
@@ -26,7 +27,13 @@ const ConfigPanel = () => {
       const response = await nodeAPI.getNodeSchema(nodeType);
       setSchema(response.data);
     } catch (error) {
-      console.error('Failed to fetch node schema:', error);
+      // 后端不可用时使用内置节点配置
+      const localNode = DEFAULT_NODE_TYPES.find(n => n.type === nodeType);
+      if (localNode && localNode.config_schema) {
+        setSchema(localNode.config_schema);
+      } else {
+        setSchema(null);
+      }
     } finally {
       setLoading(false);
     }

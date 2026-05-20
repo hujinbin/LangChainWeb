@@ -1,15 +1,15 @@
 .custom-node {
-  background: white;
-  border: 2px solid #ddd;
-  border-radius: 8px;
+  background: #1e293b;
+  border: 2px solid #334155;
+  border-radius: 10px;
   min-width: 180px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
   transition: all 0.2s;
 }
 
 .custom-node.selected {
-  border-color: #1890ff;
-  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+  border-color: #6c63ff;
+  box-shadow: 0 0 0 2px rgba(108, 99, 255, 0.3), 0 4px 16px rgba(0, 0, 0, 0.3);
 }
 
 .custom-node.running {
@@ -18,21 +18,21 @@
 
 @keyframes pulse {
   0%, 100% {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
   }
   50% {
-    box-shadow: 0 2px 12px rgba(24, 144, 255, 0.4);
+    box-shadow: 0 4px 20px rgba(108, 99, 255, 0.4);
   }
 }
 
 .node-header {
   padding: 6px 12px;
-  border-radius: 6px 6px 0 0;
+  border-radius: 8px 8px 0 0;
   display: flex;
   align-items: center;
   gap: 6px;
   color: white;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
 }
 
@@ -53,9 +53,9 @@
 }
 
 .node-label {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
-  color: #333;
+  color: #e2e8f0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -70,16 +70,16 @@
 }
 
 .status-icon.running {
-  color: #1890ff;
+  color: #6c63ff;
   animation: rotate 1s linear infinite;
 }
 
 .status-icon.success {
-  color: #52c41a;
+  color: #10b981;
 }
 
 .status-icon.error {
-  color: #f5222d;
+  color: #ef4444;
 }
 
 @keyframes rotate {
@@ -94,8 +94,8 @@
 .custom-handle {
   width: 10px;
   height: 10px;
-  background: #1890ff;
-  border: 2px solid white;
+  background: #6c63ff;
+  border: 2px solid #1e293b;
 }
 
 .custom-handle:hover {

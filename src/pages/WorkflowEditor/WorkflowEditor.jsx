@@ -5,6 +5,7 @@ import WorkflowCanvas from '../../components/WorkflowCanvas/WorkflowCanvas';
 import ConfigPanel from '../../components/ConfigPanel/ConfigPanel';
 import useWorkflowStore from '../../store/workflowStore';
 import { workflowDefAPI } from '../../services/api';
+import localStorageService from '../../services/localStorage';
 import './WorkflowEditor.css';
 
 const WorkflowEditor = () => {
@@ -47,8 +48,13 @@ const WorkflowEditor = () => {
       const response = await workflowDefAPI.getWorkflow(workflowId);
       loadWorkflow(response.data);
     } catch (error) {
-      console.error('Failed to fetch workflow:', error);
-      alert('加载工作流失败');
+      // 后端不可用时尝试本地存储
+      const localWorkflow = localStorageService.getWorkflow(workflowId);
+      if (localWorkflow) {
+        loadWorkflow(localWorkflow);
+      } else {
+        console.error('Failed to fetch workflow:', error);
+      }
     }
   };
 
@@ -83,21 +89,29 @@ const WorkflowEditor = () => {
       };
 
       let response;
-      if (id && id !== 'new') {
-        // 更新现有工作流
-        response = await workflowDefAPI.updateWorkflow(id, workflowData);
-      } else {
-        // 创建新工作流
-        response = await workflowDefAPI.createWorkflow(workflowData);
-        // 创建成功后跳转到编辑页面
-        navigate(`/workflows/${response.data.id}/edit`, { replace: true });
+      try {
+        if (id && id !== 'new') {
+          response = await workflowDefAPI.updateWorkflow(id, workflowData);
+        } else {
+          response = await workflowDefAPI.createWorkflow(workflowData);
+          navigate(`/workflows/${response.data.id}/edit`, { replace: true });
+        }
+        setCurrentWorkflow(response.data);
+      } catch (apiError) {
+        // 后端不可用时保存到本地
+        if (id && id !== 'new') {
+          workflowData.id = id;
+        }
+        const saved = localStorageService.saveWorkflow(workflowData);
+        setCurrentWorkflow(saved);
+        if (!id || id === 'new') {
+          navigate(`/workflows/${saved.id}/edit`, { replace: true });
+        }
       }
-
-      setCurrentWorkflow(response.data);
       alert('保存成功！');
     } catch (error) {
       console.error('Failed to save workflow:', error);
-      alert('保存失败：' + (error.response?.data?.detail || error.message));
+      alert('保存失败：' + (error.message || '未知错误'));
     } finally {
       setSaving(false);
     }

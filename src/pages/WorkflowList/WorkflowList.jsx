@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { workflowDefAPI, templateAPI } from '../../services/api';
+import localStorageService from '../../services/localStorage';
+import useAuthStore from '../../store/authStore';
 import dayjs from 'dayjs';
 import './WorkflowList.css';
 
 const WorkflowList = () => {
   const navigate = useNavigate();
+  const { isLoggedIn } = useAuthStore();
   const [workflows, setWorkflows] = useState([]);
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -21,9 +24,11 @@ const WorkflowList = () => {
     setLoading(true);
     try {
       const response = await workflowDefAPI.getWorkflows();
-      setWorkflows(response.data);
+      setWorkflows(response.data || []);
     } catch (error) {
-      console.error('Failed to fetch workflows:', error);
+      // 后端不可用时使用本地存储
+      console.warn('Using local storage for workflows');
+      setWorkflows(localStorageService.getWorkflows());
     } finally {
       setLoading(false);
     }
@@ -32,9 +37,9 @@ const WorkflowList = () => {
   const fetchTemplates = async () => {
     try {
       const response = await templateAPI.getTemplates();
-      setTemplates(response.data);
+      setTemplates(response.data || []);
     } catch (error) {
-      console.error('Failed to fetch templates:', error);
+      console.warn('Templates unavailable');
     }
   };
 
@@ -53,24 +58,22 @@ const WorkflowList = () => {
 
     try {
       await workflowDefAPI.deleteWorkflow(id);
-      setWorkflows(workflows.filter(w => w.id !== id));
-      alert('删除成功！');
     } catch (error) {
-      console.error('Failed to delete workflow:', error);
-      alert('删除失败：' + (error.response?.data?.detail || error.message));
+      // 后端不可用时使用本地存储
+      localStorageService.deleteWorkflow(id);
     }
+    setWorkflows(workflows.filter(w => w.id !== id));
   };
 
   const handleToggleWorkflow = async (id, currentStatus) => {
     try {
       await workflowDefAPI.toggleWorkflow(id);
-      setWorkflows(workflows.map(w => 
-        w.id === id ? { ...w, status: currentStatus === 'active' ? 'inactive' : 'active' } : w
-      ));
     } catch (error) {
-      console.error('Failed to toggle workflow:', error);
-      alert('操作失败：' + (error.response?.data?.detail || error.message));
+      localStorageService.toggleWorkflow(id);
     }
+    setWorkflows(workflows.map(w => 
+      w.id === id ? { ...w, status: currentStatus === 'active' ? 'inactive' : 'active' } : w
+    ));
   };
 
   const handleExecuteWorkflow = async (id) => {
