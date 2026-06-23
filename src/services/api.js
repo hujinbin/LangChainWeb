@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+const API_BASE_URL = process.env.REACT_APP_API_URL || '';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -9,140 +9,142 @@ const apiClient = axios.create({
   },
 });
 
-// 请求拦截器：自动附加token
 apiClient.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
+    config.headers.token = token;
     config.headers.Authorization = token;
   }
   return config;
 });
 
-// 响应拦截器：处理401
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    // 不强制跳转登录，允许游客模式
-    if (error.response && error.response.status === 401) {
-      console.warn('未登录或登录已过期');
+    if (error.response?.status === 401 || error.response?.data?.code === 400) {
+      console.warn('登录状态无效或已过期');
     }
     return Promise.reject(error);
   }
 );
 
-// 工作流执行相关
+const unwrap = (response) => response.data;
+
+const normalizeWorkflow = (workflow = {}) => ({
+  ...workflow,
+  id: workflow.id || workflow._id,
+  updated_at: workflow.updated_at || workflow.meta?.updatedAt || workflow.updatedAt,
+  created_at: workflow.created_at || workflow.meta?.createdAt || workflow.createdAt,
+});
+
+const normalizeExecution = (execution = {}) => ({
+  ...execution,
+  id: execution.id || execution._id || execution.executionId,
+  execute_time: execution.execute_time || execution.createdAt,
+  workflow_type: execution.workflow_type || execution.workflowName,
+  error_msg: execution.error_msg || execution.error,
+});
+
+const normalizeNodeType = (node = {}) => {
+  const groupToCategory = {
+    trigger: 'trigger',
+    ai: 'ai',
+    integration: 'integration',
+    logic: 'logic',
+    output: 'output',
+  };
+
+  const icons = {
+    manualTrigger: '▶',
+    webhookTrigger: '↗',
+    llm: 'AI',
+    knowledgeRetrieval: 'KB',
+    httpRequest: 'HTTP',
+    condition: '?',
+    response: 'OUT',
+  };
+
+  return {
+    ...node,
+    category: node.category || groupToCategory[node.group] || 'other',
+    icon: node.icon || icons[node.type] || '',
+    config_schema: node.config_schema || {
+      properties: Object.fromEntries((node.parameters || []).map((key) => [
+        key,
+        {
+          type: key === 'temperature' || key === 'topK' ? 'number' : 'string',
+          title: key,
+          format: ['prompt', 'body', 'headers', 'template'].includes(key) ? 'textarea' : undefined,
+        },
+      ])),
+      required: [],
+    },
+  };
+};
+
+export const aiWorkflowAPI = {
+  getFeatures: () => apiClient.get('/api/aiWorkflow/features').then(unwrap),
+  getNodeTypes: () => apiClient.get('/api/aiWorkflow/nodeTypes').then((res) => ({
+    ...res.data,
+    data: (res.data.data || []).map(normalizeNodeType),
+  })),
+  list: (params = {}) => apiClient.get('/api/aiWorkflow/list', { params }).then((res) => ({
+    ...res.data,
+    data: (res.data.data || []).map(normalizeWorkflow),
+  })),
+  detail: (id) => apiClient.get('/api/aiWorkflow/detail', { params: { id } }).then((res) => ({
+    ...res.data,
+    data: normalizeWorkflow(res.data.data),
+  })),
+  create: (data) => apiClient.post('/api/aiWorkflow/create', data).then(unwrap),
+  update: (id, data) => apiClient.post('/api/aiWorkflow/update', { id, ...data }).then(unwrap),
+  delete: (id) => apiClient.post('/api/aiWorkflow/delete', { id }).then(unwrap),
+  validate: (data) => apiClient.post('/api/aiWorkflow/validate', data).then(unwrap),
+  run: (id, input = {}) => apiClient.post('/api/aiWorkflow/run', { id, input, triggerType: 'manual' }).then((res) => ({
+    ...res.data,
+    data: normalizeExecution(res.data.data),
+  })),
+  executions: (params = {}) => apiClient.get('/api/aiWorkflow/executions', { params }).then((res) => ({
+    ...res.data,
+    data: (res.data.data || []).map(normalizeExecution),
+  })),
+};
+
 export const workflowAPI = {
-  // 触发工作流
-  trigger: (workflowType) => 
-    apiClient.post('/api/workflow/trigger', { workflow_type: workflowType }),
-  
-  // 获取执行记录列表
-  getRecords: () => 
-    apiClient.get('/api/workflow/records'),
-  
-  // 获取执行记录详情
-  getRecordDetail: (id) => 
-    apiClient.get(`/api/workflow/records/${id}`),
-  
-  // 删除执行记录
-  deleteRecord: (id) => 
-    apiClient.delete(`/api/workflow/records/${id}`),
-  
-  // 重试失败的执行
-  retryRecord: (id) => 
-    apiClient.post(`/api/workflow/records/${id}/retry`),
+  getRecords: () => aiWorkflowAPI.executions().then((res) => res.data),
+  getRecordDetail: (id) => aiWorkflowAPI.executions().then((res) => res.data.find((item) => item.id === id)),
 };
 
-// 工作流定义管理
 export const workflowDefAPI = {
-  // 获取工作流列表
-  getWorkflows: (params) => 
-    apiClient.get('/api/workflows', { params }),
-  
-  // 创建工作流
-  createWorkflow: (data) => 
-    apiClient.post('/api/workflows', data),
-  
-  // 获取工作流详情
-  getWorkflow: (id) => 
-    apiClient.get(`/api/workflows/${id}`),
-  
-  // 更新工作流
-  updateWorkflow: (id, data) => 
-    apiClient.put(`/api/workflows/${id}`, data),
-  
-  // 删除工作流
-  deleteWorkflow: (id) => 
-    apiClient.delete(`/api/workflows/${id}`),
-  
-  // 启用/禁用工作流
-  toggleWorkflow: (id) => 
-    apiClient.post(`/api/workflows/${id}/toggle`),
-  
-  // 执行工作流
-  executeWorkflow: (id) => 
-    apiClient.post(`/api/workflows/${id}/execute`),
+  getWorkflows: (params) => aiWorkflowAPI.list(params),
+  createWorkflow: (data) => aiWorkflowAPI.create(data),
+  getWorkflow: (id) => aiWorkflowAPI.detail(id),
+  updateWorkflow: (id, data) => aiWorkflowAPI.update(id, data),
+  deleteWorkflow: (id) => aiWorkflowAPI.delete(id),
+  toggleWorkflow: (id, status) => aiWorkflowAPI.update(id, { status }),
+  executeWorkflow: (id, input) => aiWorkflowAPI.run(id, input),
+  validateWorkflow: (payload) => aiWorkflowAPI.validate(payload),
 };
 
-// 节点管理
 export const nodeAPI = {
-  // 获取所有节点类型
-  getNodeTypes: () => 
-    apiClient.get('/api/nodes'),
-  
-  // 获取节点类型详情
-  getNodeType: (type) => 
-    apiClient.get(`/api/nodes/${type}`),
-  
-  // 获取节点配置Schema
-  getNodeSchema: (type) => 
-    apiClient.get(`/api/nodes/${type}/schema`),
-  
-  // 测试节点
-  testNode: (type, config) => 
-    apiClient.post(`/api/nodes/${type}/test`, config),
-  
-  // 获取节点文档
-  getNodeDocs: (type) => 
-    apiClient.get(`/api/nodes/${type}/docs`),
+  getNodeTypes: () => aiWorkflowAPI.getNodeTypes(),
+  getNodeSchema: (type) => aiWorkflowAPI.getNodeTypes().then((res) => {
+    const node = res.data.find((item) => item.type === type);
+    return { data: node?.config_schema || null };
+  }),
 };
 
-// 模板管理
 export const templateAPI = {
-  // 获取模板列表
-  getTemplates: (params) => 
-    apiClient.get('/api/templates', { params }),
-  
-  // 创建模板
-  createTemplate: (data) => 
-    apiClient.post('/api/templates', data),
-  
-  // 获取模板详情
-  getTemplate: (id) => 
-    apiClient.get(`/api/templates/${id}`),
-  
-  // 使用模板创建工作流
-  useTemplate: (id, name) => 
-    apiClient.post(`/api/templates/${id}/use`, null, { params: { name } }),
-  
-  // 删除模板
-  deleteTemplate: (id) => 
-    apiClient.delete(`/api/templates/${id}`),
+  getTemplates: async () => ({ data: [] }),
+  useTemplate: async () => {
+    throw new Error('模板市场尚未接入后端');
+  },
 };
 
-// 配置管理
 export const configAPI = {
-  // 获取系统配置
-  getConfig: () => 
-    apiClient.get('/api/config'),
-  
-  // 更新系统配置
-  updateConfig: (data) => 
-    apiClient.put('/api/config', data),
-  
-  // 获取API密钥配置状态
-  getKeysStatus: () => 
-    apiClient.get('/api/config/keys'),
+  getConfig: async () => ({ data: {} }),
+  updateConfig: async () => ({ data: {} }),
+  getKeysStatus: async () => ({ data: {} }),
 };
 
 export default apiClient;

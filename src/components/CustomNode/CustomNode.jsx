@@ -42,7 +42,8 @@ const CustomNode = ({ data, selected }) => {
         />
       )}
       
-      <div className="node-header" style={{ backgroundColor: nodeColor }}>
+      <div className="node-accent" style={{ backgroundColor: nodeColor }} />
+      <div className="node-header">
         {icon && <span className="node-icon">{icon}</span>}
         <span className="node-type">{type}</span>
       </div>

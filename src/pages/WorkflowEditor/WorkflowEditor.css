@@ -2,18 +2,18 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  background-color: #1a1a2e;
+  background-color: #101827;
 }
 
 .editor-toolbar {
   height: 56px;
-  background: #16213e;
-  border-bottom: 1px solid #2a2a4a;
+  background: #111a2e;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.16);
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
 }
 
 .toolbar-left {
@@ -21,64 +21,101 @@
   align-items: center;
   gap: 16px;
   flex: 1;
+  min-width: 0;
 }
 
 .toolbar-right {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .btn-icon {
   width: 36px;
   height: 36px;
-  border: 1px solid #3a3a5a;
-  background: #1a1a2e;
-  border-radius: 6px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: #0f172a;
+  border-radius: 7px;
   font-size: 18px;
   cursor: pointer;
   transition: all 0.2s;
-  color: #e0e0e0;
+  color: #dbeafe;
 }
 
 .btn-icon:hover {
-  background-color: #2a2a4a;
-  border-color: #6c63ff;
-  color: #6c63ff;
+  background-color: #1e293b;
+  border-color: rgba(96, 165, 250, 0.5);
+  color: #bfdbfe;
 }
 
 .workflow-name-input input {
   padding: 8px 12px;
   border: 1px solid transparent;
-  border-radius: 6px;
+  border-radius: 7px;
   font-size: 16px;
-  font-weight: 500;
+  font-weight: 700;
   outline: none;
   transition: all 0.2s;
   min-width: 200px;
   background: transparent;
-  color: #f0f0f0;
+  color: #f8fafc;
 }
 
 .workflow-name-input input:hover {
-  background-color: #2a2a4a;
+  background-color: #17223a;
 }
 
 .workflow-name-input input:focus {
-  border-color: #6c63ff;
-  background-color: #1a1a2e;
+  border-color: #60a5fa;
+  background-color: #0f172a;
+}
+
+.workflow-description-input {
+  width: 260px;
+  padding: 8px 12px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 7px;
+  background: #0f172a;
+  color: #dbeafe;
+  outline: none;
+}
+
+.workflow-description-input:focus {
+  border-color: #60a5fa;
 }
 
 .workflow-status {
   font-size: 13px;
-  color: #8b8ba7;
+  color: #94a3b8;
+}
+
+.validation-chip {
+  display: inline-flex;
+  align-items: center;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  border: 1px solid transparent;
+}
+
+.validation-chip.valid {
+  color: #bbf7d0;
+  background: rgba(22, 163, 74, 0.16);
+  border-color: rgba(22, 163, 74, 0.45);
+}
+
+.validation-chip.invalid {
+  color: #fed7aa;
+  background: rgba(217, 119, 6, 0.16);
+  border-color: rgba(217, 119, 6, 0.45);
 }
 
 .btn {
   padding: 8px 16px;
-  border-radius: 6px;
+  border-radius: 7px;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.2s;
   border: none;
@@ -94,23 +131,44 @@
 }
 
 .btn-primary {
-  background-color: #6c63ff;
+  background-color: #3b82f6;
   color: white;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background-color: #7c74ff;
-  box-shadow: 0 4px 12px rgba(108, 99, 255, 0.3);
+  background-color: #60a5fa;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.24);
+}
+
+.btn-default {
+  background-color: #1e293b;
+  color: #dbeafe;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+}
+
+.btn-default:hover:not(:disabled) {
+  background-color: #273449;
 }
 
 .btn-success {
-  background-color: #10b981;
+  background-color: #0f766e;
   color: white;
 }
 
 .btn-success:hover:not(:disabled) {
-  background-color: #34d399;
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  background-color: #14b8a6;
+  box-shadow: 0 4px 12px rgba(20, 184, 166, 0.24);
+}
+
+.validation-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 20px;
+  background: #3b2608;
+  color: #fed7aa;
+  border-bottom: 1px solid rgba(251, 146, 60, 0.35);
+  font-size: 12px;
 }
 
 .editor-main {
@@ -122,7 +180,7 @@
 .editor-canvas {
   flex: 1;
   position: relative;
-  background: #1a1a2e;
+  background: #101827;
 }
 
 .editor-shortcuts {
@@ -130,8 +188,8 @@
   bottom: 16px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(22, 33, 62, 0.9);
-  color: #8b8ba7;
+  background: rgba(17, 26, 46, 0.9);
+  color: #94a3b8;
   padding: 8px 16px;
   border-radius: 20px;
   font-size: 12px;
@@ -140,12 +198,12 @@
   gap: 12px;
   pointer-events: none;
   z-index: 10;
-  border: 1px solid #2a2a4a;
+  border: 1px solid rgba(148, 163, 184, 0.16);
 }
 
 .editor-shortcuts kbd {
-  background: rgba(108, 99, 255, 0.2);
-  color: #a5a0ff;
+  background: rgba(59, 130, 246, 0.16);
+  color: #bfdbfe;
   padding: 2px 8px;
   border-radius: 4px;
   font-family: monospace;

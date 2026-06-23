@@ -1,15 +1,21 @@
 .custom-node {
-  background: #1e293b;
-  border: 2px solid #334155;
-  border-radius: 10px;
-  min-width: 180px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-  transition: all 0.2s;
+  position: relative;
+  width: 188px;
+  overflow: hidden;
+  background: #142033;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 8px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.28);
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
 }
 
 .custom-node.selected {
-  border-color: #6c63ff;
-  box-shadow: 0 0 0 2px rgba(108, 99, 255, 0.3), 0 4px 16px rgba(0, 0, 0, 0.3);
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.18), 0 16px 36px rgba(0, 0, 0, 0.3);
+}
+
+.custom-node:hover {
+  transform: translateY(-1px);
 }
 
 .custom-node.running {
@@ -18,34 +24,43 @@
 
 @keyframes pulse {
   0%, 100% {
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.28);
   }
   50% {
-    box-shadow: 0 4px 20px rgba(108, 99, 255, 0.4);
+    box-shadow: 0 18px 42px rgba(96, 165, 250, 0.24);
   }
+}
+
+.node-accent {
+  height: 3px;
+  width: 100%;
 }
 
 .node-header {
-  padding: 6px 12px;
-  border-radius: 8px 8px 0 0;
+  padding: 9px 12px 6px;
   display: flex;
   align-items: center;
-  gap: 6px;
-  color: white;
+  gap: 7px;
+  color: #cbd5e1;
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 700;
 }
 
 .node-icon {
-  font-size: 14px;
+  min-width: 24px;
+  color: #93c5fd;
+  font-size: 11px;
+  font-weight: 800;
 }
 
 .node-type {
-  opacity: 0.9;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .node-body {
-  padding: 12px;
+  padding: 2px 12px 13px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -53,9 +68,9 @@
 }
 
 .node-label {
-  font-size: 13px;
-  font-weight: 500;
-  color: #e2e8f0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #f8fafc;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -63,19 +78,19 @@
 }
 
 .status-icon {
-  font-size: 16px;
+  font-size: 15px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .status-icon.running {
-  color: #6c63ff;
+  color: #60a5fa;
   animation: rotate 1s linear infinite;
 }
 
 .status-icon.success {
-  color: #10b981;
+  color: #22c55e;
 }
 
 .status-icon.error {
@@ -94,10 +109,10 @@
 .custom-handle {
   width: 10px;
   height: 10px;
-  background: #6c63ff;
-  border: 2px solid #1e293b;
+  background: #60a5fa;
+  border: 2px solid #101827;
 }
 
 .custom-handle:hover {
-  background: #40a9ff;
+  background: #22d3ee;
 }

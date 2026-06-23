@@ -1,44 +1,64 @@
 .workflow-canvas {
   width: 100%;
   height: 100%;
-  background-color: #1a1a2e;
+  background: #101827;
+}
+
+.react-flow {
+  background:
+    radial-gradient(circle at 20% 16%, rgba(59, 130, 246, 0.08), transparent 28%),
+    #101827;
 }
 
 .react-flow__node.selected {
-  box-shadow: 0 0 0 2px #6c63ff;
+  box-shadow: none;
 }
 
 .react-flow__edge.selected .react-flow__edge-path {
-  stroke: #6c63ff;
-  stroke-width: 3;
+  stroke: #60a5fa;
+  stroke-width: 2.5;
 }
 
 .react-flow__edge-path {
-  stroke: #4a4a6a;
+  stroke: rgba(148, 163, 184, 0.55);
 }
 
 .react-flow__controls {
-  button {
-    background-color: #16213e;
-    border: 1px solid #3a3a5a;
-    color: #e0e0e0;
-    
-    &:hover {
-      background-color: #2a2a4a;
-    }
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 8px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.22);
+}
 
-    svg {
-      fill: #e0e0e0;
-    }
-  }
+.react-flow__controls button {
+  width: 30px;
+  height: 30px;
+  background-color: #111a2e;
+  border: 0;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+  color: #dbeafe;
+}
+
+.react-flow__controls button:hover {
+  background-color: #1e293b;
+}
+
+.react-flow__controls button svg {
+  fill: #dbeafe;
 }
 
 .react-flow__minimap {
-  border: 1px solid #3a3a5a;
-  border-radius: 6px;
-  background: #16213e;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28);
+  opacity: 0.86;
 }
 
-.react-flow__background pattern line {
-  stroke: #2a2a4a;
+.react-flow__minimap-mask {
+  fill: rgba(15, 23, 42, 0.5);
+  stroke: rgba(96, 165, 250, 0.55);
+  stroke-width: 1;
+}
+
+.react-flow__background pattern circle {
+  fill: rgba(148, 163, 184, 0.22);
 }

@@ -64,7 +64,6 @@ const ConfigPanel = () => {
 
   const renderFormField = (key, propSchema) => {
     const value = nodeConfig[key] ?? propSchema.default ?? '';
-    const isRequired = schema?.required?.includes(key);
 
     switch (propSchema.type) {
       case 'string':

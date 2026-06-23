@@ -7,7 +7,9 @@ import './NodePanel.css';
 const NodePanel = () => {
   const [nodeTypes, setNodeTypes] = useState(DEFAULT_NODE_TYPES);
   const [searchTerm, setSearchTerm] = useState('');
-  const [expandedCategories, setExpandedCategories] = useState({});
+  const [expandedCategories, setExpandedCategories] = useState(
+    DEFAULT_NODE_TYPES.reduce((acc, node) => ({ ...acc, [node.category]: true }), {})
+  );
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -20,18 +22,18 @@ const NodePanel = () => {
       const response = await nodeAPI.getNodeTypes();
       if (response.data && response.data.length > 0) {
         setNodeTypes(response.data);
+        const categories = {};
+        response.data.forEach(node => {
+          categories[node.category] = true;
+        });
+        setExpandedCategories(categories);
+        return;
       }
     } catch (error) {
       // 后端不可用时使用内置节点数据
       console.warn('Using built-in node types (backend unavailable)');
     } finally {
       setLoading(false);
-      // 默认展开所有分类
-      const categories = {};
-      nodeTypes.forEach(node => {
-        categories[node.category] = true;
-      });
-      setExpandedCategories(categories);
     }
   };
 

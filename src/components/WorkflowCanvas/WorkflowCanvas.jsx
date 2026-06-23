@@ -172,8 +172,14 @@ const WorkflowCanvas = () => {
             return color;
           }}
           style={{
-            backgroundColor: '#16213e',
+            width: 170,
+            height: 112,
+            backgroundColor: '#0f172a',
+            borderRadius: 8,
           }}
+          maskColor="rgba(15, 23, 42, 0.58)"
+          pannable={false}
+          zoomable={false}
         />
       </ReactFlow>
     </div>
