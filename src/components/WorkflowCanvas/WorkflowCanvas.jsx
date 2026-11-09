@@ -1,189 +1,267 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+} from 'react';
 import ReactFlow, {
   MiniMap,
   Controls,
   Background,
-  useNodesState,
-  useEdgesState,
-  addEdge,
   MarkerType,
 } from 'reactflow';
+import { FiGitBranch, FiPlus } from 'react-icons/fi';
+import { v4 as uuidv4 } from 'uuid';
 import 'reactflow/dist/style.css';
 import CustomNode from '../CustomNode/CustomNode';
 import useWorkflowStore from '../../store/workflowStore';
+import {
+  DEFAULT_NODE_TYPES,
+  getDefaultParameters,
+} from '../../constants/nodeTypes';
 import './WorkflowCanvas.css';
 
-const nodeTypes = {
-  custom: CustomNode,
-};
-
+const nodeTypes = { custom: CustomNode };
 const defaultEdgeOptions = {
   type: 'smoothstep',
-  markerEnd: {
-    type: MarkerType.ArrowClosed,
-    color: '#6c63ff',
-  },
-  style: {
-    strokeWidth: 2,
-    stroke: '#4a4a6a',
-  },
+  markerEnd: { type: MarkerType.ArrowClosed, color: '#779487' },
+  style: { strokeWidth: 1.6, stroke: '#779487' },
 };
 
-const WorkflowCanvas = () => {
-  const { 
-    nodes: storeNodes, 
-    edges: storeEdges,
-    setNodes: setStoreNodes,
-    setEdges: setStoreEdges,
+const WorkflowCanvas = forwardRef(({ disabled = false }, ref) => {
+  const {
+    nodes,
+    edges,
+    applyNodeChanges,
+    applyEdgeChanges,
+    addNode,
+    addEdge,
     selectNode,
-    deleteNode,
-    deleteEdge
+    toggleNodePanel,
+    isNodePanelOpen,
   } = useWorkflowStore();
-
-  const [nodes, setNodes, onNodesChange] = useNodesState(storeNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(storeEdges);
-  const [reactFlowInstance, setReactFlowInstance] = useState(null);
-
-  // 同步 store 中的节点和边到 ReactFlow
-  useEffect(() => {
-    setNodes(storeNodes);
-    setEdges(storeEdges);
-  }, [storeNodes, storeEdges, setNodes, setEdges]);
-
-  // 当节点或边改变时，更新 store
-  useEffect(() => {
-    setStoreNodes(nodes);
-  }, [nodes, setStoreNodes]);
+  const wrapperRef = useRef(null);
+  const flowRef = useRef(null);
 
   useEffect(() => {
-    setStoreEdges(edges);
-  }, [edges, setStoreEdges]);
-
-  // 连接节点
-  const onConnect = useCallback(
-    (params) => {
-      const newEdge = {
-        ...params,
-        id: `edge-${params.source}-${params.target}`,
-      };
-      setEdges((eds) => addEdge(newEdge, eds));
-    },
-    [setEdges]
-  );
-
-  // 节点点击
-  const onNodeClick = useCallback(
-    (event, node) => {
-      selectNode(node);
-    },
-    [selectNode]
-  );
-
-  // 画布点击（取消选择）
-  const onPaneClick = useCallback(() => {
-    selectNode(null);
-  }, [selectNode]);
-
-  // 删除键处理
-  const onNodesDelete = useCallback(
-    (deleted) => {
-      deleted.forEach((node) => deleteNode(node.id));
-    },
-    [deleteNode]
-  );
-
-  const onEdgesDelete = useCallback(
-    (deleted) => {
-      deleted.forEach((edge) => deleteEdge(edge.id));
-    },
-    [deleteEdge]
-  );
-
-  // 拖拽添加节点
-  const onDragOver = useCallback((event) => {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = 'move';
+    const wrapper = wrapperRef.current;
+    if (!wrapper) return undefined;
+    let timer;
+    let previousWidth = 0;
+    let previousHeight = 0;
+    // 只响应容器尺寸变化，结果抽屉和配置面板展开时重新适配节点。
+    const observer = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect;
+      if (
+        width <= 0 ||
+        height <= 0 ||
+        (width === previousWidth && height === previousHeight)
+      )
+        return;
+      previousWidth = width;
+      previousHeight = height;
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        if (useWorkflowStore.getState().nodes.length)
+          flowRef.current?.fitView({
+            padding: 0.25,
+            maxZoom: 1,
+            duration: 120,
+          });
+      }, 80);
+    });
+    observer.observe(wrapper);
+    return () => {
+      observer.disconnect();
+      clearTimeout(timer);
+    };
   }, []);
+
+  const addAtScreen = useCallback(
+    (meta, point, avoidOverlap = false) => {
+      if (disabled || !meta?.type) return;
+      const center = flowRef.current?.screenToFlowPosition(point) || {
+        x: 220,
+        y: 160,
+      };
+      const position = { x: center.x - 112, y: center.y - 60 };
+      if (avoidOverlap) {
+        const existing = useWorkflowStore.getState().nodes;
+        while (
+          existing.some(
+            (node) =>
+              Math.abs(node.position.x - position.x) < 250 &&
+              Math.abs(node.position.y - position.y) < 150
+          )
+        ) {
+          position.x += 280;
+        }
+      }
+      const node = {
+        id: `node-${uuidv4()}`,
+        type: 'custom',
+        position,
+        data: {
+          label: meta.name || meta.type,
+          type: meta.type,
+          category: meta.category || 'other',
+          icon: meta.icon,
+          hasInput: Boolean(meta.inputs?.length),
+          hasOutput: Boolean(meta.outputs?.length),
+          previewOnly: meta.previewOnly || meta.executable === false,
+          config: getDefaultParameters(meta),
+        },
+      };
+      addNode(node);
+      selectNode(node);
+      if (avoidOverlap)
+        flowRef.current?.setCenter(position.x + 112, position.y + 60, {
+          zoom: flowRef.current.getZoom(),
+          duration: 160,
+        });
+    },
+    [addNode, disabled, selectNode]
+  );
+
+  const addAtCenter = useCallback(
+    (meta) => {
+      const bounds = wrapperRef.current?.getBoundingClientRect();
+      if (bounds)
+        addAtScreen(
+          meta,
+          {
+            x: bounds.left + bounds.width / 2,
+            y: bounds.top + bounds.height * 0.42,
+          },
+          true
+        );
+    },
+    [addAtScreen]
+  );
+
+  useImperativeHandle(ref, () => ({ addNodeAtCenter: addAtCenter }), [
+    addAtCenter,
+  ]);
+
+  const isValidConnection = useCallback(
+    (connection) =>
+      Boolean(
+        connection.source &&
+        connection.target &&
+        connection.source !== connection.target &&
+        !edges.some(
+          (edge) =>
+            edge.source === connection.source &&
+            edge.target === connection.target &&
+            (edge.sourceHandle || null) === (connection.sourceHandle || null) &&
+            (edge.targetHandle || null) === (connection.targetHandle || null)
+        )
+      ),
+    [edges]
+  );
+
+  const onConnect = useCallback(
+    (connection) => {
+      if (!disabled && isValidConnection(connection))
+        addEdge({ ...connection, id: `edge-${uuidv4()}`, type: 'smoothstep' });
+    },
+    [addEdge, disabled, isValidConnection]
+  );
 
   const onDrop = useCallback(
     (event) => {
       event.preventDefault();
-
-      if (!reactFlowInstance) return;
-
-      const nodeData = event.dataTransfer.getData('application/reactflow');
-      if (!nodeData) return;
-
-      const node = JSON.parse(nodeData);
-      const position = reactFlowInstance.project({
-        x: event.clientX,
-        y: event.clientY,
-      });
-
-      const newNode = {
-        id: `node-${Date.now()}`,
-        type: 'custom',
-        position,
-        data: {
-          label: node.name,
-          type: node.type,
-          category: node.category,
-          icon: node.icon,
-          hasInput: node.inputs && node.inputs.length > 0,
-          hasOutput: node.outputs && node.outputs.length > 0,
-          config: {},
-        },
-      };
-
-      setNodes((nds) => nds.concat(newNode));
+      try {
+        const raw = event.dataTransfer.getData('application/reactflow');
+        if (raw)
+          addAtScreen(JSON.parse(raw), { x: event.clientX, y: event.clientY });
+      } catch {
+        // 非节点拖放内容不进入工作流，避免破坏当前画布。
+      }
     },
-    [reactFlowInstance, setNodes]
+    [addAtScreen]
   );
 
   return (
-    <div className="workflow-canvas">
+    <div className="workflow-canvas" ref={wrapperRef} aria-label="工作流画布">
+      {/* 画布直接消费 store，避免本地状态与 store 的双向同步循环。 */}
       <ReactFlow
         nodes={nodes}
         edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
+        onNodesChange={applyNodeChanges}
+        onEdgesChange={applyEdgeChanges}
         onConnect={onConnect}
-        onNodeClick={onNodeClick}
-        onPaneClick={onPaneClick}
-        onNodesDelete={onNodesDelete}
-        onEdgesDelete={onEdgesDelete}
-        onInit={setReactFlowInstance}
+        isValidConnection={isValidConnection}
+        onNodeClick={(_, node) => selectNode(node)}
+        onPaneClick={() => selectNode(null)}
+        onInit={(instance) => {
+          flowRef.current = instance;
+        }}
         onDrop={onDrop}
-        onDragOver={onDragOver}
+        onDragOver={(event) => {
+          event.preventDefault();
+          event.dataTransfer.dropEffect = 'move';
+        }}
         nodeTypes={nodeTypes}
         defaultEdgeOptions={defaultEdgeOptions}
+        nodesDraggable={!disabled}
+        nodesConnectable={!disabled}
+        deleteKeyCode={disabled ? null : ['Backspace', 'Delete']}
+        minZoom={0.25}
+        maxZoom={1.8}
         fitView
-        snapToGrid={true}
-        snapGrid={[15, 15]}
+        fitViewOptions={{ padding: 0.3, maxZoom: 1 }}
+        snapToGrid
+        snapGrid={[16, 16]}
         attributionPosition="bottom-right"
       >
-        <Background color="#2a2a4a" gap={15} />
-        <Controls />
+        <Background color="#cfd9cd" gap={24} size={1} />
+        <Controls showInteractive={false} />
         <MiniMap
-          nodeColor={(node) => {
-            const color = node.data?.category 
-              ? require('../../constants').CATEGORY_COLORS[node.data.category]
-              : '#999';
-            return color;
-          }}
-          style={{
-            width: 170,
-            height: 112,
-            backgroundColor: '#0f172a',
-            borderRadius: 8,
-          }}
-          maskColor="rgba(15, 23, 42, 0.58)"
-          pannable={false}
-          zoomable={false}
+          nodeColor="#bad0bc"
+          maskColor="rgba(235, 241, 231, 0.7)"
+          pannable
+          zoomable
         />
       </ReactFlow>
+      <div className="canvas-counter">
+        <span />
+        {nodes.length} 个节点
+        <span className="canvas-counter-divider" />
+        {edges.length} 条连接
+      </div>
+      {!nodes.length && (
+        <div className="canvas-empty">
+          <span className="canvas-empty-symbol">
+            <FiGitBranch />
+          </span>
+          <span className="canvas-empty-eyebrow">BUILD YOUR FLOW</span>
+          <h2>从一个触发节点开始</h2>
+          <p>连接 Flash 模型，让文字、图片和视频有序生成。</p>
+          <button
+            className="btn btn-primary"
+            disabled={disabled}
+            onClick={() =>
+              addAtCenter(
+                DEFAULT_NODE_TYPES.find((node) => node.type === 'manualTrigger')
+              )
+            }
+          >
+            <FiPlus /> 添加手动触发
+          </button>
+          {!isNodePanelOpen && (
+            <button className="canvas-open-library" onClick={toggleNodePanel}>
+              浏览节点库
+            </button>
+          )}
+        </div>
+      )}
+      <div className="canvas-help">
+        拖动画布浏览 <span>·</span> 滚轮缩放 <span>·</span> Delete 删除选中项
+      </div>
     </div>
   );
-};
+});
 
 export default WorkflowCanvas;

@@ -1,12 +1,10 @@
 import axios from 'axios';
-
-const API_BASE_URL = process.env.REACT_APP_API_URL || '';
+import { mergeNodeTypes, normalizeModelCatalog } from '../constants/nodeTypes';
+import { WORKFLOW_TIMEOUT } from '../constants';
 
 const apiClient = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  baseURL: process.env.REACT_APP_API_URL || '',
+  headers: { 'Content-Type': 'application/json' },
 });
 
 apiClient.interceptors.request.use((config) => {
@@ -21,98 +19,158 @@ apiClient.interceptors.request.use((config) => {
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401 || error.response?.data?.code === 400) {
-      console.warn('登录状态无效或已过期');
-    }
+    if (error.response?.data?.msg) error.message = error.response.data.msg;
     return Promise.reject(error);
   }
 );
 
-const unwrap = (response) => response.data;
-
-const normalizeWorkflow = (workflow = {}) => ({
+export const normalizeWorkflow = (workflow = {}) => ({
   ...workflow,
   id: workflow.id || workflow._id,
-  updated_at: workflow.updated_at || workflow.meta?.updatedAt || workflow.updatedAt,
-  created_at: workflow.created_at || workflow.meta?.createdAt || workflow.createdAt,
+  updated_at:
+    workflow.updated_at || workflow.meta?.updatedAt || workflow.updatedAt,
+  created_at:
+    workflow.created_at || workflow.meta?.createdAt || workflow.createdAt,
+  _source: 'server',
+  isLocal: false,
 });
 
-const normalizeExecution = (execution = {}) => ({
+export const normalizeExecution = (execution = {}) => ({
   ...execution,
   id: execution.id || execution._id || execution.executionId,
   execute_time: execution.execute_time || execution.createdAt,
   workflow_type: execution.workflow_type || execution.workflowName,
   error_msg: execution.error_msg || execution.error,
+  simulated: execution.simulated ?? true,
 });
 
-const normalizeNodeType = (node = {}) => {
-  const groupToCategory = {
-    trigger: 'trigger',
-    ai: 'ai',
-    integration: 'integration',
-    logic: 'logic',
-    output: 'output',
-  };
+const unwrap = (response) => {
+  const payload = response.data;
+  if (!payload || payload.code !== 200) {
+    const error = new Error(
+      payload?.data?.error || payload?.msg || '工作流请求失败'
+    );
+    error.code = payload?.code;
+    error.isBusinessError = true;
+    error.response = response;
+    error.data = payload?.data;
+    if (error.data?.executionId || (error.data?._id && error.data?.nodeResults))
+      error.execution = normalizeExecution(error.data);
+    throw error;
+  }
+  return payload;
+};
 
-  const icons = {
-    manualTrigger: '▶',
-    webhookTrigger: '↗',
-    llm: 'AI',
-    knowledgeRetrieval: 'KB',
-    httpRequest: 'HTTP',
-    condition: '?',
-    response: 'OUT',
-  };
+const timeoutBudget = (value = WORKFLOW_TIMEOUT.DEFAULT) => {
+  if (
+    !Number.isInteger(value) ||
+    value < WORKFLOW_TIMEOUT.MIN ||
+    value > WORKFLOW_TIMEOUT.MAX
+  ) {
+    throw new Error('timeoutMs 需要为 1000 至 600000 毫秒');
+  }
+  return value;
+};
 
-  return {
-    ...node,
-    category: node.category || groupToCategory[node.group] || 'other',
-    icon: node.icon || icons[node.type] || '',
-    config_schema: node.config_schema || {
-      properties: Object.fromEntries((node.parameters || []).map((key) => [
-        key,
-        {
-          type: key === 'temperature' || key === 'topK' ? 'number' : 'string',
-          title: key,
-          format: ['prompt', 'body', 'headers', 'template'].includes(key) ? 'textarea' : undefined,
-        },
-      ])),
-      required: [],
-    },
-  };
+const validateSettings = (data) => {
+  if (data.settings !== undefined) {
+    if (
+      !data.settings ||
+      typeof data.settings !== 'object' ||
+      Array.isArray(data.settings)
+    )
+      throw new Error('settings 需要为对象');
+    if (data.settings.timeoutMs !== undefined)
+      timeoutBudget(data.settings.timeoutMs);
+  }
+  return data;
 };
 
 export const aiWorkflowAPI = {
   getFeatures: () => apiClient.get('/api/aiWorkflow/features').then(unwrap),
-  getNodeTypes: () => apiClient.get('/api/aiWorkflow/nodeTypes').then((res) => ({
-    ...res.data,
-    data: (res.data.data || []).map(normalizeNodeType),
-  })),
-  list: (params = {}) => apiClient.get('/api/aiWorkflow/list', { params }).then((res) => ({
-    ...res.data,
-    data: (res.data.data || []).map(normalizeWorkflow),
-  })),
-  detail: (id) => apiClient.get('/api/aiWorkflow/detail', { params: { id } }).then((res) => ({
-    ...res.data,
-    data: normalizeWorkflow(res.data.data),
-  })),
-  create: (data) => apiClient.post('/api/aiWorkflow/create', data).then(unwrap),
-  update: (id, data) => apiClient.post('/api/aiWorkflow/update', { id, ...data }).then(unwrap),
+  getModels: () =>
+    apiClient
+      .get('/api/aiWorkflow/models')
+      .then(unwrap)
+      .then((payload) => ({
+        ...payload,
+        data: normalizeModelCatalog(payload.data),
+      })),
+  getNodeTypes: () =>
+    apiClient
+      .get('/api/aiWorkflow/nodeTypes')
+      .then(unwrap)
+      .then((payload) => ({ ...payload, data: mergeNodeTypes(payload.data) })),
+  list: (params = {}) =>
+    apiClient
+      .get('/api/aiWorkflow/list', { params })
+      .then(unwrap)
+      .then((payload) => ({
+        ...payload,
+        data: (payload.data || []).map(normalizeWorkflow),
+      })),
+  detail: (id) =>
+    apiClient
+      .get('/api/aiWorkflow/detail', { params: { id } })
+      .then(unwrap)
+      .then((payload) => ({
+        ...payload,
+        data: normalizeWorkflow(payload.data),
+      })),
+  create: async (data) =>
+    apiClient
+      .post('/api/aiWorkflow/create', validateSettings(data))
+      .then(unwrap),
+  update: async (id, data) =>
+    apiClient
+      .post('/api/aiWorkflow/update', { ...validateSettings(data), id })
+      .then(unwrap),
   delete: (id) => apiClient.post('/api/aiWorkflow/delete', { id }).then(unwrap),
-  validate: (data) => apiClient.post('/api/aiWorkflow/validate', data).then(unwrap),
-  run: (id, input = {}) => apiClient.post('/api/aiWorkflow/run', { id, input, triggerType: 'manual' }).then((res) => ({
-    ...res.data,
-    data: normalizeExecution(res.data.data),
-  })),
-  executions: (params = {}) => apiClient.get('/api/aiWorkflow/executions', { params }).then((res) => ({
-    ...res.data,
-    data: (res.data.data || []).map(normalizeExecution),
-  })),
+  validate: (data) =>
+    apiClient.post('/api/aiWorkflow/validate', data).then(unwrap),
+  run: async (id, input = {}, options = {}) => {
+    if (!input || typeof input !== 'object' || Array.isArray(input))
+      throw new Error('input 需要为对象');
+    const simulate = options.simulate === undefined ? false : options.simulate;
+    if (typeof simulate !== 'boolean') throw new Error('simulate 需要为布尔值');
+    const budget = timeoutBudget(options.timeoutMs);
+    const response = await apiClient.post(
+      '/api/aiWorkflow/run',
+      { id, input, simulate, triggerType: options.triggerType || 'manual' },
+      {
+        // 后端总超时由保存的 settings 控制，预留时间用于收取终态执行记录。
+        timeout: budget + 30000,
+        signal: options.signal,
+      }
+    );
+    const payload = {
+      ...response.data,
+      data: normalizeExecution(response.data?.data),
+    };
+    return unwrap({ ...response, data: payload });
+  },
+  executions: (params = {}) =>
+    apiClient
+      .get('/api/aiWorkflow/executions', { params })
+      .then(unwrap)
+      .then((payload) => ({
+        ...payload,
+        data: (payload.data || []).map(normalizeExecution),
+      })),
+  execution: (id) =>
+    apiClient
+      .get('/api/aiWorkflow/execution', { params: { id } })
+      .then(unwrap)
+      .then((payload) => ({
+        ...payload,
+        data: normalizeExecution(payload.data),
+      })),
 };
 
 export const workflowAPI = {
-  getRecords: () => aiWorkflowAPI.executions().then((res) => res.data),
-  getRecordDetail: (id) => aiWorkflowAPI.executions().then((res) => res.data.find((item) => item.id === id)),
+  getRecords: (params) =>
+    aiWorkflowAPI.executions(params).then((res) => res.data),
+  getRecordDetail: (id) => aiWorkflowAPI.execution(id).then((res) => res.data),
 };
 
 export const workflowDefAPI = {
@@ -122,16 +180,38 @@ export const workflowDefAPI = {
   updateWorkflow: (id, data) => aiWorkflowAPI.update(id, data),
   deleteWorkflow: (id) => aiWorkflowAPI.delete(id),
   toggleWorkflow: (id, status) => aiWorkflowAPI.update(id, { status }),
-  executeWorkflow: (id, input) => aiWorkflowAPI.run(id, input),
+  executeWorkflow: (id, input, options) =>
+    aiWorkflowAPI.run(id, input, options),
   validateWorkflow: (payload) => aiWorkflowAPI.validate(payload),
 };
 
 export const nodeAPI = {
+  getModels: () => aiWorkflowAPI.getModels(),
   getNodeTypes: () => aiWorkflowAPI.getNodeTypes(),
-  getNodeSchema: (type) => aiWorkflowAPI.getNodeTypes().then((res) => {
-    const node = res.data.find((item) => item.type === type);
-    return { data: node?.config_schema || null };
-  }),
+  getNodeSchema: async (type) => {
+    const [types, catalog] = await Promise.all([
+      aiWorkflowAPI.getNodeTypes(),
+      aiWorkflowAPI.getModels(),
+    ]);
+    const node = mergeNodeTypes(types.data, catalog.data).find(
+      (item) => item.type === type
+    );
+    return { code: 200, data: node?.config_schema || null };
+  },
+};
+
+export const mediaAPI = {
+  queryVideo: async (videoId, options = {}) => {
+    if (typeof videoId !== 'string' || !videoId.trim())
+      throw new Error('缺少有效的 video_id');
+    const payload = await apiClient
+      .get('/api/ai/videos', {
+        params: { video_id: videoId },
+        signal: options.signal,
+      })
+      .then(unwrap);
+    return payload.data;
+  },
 };
 
 export const templateAPI = {
@@ -140,11 +220,9 @@ export const templateAPI = {
     throw new Error('模板市场尚未接入后端');
   },
 };
-
 export const configAPI = {
   getConfig: async () => ({ data: {} }),
   updateConfig: async () => ({ data: {} }),
   getKeysStatus: async () => ({ data: {} }),
 };
-
 export default apiClient;

@@ -1,148 +1,198 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  FiSearch,
+  FiChevronDown,
+  FiPlus,
+  FiType,
+  FiImage,
+  FiVideo,
+  FiPlay,
+  FiGlobe,
+  FiDatabase,
+  FiGitBranch,
+  FiArrowUpRight,
+  FiBox,
+  FiX,
+} from 'react-icons/fi';
 import { nodeAPI } from '../../services/api';
-import { CATEGORY_LABELS, CATEGORY_COLORS } from '../../constants';
+import { CATEGORY_LABELS } from '../../constants';
 import { DEFAULT_NODE_TYPES } from '../../constants/nodeTypes';
+import useWorkflowStore from '../../store/workflowStore';
 import './NodePanel.css';
 
-const NodePanel = () => {
+const icons = {
+  manualTrigger: FiPlay,
+  webhookTrigger: FiGlobe,
+  llm: FiType,
+  imageGeneration: FiImage,
+  videoGeneration: FiVideo,
+  knowledgeRetrieval: FiDatabase,
+  httpRequest: FiGlobe,
+  condition: FiGitBranch,
+  response: FiArrowUpRight,
+};
+const previewTypes = new Set([
+  'knowledgeRetrieval',
+  'httpRequest',
+  'condition',
+]);
+const categoryOrder = [
+  'trigger',
+  'ai',
+  'output',
+  'integration',
+  'logic',
+  'other',
+];
+
+const NodePanel = ({ onAddNode, disabled = false }) => {
   const [nodeTypes, setNodeTypes] = useState(DEFAULT_NODE_TYPES);
   const [searchTerm, setSearchTerm] = useState('');
-  const [expandedCategories, setExpandedCategories] = useState(
-    DEFAULT_NODE_TYPES.reduce((acc, node) => ({ ...acc, [node.category]: true }), {})
-  );
-  const [loading, setLoading] = useState(false);
+  const [collapsed, setCollapsed] = useState({});
+  const [source, setSource] = useState('loading');
+  const toggleNodePanel = useWorkflowStore((state) => state.toggleNodePanel);
 
   useEffect(() => {
-    fetchNodeTypes();
+    let active = true;
+    nodeAPI
+      .getNodeTypes()
+      .then((response) => {
+        if (!active) return;
+        if (response.data?.length) setNodeTypes(response.data);
+        setSource('server');
+      })
+      .catch(() => {
+        // 服务不可用时仍可用内置能力编排，运行时会显示实际连接错误。
+        if (active) setSource('local');
+      });
+    return () => {
+      active = false;
+    };
   }, []);
 
-  const fetchNodeTypes = async () => {
-    try {
-      setLoading(true);
-      const response = await nodeAPI.getNodeTypes();
-      if (response.data && response.data.length > 0) {
-        setNodeTypes(response.data);
-        const categories = {};
-        response.data.forEach(node => {
-          categories[node.category] = true;
-        });
-        setExpandedCategories(categories);
-        return;
-      }
-    } catch (error) {
-      // 后端不可用时使用内置节点数据
-      console.warn('Using built-in node types (backend unavailable)');
-    } finally {
-      setLoading(false);
+  const categories = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
+    return categoryOrder
+      .map((category) => ({
+        category,
+        nodes: nodeTypes
+          .filter(
+            (node) =>
+              (node.category || 'other') === category &&
+              `${node.name} ${node.description || ''} ${node.type}`
+                .toLowerCase()
+                .includes(query)
+          )
+          .sort(
+            (left, right) =>
+              Number(left.previewOnly || previewTypes.has(left.type)) -
+              Number(right.previewOnly || previewTypes.has(right.type))
+          ),
+      }))
+      .filter((group) => group.nodes.length);
+  }, [nodeTypes, searchTerm]);
+
+  const startDrag = (event, node) => {
+    if (disabled) {
+      event.preventDefault();
+      return;
     }
-  };
-
-  const toggleCategory = (category) => {
-    setExpandedCategories(prev => ({
-      ...prev,
-      [category]: !prev[category]
-    }));
-  };
-
-  const onDragStart = (event, node) => {
     event.dataTransfer.setData('application/reactflow', JSON.stringify(node));
     event.dataTransfer.effectAllowed = 'move';
   };
 
-  // 按分类组织节点
-  const nodesByCategory = nodeTypes.reduce((acc, node) => {
-    const category = node.category || 'other';
-    if (!acc[category]) {
-      acc[category] = [];
-    }
-    acc[category].push(node);
-    return acc;
-  }, {});
-
-  // 过滤节点
-  const filterNodes = (nodes) => {
-    if (!searchTerm) return nodes;
-    return nodes.filter(node => 
-      node.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      node.description.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  };
-
-  if (loading) {
-    return (
-      <div className="node-panel">
-        <div className="loading">加载中...</div>
-      </div>
-    );
-  }
-
   return (
-    <div className="node-panel">
-      <div className="panel-header">
-        <h3>节点面板</h3>
+    <aside className="node-panel" aria-label="节点库">
+      <div className="node-library-header">
+        <div>
+          <span className="node-library-eyebrow">BUILDING BLOCKS</span>
+          <h2>
+            节点库 <span>{nodeTypes.length}</span>
+          </h2>
+        </div>
+        <button
+          className="node-library-close"
+          onClick={toggleNodePanel}
+          aria-label="收起节点库"
+        >
+          <FiX />
+        </button>
+      </div>
+      <label className="node-library-search">
+        <FiSearch />
         <input
-          type="text"
-          placeholder="搜索节点..."
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="search-input"
+          onChange={(event) => setSearchTerm(event.target.value)}
+          placeholder="搜索节点或能力"
+          aria-label="搜索节点"
         />
+      </label>
+      <div className="node-library-groups">
+        {categories.map(({ category, nodes }) => (
+          <section className="node-library-group" key={category}>
+            <button
+              className="node-library-category"
+              aria-expanded={!collapsed[category]}
+              onClick={() =>
+                setCollapsed((previous) => ({
+                  ...previous,
+                  [category]: !previous[category],
+                }))
+              }
+            >
+              <FiChevronDown
+                className={collapsed[category] ? 'is-collapsed' : ''}
+              />
+              <span>{CATEGORY_LABELS[category] || category}</span>
+              <small>{nodes.length}</small>
+            </button>
+            {!collapsed[category] &&
+              nodes.map((node) => {
+                const Icon = icons[node.type] || FiBox;
+                const preview =
+                  node.previewOnly ||
+                  node.executable === false ||
+                  previewTypes.has(node.type);
+                return (
+                  <button
+                    key={node.type}
+                    className={`node-library-item ${preview ? 'preview-item' : ''}`}
+                    data-node-type={node.type}
+                    draggable={!disabled}
+                    disabled={disabled}
+                    onDragStart={(event) => startDrag(event, node)}
+                    onClick={() => onAddNode?.(node)}
+                    title={node.description}
+                  >
+                    <span className="node-library-item-icon">
+                      <Icon />
+                    </span>
+                    <span className="node-library-item-content">
+                      <strong>{node.name}</strong>
+                      <small>{preview ? '仅模拟预览' : node.description}</small>
+                    </span>
+                    <FiPlus className="node-library-item-add" />
+                  </button>
+                );
+              })}
+          </section>
+        ))}
+        {!categories.length && (
+          <div className="node-library-empty">没有找到匹配节点</div>
+        )}
       </div>
-
-      <div className="panel-content">
-        {Object.entries(nodesByCategory).map(([category, nodes]) => {
-          const filteredNodes = filterNodes(nodes);
-          if (filteredNodes.length === 0) return null;
-
-          return (
-            <div key={category} className="category-section">
-              <div 
-                className="category-header"
-                onClick={() => toggleCategory(category)}
-              >
-                <span className="category-icon">
-                  {expandedCategories[category] ? '▼' : '▶'}
-                </span>
-                <span 
-                  className="category-dot"
-                  style={{ backgroundColor: CATEGORY_COLORS[category] }}
-                />
-                <span className="category-name">
-                  {CATEGORY_LABELS[category] || category}
-                </span>
-                <span className="category-count">({filteredNodes.length})</span>
-              </div>
-
-              {expandedCategories[category] && (
-                <div className="node-list">
-                  {filteredNodes.map((node) => (
-                    <div
-                      key={node.type}
-                      className="node-item"
-                      draggable
-                      onDragStart={(e) => onDragStart(e, node)}
-                      style={{ borderLeftColor: CATEGORY_COLORS[category] }}
-                    >
-                      <div className="node-item-header">
-                        {node.icon && <span className="node-item-icon">{node.icon}</span>}
-                        <span className="node-item-name">{node.name}</span>
-                      </div>
-                      <div className="node-item-description">
-                        {node.description}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          );
-        })}
+      <div className="node-library-footer">
+        <span className="node-library-flash">FLASH ONLY</span>
+        <p>点击添加，或拖入画布</p>
+        <small>
+          {source === 'local'
+            ? '内置节点库 · 离线编排'
+            : source === 'loading'
+              ? '正在同步节点能力…'
+              : '已同步服务器能力'}
+        </small>
       </div>
-
-      <div className="panel-footer">
-        <div className="tip">💡 拖拽节点到画布</div>
-      </div>
-    </div>
+    </aside>
   );
 };
 

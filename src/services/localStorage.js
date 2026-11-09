@@ -11,7 +11,12 @@ const localStorageService = {
   getWorkflows: () => {
     try {
       const data = localStorage.getItem(STORAGE_KEYS.WORKFLOWS);
-      return data ? JSON.parse(data) : [];
+      const workflows = data ? JSON.parse(data) : [];
+      return Array.isArray(workflows)
+        ? workflows
+            .filter((item) => item && typeof item === 'object')
+            .map((item) => ({ ...item, _source: 'local', isLocal: true }))
+        : [];
     } catch {
       return [];
     }
@@ -21,44 +26,42 @@ const localStorageService = {
   saveWorkflow: (workflow) => {
     const workflows = localStorageService.getWorkflows();
     const now = new Date().toISOString();
-
-    if (workflow.id) {
-      // 更新
-      const index = workflows.findIndex(w => w.id === workflow.id);
-      if (index !== -1) {
-        workflows[index] = { ...workflows[index], ...workflow, updated_at: now };
-      } else {
-        workflows.push({ ...workflow, created_at: now, updated_at: now });
-      }
-    } else {
-      // 新建
-      workflow.id = uuidv4();
-      workflow.created_at = now;
-      workflow.updated_at = now;
-      workflows.push(workflow);
-    }
+    const id = workflow.id || uuidv4();
+    const index = workflows.findIndex((item) => item.id === id);
+    // 返回持久化后的完整快照，来源标记供界面区分本地草稿。
+    const saved = {
+      ...(index === -1 ? {} : workflows[index]),
+      ...workflow,
+      id,
+      created_at: workflows[index]?.created_at || workflow.created_at || now,
+      updated_at: now,
+      _source: 'local',
+      isLocal: true,
+    };
+    if (index === -1) workflows.push(saved);
+    else workflows[index] = saved;
 
     localStorage.setItem(STORAGE_KEYS.WORKFLOWS, JSON.stringify(workflows));
-    return workflow;
+    return saved;
   },
 
   // 获取单个工作流
   getWorkflow: (id) => {
     const workflows = localStorageService.getWorkflows();
-    return workflows.find(w => w.id === id) || null;
+    return workflows.find((w) => w.id === id) || null;
   },
 
   // 删除工作流
   deleteWorkflow: (id) => {
     const workflows = localStorageService.getWorkflows();
-    const filtered = workflows.filter(w => w.id !== id);
+    const filtered = workflows.filter((w) => w.id !== id);
     localStorage.setItem(STORAGE_KEYS.WORKFLOWS, JSON.stringify(filtered));
   },
 
   // 切换工作流状态
   toggleWorkflow: (id) => {
     const workflows = localStorageService.getWorkflows();
-    const workflow = workflows.find(w => w.id === id);
+    const workflow = workflows.find((w) => w.id === id);
     if (workflow) {
       workflow.status = workflow.status === 'active' ? 'inactive' : 'active';
       workflow.updated_at = new Date().toISOString();
@@ -71,7 +74,15 @@ const localStorageService = {
   getExecutions: () => {
     try {
       const data = localStorage.getItem(STORAGE_KEYS.EXECUTIONS);
-      return data ? JSON.parse(data) : [];
+      const executions = data ? JSON.parse(data) : [];
+      return Array.isArray(executions)
+        ? executions.map((item) => ({
+            ...item,
+            isLocal: true,
+            _source: 'local',
+            simulated: item.simulated ?? true,
+          }))
+        : [];
     } catch {
       return [];
     }
@@ -80,13 +91,19 @@ const localStorageService = {
   // 添加执行记录
   addExecution: (execution) => {
     const executions = localStorageService.getExecutions();
-    execution.id = uuidv4();
-    execution.execute_time = new Date().toISOString();
-    executions.unshift(execution);
+    const saved = {
+      ...execution,
+      id: uuidv4(),
+      execute_time: new Date().toISOString(),
+      isLocal: true,
+      _source: 'local',
+      simulated: execution.simulated ?? true,
+    };
+    executions.unshift(saved);
     // 只保留最近50条
     if (executions.length > 50) executions.length = 50;
     localStorage.setItem(STORAGE_KEYS.EXECUTIONS, JSON.stringify(executions));
-    return execution;
+    return saved;
   },
 };
 

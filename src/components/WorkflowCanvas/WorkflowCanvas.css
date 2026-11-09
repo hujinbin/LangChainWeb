@@ -1,64 +1,186 @@
 .workflow-canvas {
+  position: relative;
   width: 100%;
   height: 100%;
-  background: #101827;
+  min-height: 220px;
+  background: #f2f5ee;
 }
 
-.react-flow {
-  background:
-    radial-gradient(circle at 20% 16%, rgba(59, 130, 246, 0.08), transparent 28%),
-    #101827;
+.workflow-canvas .react-flow {
+  background: #f2f5ee;
 }
 
-.react-flow__node.selected {
+.workflow-canvas .react-flow__node.selected {
   box-shadow: none;
 }
 
-.react-flow__edge.selected .react-flow__edge-path {
-  stroke: #60a5fa;
+.workflow-canvas .react-flow__edge.selected .react-flow__edge-path {
+  stroke: #23775b;
   stroke-width: 2.5;
 }
 
-.react-flow__edge-path {
-  stroke: rgba(148, 163, 184, 0.55);
+.workflow-canvas .react-flow__connection-path {
+  stroke: #23775b;
+  stroke-width: 2;
 }
 
-.react-flow__controls {
+.workflow-canvas .react-flow__controls {
   overflow: hidden;
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  border-radius: 8px;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.22);
+  border: 1px solid #dfe6da;
+  border-radius: 9px;
+  box-shadow: 0 3px 12px #203c3208;
 }
 
-.react-flow__controls button {
+.workflow-canvas .react-flow__controls-button {
   width: 30px;
   height: 30px;
-  background-color: #111a2e;
+  color: #536b5b;
+  background: #fff;
+  border-bottom-color: #e7ece2;
+}
+
+.workflow-canvas .react-flow__controls-button:hover {
+  background: #edf4e7;
+}
+
+.workflow-canvas .react-flow__controls-button svg {
+  fill: currentColor;
+}
+
+.workflow-canvas .react-flow__minimap {
+  width: 134px;
+  height: 86px;
+  overflow: hidden;
+  border: 1px solid #dfe6da;
+  border-radius: 9px;
+  box-shadow: 0 3px 12px #203c3206;
+  background: #fff;
+}
+
+.workflow-canvas .react-flow__attribution {
+  background: #f2f5eee8;
+  color: #91a08e;
+  font-size: 9px;
+}
+
+.canvas-counter {
+  position: absolute;
+  top: 18px;
+  left: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 11px;
+  border: 1px solid #dfe5d9;
+  border-radius: 7px;
+  background: #ffffffd9;
+  color: #6b7c69;
+  font-size: 11px;
+  pointer-events: none;
+}
+
+.canvas-counter > span:first-child {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #658c55;
+}
+
+.canvas-counter-divider {
+  height: 10px;
+  width: 1px;
+  margin: 0 2px;
+  background: #dfe6da;
+}
+
+.canvas-help {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  display: flex;
+  gap: 10px;
+  transform: translateX(-50%);
+  color: #839479;
+  font-size: 11px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.canvas-help span {
+  color: #b7c1b0;
+}
+
+.canvas-empty {
+  position: absolute;
+  top: 44%;
+  left: 50%;
+  display: flex;
+  width: min(380px, calc(100% - 30px));
+  flex-direction: column;
+  align-items: center;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  pointer-events: none;
+}
+
+.canvas-empty-symbol {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 65px;
+  height: 65px;
+  margin-bottom: 20px;
+  border: 1px solid #d5dfc9;
+  border-radius: 20px;
+  background: #e9f0dc;
+  color: #47753b;
+  font-size: 28px;
+  box-shadow: 0 5px 0 #e2ead8;
+}
+
+.canvas-empty-eyebrow {
+  color: #8a9a7e;
+  font-family: 'SFMono-Regular', Consolas, monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+}
+
+.canvas-empty h2 {
+  margin: 10px 0 7px;
+  color: #264633;
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: -0.4px;
+}
+
+.canvas-empty p {
+  margin: 0 0 22px;
+  color: #85917c;
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+.canvas-empty button {
+  pointer-events: auto;
+}
+
+.canvas-open-library {
+  margin-top: 14px;
+  padding: 4px 7px;
   border: 0;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.16);
-  color: #dbeafe;
+  background: transparent;
+  color: #6a7e61;
+  cursor: pointer;
+  font-size: 12px;
 }
 
-.react-flow__controls button:hover {
-  background-color: #1e293b;
-}
-
-.react-flow__controls button svg {
-  fill: #dbeafe;
-}
-
-.react-flow__minimap {
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28);
-  opacity: 0.86;
-}
-
-.react-flow__minimap-mask {
-  fill: rgba(15, 23, 42, 0.5);
-  stroke: rgba(96, 165, 250, 0.55);
-  stroke-width: 1;
-}
-
-.react-flow__background pattern circle {
-  fill: rgba(148, 163, 184, 0.22);
+@media (max-width: 900px) {
+  .canvas-help {
+    display: none;
+    font-size: 11px;
+    color: #839479;
+  }
+  .workflow-canvas .react-flow__minimap {
+    display: none;
+  }
 }

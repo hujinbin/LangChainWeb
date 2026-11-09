@@ -39,9 +39,12 @@ export const WORKFLOW_STATUS = {
 };
 
 export const EXECUTION_STATUS = {
+  RUNNING: 'running',
   SUCCESS: 'success',
   FAILED: 'failed',
 };
+
+export const WORKFLOW_TIMEOUT = { DEFAULT: 180000, MIN: 1000, MAX: 600000 };
 
 export const TRIGGER_TYPES = {
   MANUAL: 'manual',

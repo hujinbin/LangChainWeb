@@ -1,8 +1,18 @@
 const { createProxyMiddleware } = require('http-proxy-middleware');
 
-module.exports = function(app) {
-  // 将 /api 转发到后端
-  app.use('/api', createProxyMiddleware({ target: 'http://localhost:8000', changeOrigin: true }));
-  // 将 /outputs 静态资源目录转发到后端（方便 iframe 预览）
-  app.use('/outputs', createProxyMiddleware({ target: 'http://localhost:8000', changeOrigin: true }));
+module.exports = function (app) {
+  // 开发时由同源代理访问博客 API，避免浏览器跨域并保留工作流长请求。
+  const target =
+    process.env.REACT_APP_PROXY_TARGET || 'https://jue.leheavengame.com';
+  app.use(
+    '/api',
+    createProxyMiddleware({
+      target,
+      changeOrigin: true,
+      proxyTimeout: 620000,
+      timeout: 620000,
+    })
+  );
+  // 将生成资源目录一并转发，支持后端返回的同源资源路径。
+  app.use('/outputs', createProxyMiddleware({ target, changeOrigin: true }));
 };
