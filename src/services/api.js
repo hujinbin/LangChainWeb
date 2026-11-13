@@ -1,5 +1,9 @@
 import axios from 'axios';
-import { mergeNodeTypes, normalizeModelCatalog } from '../constants/nodeTypes';
+import {
+  FLASH_MODEL_CATALOG,
+  mergeNodeTypes,
+  normalizeModelCatalog,
+} from '../constants/nodeTypes';
 import { WORKFLOW_TIMEOUT } from '../constants';
 
 const apiClient = axios.create({
@@ -128,6 +132,23 @@ export const aiWorkflowAPI = {
   delete: (id) => apiClient.post('/api/aiWorkflow/delete', { id }).then(unwrap),
   validate: (data) =>
     apiClient.post('/api/aiWorkflow/validate', data).then(unwrap),
+  generateWorkflow: async (data, options = {}) => {
+    if (typeof data.message !== 'string' || !data.message.trim())
+      throw new Error('请先描述工作流需求');
+    if (
+      data.model !== undefined &&
+      !FLASH_MODEL_CATALOG.text.includes(data.model)
+    )
+      throw new Error('请选择 Flash 文本模型');
+    if (data.search !== undefined && typeof data.search !== 'boolean')
+      throw new Error('联网开关需要为布尔值');
+    return apiClient
+      .post('/api/aiWorkflow/generate', data, {
+        timeout: 210000,
+        signal: options.signal,
+      })
+      .then(unwrap);
+  },
   run: async (id, input = {}, options = {}) => {
     if (!input || typeof input !== 'object' || Array.isArray(input))
       throw new Error('input 需要为对象');

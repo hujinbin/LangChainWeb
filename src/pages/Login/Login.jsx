@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   FiArrowRight,
   FiGitBranch,
@@ -14,6 +14,7 @@ import './Login.css';
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const login = useAuthStore((state) => state.login);
   const [isRegister, setIsRegister] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -83,7 +84,10 @@ export default function Login() {
       } else {
         if (!data.token) throw new Error('登录响应缺少凭据，请重试');
         login(data.data, data.token);
-        navigate('/');
+        const destination = location.state?.from;
+        const returnPath = typeof destination === 'string' && destination.startsWith('/') && !destination.startsWith('//')
+          ? destination : '/';
+        navigate(returnPath, { state: location.state?.returnState });
       }
     } catch (err) {
       setError(

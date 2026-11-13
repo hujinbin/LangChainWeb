@@ -205,6 +205,24 @@
   letter-spacing: 1.4px;
 }
 
+.editor-assistant-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 9px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: #55724b;
+  background: transparent;
+  font-size: 12px;
+}
+
+.editor-assistant-toggle:hover:not(:disabled),
+.editor-assistant-toggle.is-active {
+  background: #eaf2df;
+  border-color: #dce7cf;
+}
+
 .editor-run-settings select {
   padding: 5px 20px 5px 7px;
   border: 1px solid transparent;
@@ -528,6 +546,11 @@
   }
   .editor-subtoolbar {
     padding: 0 12px;
+    gap: 8px;
+    flex-wrap: wrap;
+    min-height: 46px;
+    padding-top: 5px;
+    padding-bottom: 5px;
   }
   .editor-main > .node-panel {
     position: absolute;

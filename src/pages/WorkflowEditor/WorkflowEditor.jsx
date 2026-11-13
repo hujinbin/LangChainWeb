@@ -14,11 +14,13 @@ import {
   FiSquare,
   FiCloud,
   FiHardDrive,
+  FiMessageSquare,
 } from 'react-icons/fi';
 import NodePanel from '../../components/NodePanel/NodePanel';
 import WorkflowCanvas from '../../components/WorkflowCanvas/WorkflowCanvas';
 import ConfigPanel from '../../components/ConfigPanel/ConfigPanel';
 import ExecutionResult from '../../components/ExecutionResult/ExecutionResult';
+import WorkflowAssistant from '../../components/WorkflowAssistant/WorkflowAssistant';
 import useWorkflowStore from '../../store/workflowStore';
 import { aiWorkflowAPI, workflowDefAPI } from '../../services/api';
 import localStorageService from '../../services/localStorage';
@@ -91,7 +93,12 @@ const parseObject = (value, label) => {
 
 const WorkflowEditor = () => {
   const { id = 'new' } = useParams();
-  const { search } = useLocation();
+  const location = useLocation();
+  const { search } = location;
+  const initialPrompt =
+    id === 'new' && typeof location.state?.initialPrompt === 'string'
+      ? location.state.initialPrompt
+      : '';
   const navigate = useNavigate();
   const {
     currentWorkflow,
@@ -118,7 +125,7 @@ const WorkflowEditor = () => {
   const [metadataBaseline, setMetadataBaseline] = useState(
     metaFingerprint('未命名工作流', '', '{}', 180000)
   );
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [executing, setExecuting] = useState(false);
@@ -129,9 +136,14 @@ const WorkflowEditor = () => {
   const [simulate, setSimulate] = useState(false);
   const [executionRecord, setExecutionRecord] = useState(null);
   const [resultOpen, setResultOpen] = useState(true);
+  const [assistantOpen, setAssistantOpen] = useState(Boolean(initialPrompt));
+  const [conversationKey, setConversationKey] = useState(0);
   const canvasRef = useRef(null);
   const loadedKeyRef = useRef(null);
   const requestRef = useRef(null);
+  const documentSequenceRef = useRef(0);
+  const generatedChangesRef = useRef(new Map());
+  const fitTimerRef = useRef(null);
   const busy = loading || saving || publishing || executing;
   const metadataDirty =
     metadataBaseline !==
@@ -165,6 +177,8 @@ const WorkflowEditor = () => {
       setInputText(JSON.stringify(workflow.input || {}, null, 2));
       setValidation(workflow.latestValidation || null);
       setExecutionRecord(null);
+      generatedChangesRef.current.clear();
+      setConversationKey(++documentSequenceRef.current);
     },
     [loadWorkflow]
   );
@@ -181,6 +195,7 @@ const WorkflowEditor = () => {
     }
     loadedKeyRef.current = null;
     let active = true;
+    setAssistantOpen(Boolean(initialPrompt));
     setNotice(null);
     setLoading(true);
     const load = async () => {
@@ -230,7 +245,7 @@ const WorkflowEditor = () => {
     return () => {
       active = false;
     };
-  }, [id, search, applyDocument]);
+  }, [id, search, initialPrompt, applyDocument]);
 
   useEffect(() => {
     if (
@@ -238,10 +253,14 @@ const WorkflowEditor = () => {
       useWorkflowStore.getState().isNodePanelOpen
     )
       useWorkflowStore.getState().toggleNodePanel();
-    return () => requestRef.current?.abort();
+    return () => {
+      requestRef.current?.abort();
+      clearTimeout(fitTimerRef.current);
+    };
   }, []);
 
   useEffect(() => {
+    if (isConfigPanelOpen) setAssistantOpen(false);
     if (isConfigPanelOpen && window.matchMedia('(max-width: 760px)').matches) {
       setParametersOpen(false);
       setResultOpen(false);
@@ -263,6 +282,111 @@ const WorkflowEditor = () => {
       variables: parseObject(variablesText, '工作流变量'),
       settings: { ...currentWorkflow?.settings, timeoutMs },
     };
+  };
+
+  const metadataSnapshot = () => ({
+    name: workflowName,
+    description,
+    variables: variablesText,
+    input: inputText,
+    timeout: timeoutValue,
+  });
+  const restoreMetadata = (metadata) => {
+    setWorkflowName(metadata.name);
+    setDescription(metadata.description);
+    setVariablesText(metadata.variables);
+    setInputText(metadata.input);
+    setTimeoutValue(metadata.timeout);
+  };
+  const handleUndo = () => {
+    const graph = useWorkflowStore.getState();
+    const generated = generatedChangesRef.current.get(
+      graph.history[graph.historyIndex]
+    );
+    undo();
+    if (generated) restoreMetadata(generated.before);
+    setValidation(null);
+  };
+  const handleRedo = () => {
+    const graph = useWorkflowStore.getState();
+    const generated = generatedChangesRef.current.get(
+      graph.history[graph.historyIndex + 1]
+    );
+    redo();
+    if (generated) restoreMetadata(generated.after);
+    setValidation(null);
+  };
+  const applyGeneratedWorkflow = (result) => {
+    const draft = result.workflow;
+    const graph = useWorkflowStore.getState();
+    const previousEntry = graph.history[graph.historyIndex];
+    const before = metadataSnapshot();
+    const after = {
+      name: draft.name,
+      description: draft.description || '',
+      variables: JSON.stringify(draft.variables || {}, null, 2),
+      input: JSON.stringify(result.input || {}, null, 2),
+      timeout: String(draft.settings?.timeoutMs || 180000),
+    };
+    graph.replaceGraph(
+      {
+        nodes: draft.nodes.map(toCanvasNode),
+        edges: draft.edges.map((edge, index) => ({
+          ...edge,
+          id: edge.id || `edge-${index}`,
+          type: edge.type || 'smoothstep',
+        })),
+      },
+      { clearSelection: true, forceHistory: true }
+    );
+    const updated = useWorkflowStore.getState();
+    const currentEntry = updated.history[updated.historyIndex];
+    if (currentEntry !== previousEntry)
+      generatedChangesRef.current.set(currentEntry, { before, after });
+    for (const entry of generatedChangesRef.current.keys()) {
+      if (!updated.history.includes(entry))
+        generatedChangesRef.current.delete(entry);
+    }
+    restoreMetadata(after);
+    setValidation(null);
+    setExecutionRecord(null);
+    setParametersOpen(false);
+    setNotice({ type: 'success', text: '已生成工作流，可编辑节点后保存。' });
+    clearTimeout(fitTimerRef.current);
+    fitTimerRef.current = setTimeout(() => canvasRef.current?.fitView(), 100);
+  };
+  const getAssistantRevision = () => {
+    const graph = useWorkflowStore.getState();
+    return JSON.stringify({
+      ...metadataSnapshot(),
+      nodes: graph.nodes.map(toWorkflowNode),
+      edges: graph.edges.map(toWorkflowEdge),
+      documentId: graph.currentWorkflow?.id || graph.currentWorkflow?._id,
+      selectedNode: graph.selectedNode?.id,
+      configuring: graph.isConfigPanelOpen,
+    });
+  };
+  const handleToggleAssistant = () => {
+    if (assistantOpen) {
+      setAssistantOpen(false);
+      return;
+    }
+    selectNode(null);
+    setAssistantOpen(true);
+    setParametersOpen(false);
+    setResultOpen(false);
+    if (
+      window.matchMedia('(max-width: 760px)').matches &&
+      useWorkflowStore.getState().isNodePanelOpen
+    )
+      toggleNodePanel();
+  };
+  const handleToggleNodePanel = () => {
+    if (window.matchMedia('(max-width: 760px)').matches) {
+      setAssistantOpen(false);
+      selectNode(null);
+    }
+    toggleNodePanel();
   };
 
   const persistWorkflow = async () => {
@@ -409,6 +533,7 @@ const WorkflowEditor = () => {
     const controller = new AbortController();
     requestRef.current = controller;
     setParametersOpen(false);
+    setAssistantOpen(false);
     selectNode(null);
     setExecuting(true);
     setResultOpen(true);
@@ -496,7 +621,10 @@ const WorkflowEditor = () => {
     }
     setParametersOpen(true);
     setResultOpen(false);
-    if (window.matchMedia('(max-width: 760px)').matches) selectNode(null);
+    if (window.matchMedia('(max-width: 760px)').matches) {
+      selectNode(null);
+      setAssistantOpen(false);
+    }
   };
   const handleToggleResult = () => {
     if (resultOpen) {
@@ -505,7 +633,10 @@ const WorkflowEditor = () => {
     }
     setResultOpen(true);
     setParametersOpen(false);
-    if (window.matchMedia('(max-width: 760px)').matches) selectNode(null);
+    if (window.matchMedia('(max-width: 760px)').matches) {
+      selectNode(null);
+      setAssistantOpen(false);
+    }
   };
   const handleKeyDown = (event) => {
     if (
@@ -517,12 +648,12 @@ const WorkflowEditor = () => {
       return;
     if (event.key.toLowerCase() === 'z' && !busy) {
       event.preventDefault();
-      if (event.shiftKey) redo();
-      else undo();
+      if (event.shiftKey) handleRedo();
+      else handleUndo();
     }
     if (event.key.toLowerCase() === 'y' && !busy) {
       event.preventDefault();
-      redo();
+      handleRedo();
     }
     if (event.key.toLowerCase() === 's') {
       event.preventDefault();
@@ -636,7 +767,7 @@ const WorkflowEditor = () => {
         <div className="editor-tools">
           <button
             className={`editor-tool ${isNodePanelOpen ? 'is-active' : ''}`}
-            onClick={toggleNodePanel}
+            onClick={handleToggleNodePanel}
             aria-label="切换节点库"
             title="节点库"
           >
@@ -646,7 +777,7 @@ const WorkflowEditor = () => {
           <button
             className="editor-tool"
             disabled={busy || !canUndo}
-            onClick={undo}
+            onClick={handleUndo}
             aria-label="撤销"
             title="撤销 Ctrl+Z"
           >
@@ -655,13 +786,21 @@ const WorkflowEditor = () => {
           <button
             className="editor-tool"
             disabled={busy || !canRedo}
-            onClick={redo}
+            onClick={handleRedo}
             aria-label="重做"
             title="重做 Ctrl+Shift+Z"
           >
             <FiRotateCw />
           </button>
-          <span className="editor-subtitle">WORKFLOW EDITOR</span>
+          <button
+            className={`editor-assistant-toggle ${assistantOpen ? 'is-active' : ''}`}
+            aria-expanded={assistantOpen}
+            onClick={handleToggleAssistant}
+            disabled={loading}
+          >
+            <FiMessageSquare />
+            对话生成
+          </button>
         </div>
         <div className="editor-run-settings">
           <select
@@ -764,6 +903,21 @@ const WorkflowEditor = () => {
           {loading && <div className="editor-loading">正在加载工作流…</div>}
         </div>
         {isConfigPanelOpen && <ConfigPanel />}
+        <WorkflowAssistant
+          key={conversationKey}
+          open={assistantOpen}
+          ready={!loading}
+          disabled={busy}
+          initialPrompt={initialPrompt}
+          initialRequestKey={location.state?.requestKey || location.key}
+          getWorkflow={() => ({
+            ...buildPayload(),
+            input: parseObject(inputText, '运行输入'),
+          })}
+          getRevision={getAssistantRevision}
+          onApply={applyGeneratedWorkflow}
+          onClose={() => setAssistantOpen(false)}
+        />
       </div>
       {executionRecord && (
         <section className={`editor-execution ${resultOpen ? 'is-open' : ''}`}>

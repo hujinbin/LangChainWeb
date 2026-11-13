@@ -11,6 +11,19 @@ beforeEach(() =>
   useWorkflowStore.setState(useWorkflowStore.getInitialState(), true)
 );
 
+test('生成只改元数据时可显式记录一次历史，默认相同画布保持去重', () => {
+  const graph = { nodes: [node()], edges: [] };
+  state().loadWorkflow(graph);
+  state().replaceGraph(graph);
+  expect(state().history).toHaveLength(1);
+  state().replaceGraph(graph, { forceHistory: true });
+  expect(state().history).toHaveLength(2);
+  expect(state().canUndo).toBe(true);
+  state().undo();
+  expect(state().nodes).toEqual(graph.nodes);
+  expect(state().canRedo).toBe(true);
+});
+
 test('第一次编辑可以撤销到空画布，撤销后编辑会截断重做分支', () => {
   state().addNode(node());
   expect(state().canUndo).toBe(true);

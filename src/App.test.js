@@ -8,9 +8,16 @@ jest.mock('./services/api', () => ({
   mediaAPI: { queryVideo: jest.fn() },
 }));
 
-jest.mock('./pages/WorkflowEditor/WorkflowEditor', () => () => (
-  <div>工作流编辑器</div>
-));
+jest.mock('./pages/WorkflowEditor/WorkflowEditor', () => () => {
+  const { useLocation } = require('react-router-dom');
+  const location = useLocation();
+  return (
+    <div>
+      工作流编辑器
+      <span data-testid="initial-prompt">{location.state?.initialPrompt}</span>
+    </div>
+  );
+});
 
 beforeEach(() => {
   window.history.replaceState({}, '', '/');
@@ -26,6 +33,20 @@ test('工作台展示文本图片视频起点，点击起点进入编辑器', ()
   fireEvent.click(screen.getByRole('button', { name: /制作一段短片/ }));
   expect(screen.getByText('工作流编辑器')).toBeInTheDocument();
   expect(window.location.search).toBe('?starter=video');
+});
+
+test('首页自然语言需求进入编辑器并保留首次生成内容', () => {
+  render(<App />);
+  fireEvent.change(screen.getByLabelText('你希望完成什么任务？'), {
+    target: { value: '生成文案，然后为文案生成配图' },
+  });
+  fireEvent.click(
+    screen.getByRole('button', { name: '对话生成', exact: true })
+  );
+  expect(window.location.pathname).toBe('/workflows/new/edit');
+  expect(screen.getByTestId('initial-prompt')).toHaveTextContent(
+    '生成文案，然后为文案生成配图'
+  );
 });
 
 test('失败视频日志保留原因和任务ID，并可查询生成后的成片', async () => {

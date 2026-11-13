@@ -110,6 +110,15 @@ function Dashboard() {
   const requestVersion = useRef(0);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [workflowPrompt, setWorkflowPrompt] = useState('');
+  const startFromConversation = (event) => {
+    event.preventDefault();
+    const initialPrompt = workflowPrompt.trim();
+    if (!initialPrompt) return;
+    navigate('/workflows/new/edit', {
+      state: { initialPrompt, requestKey: String(Date.now()) },
+    });
+  };
   const fetchOverview = useCallback(async () => {
     const version = ++requestVersion.current;
     setLoading(true);
@@ -160,7 +169,6 @@ function Dashboard() {
     <main className="page-wrap">
       <header className="page-heading">
         <div>
-          <span className="eyebrow">YOUR CREATIVE WORKSPACE</span>
           <h1>工作台</h1>
           <p>把一个想法，连接成一段完整的 AI 工作流。</p>
         </div>
@@ -182,20 +190,50 @@ function Dashboard() {
       )}
       <section className="studio-hero">
         <div className="studio-hero-copy">
-          <span className="eyebrow">LESS REPETITION. MORE CREATION.</span>
           <h2>
-            让想法，<em>流动起来。</em>
+            描述需求，<em>生成工作流。</em>
           </h2>
-          <p>
-            从一句提示词到文字、画面与视频。连接 Flash
-            模型，让每个节点接住你的下一个灵感。
-          </p>
-          <button
-            className="btn btn-lime"
-            onClick={() => navigate('/workflows/new/edit')}
+          <p>通过对话创建文本、图片和视频流程，生成后可继续调整节点并保存。</p>
+          <form
+            className="workflow-prompt-form"
+            onSubmit={startFromConversation}
           >
-            <FiPlus /> 创建工作流 <FiArrowRight />
-          </button>
+            <label htmlFor="home-workflow-prompt">你希望完成什么任务？</label>
+            <textarea
+              id="home-workflow-prompt"
+              value={workflowPrompt}
+              onChange={(event) => setWorkflowPrompt(event.target.value)}
+              placeholder="例如，输入产品主题，自动生成宣传文案、配图和一段短视频…"
+              maxLength={6000}
+              rows={3}
+              onKeyDown={(event) => {
+                if (
+                  event.key === 'Enter' &&
+                  !event.shiftKey &&
+                  !event.nativeEvent.isComposing
+                ) {
+                  event.preventDefault();
+                  startFromConversation(event);
+                }
+              }}
+            />
+            <div>
+              <button
+                type="button"
+                className="workflow-blank-link"
+                onClick={() => navigate('/workflows/new/edit')}
+              >
+                <FiPlus /> 从空白画布开始
+              </button>
+              <button
+                className="btn btn-lime"
+                type="submit"
+                disabled={!workflowPrompt.trim()}
+              >
+                对话生成 <FiArrowRight />
+              </button>
+            </div>
+          </form>
         </div>
         <div className="hero-workflow" aria-hidden="true">
           <div className="hero-flow-node">
@@ -215,9 +253,6 @@ function Dashboard() {
             <span>创意短片</span>
             <small>VIDEO / 720P</small>
           </div>
-          <span className="hero-floating-note">
-            <FiZap /> CONNECT YOUR NEXT IDEA
-          </span>
         </div>
       </section>
       <section className="studio-stats" aria-label="工作台概览">
@@ -237,7 +272,6 @@ function Dashboard() {
             <h2>从一个灵感开始</h2>
             <p>选择已配置的起点，在画布里继续创作。</p>
           </div>
-          <span className="section-caption">QUICK START / 03</span>
         </div>
         <TemplateCards />
       </section>

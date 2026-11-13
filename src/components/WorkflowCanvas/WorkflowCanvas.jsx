@@ -140,9 +140,15 @@ const WorkflowCanvas = forwardRef(({ disabled = false }, ref) => {
     [addAtScreen]
   );
 
-  useImperativeHandle(ref, () => ({ addNodeAtCenter: addAtCenter }), [
-    addAtCenter,
-  ]);
+  useImperativeHandle(
+    ref,
+    () => ({
+      addNodeAtCenter: addAtCenter,
+      fitView: () =>
+        flowRef.current?.fitView({ padding: 0.25, maxZoom: 1, duration: 150 }),
+    }),
+    [addAtCenter]
+  );
 
   const isValidConnection = useCallback(
     (connection) =>

@@ -57,7 +57,8 @@ const changeGraph = (state, graph, options = {}) => {
     historyIndex = 0;
   } else if (
     options.recordHistory !== false &&
-    signature(history[historyIndex]) !== graphKey
+    (options.forceHistory === true ||
+      signature(history[historyIndex]) !== graphKey)
   ) {
     history = [...history.slice(0, historyIndex + 1), snapshot(next)].slice(
       -100

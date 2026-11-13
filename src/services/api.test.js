@@ -129,3 +129,34 @@ test('节点表单使用模型目录交集，并保留服务器来源', async ()
     isLocal: false,
   });
 });
+
+test('对话生成传递历史、当前画布与信号，并在调用前拒绝收费模型', async () => {
+  const requests = [];
+  apiClient.defaults.adapter = (config) => {
+    requests.push(config);
+    return mockResponse(config, {
+      code: 200,
+      data: { reply: '请补充主题', workflow: null },
+    });
+  };
+  const controller = new AbortController();
+  const payload = {
+    message: '生成一个配图流程',
+    messages: [{ role: 'user', content: '帮助我编排' }],
+    workflow: { nodes: [], edges: [], input: { theme: '咖啡' } },
+    model: 'agnes-3.0-flash',
+    search: false,
+  };
+  await aiWorkflowAPI.generateWorkflow(payload, { signal: controller.signal });
+  expect(requests[0].url).toBe('/api/aiWorkflow/generate');
+  expect(requests[0].timeout).toBe(210000);
+  expect(requests[0].signal).toBe(controller.signal);
+  expect(JSON.parse(requests[0].data)).toEqual(payload);
+  await expect(
+    aiWorkflowAPI.generateWorkflow({ ...payload, model: 'agnes-3.0-pro' })
+  ).rejects.toThrow('Flash');
+  await expect(
+    aiWorkflowAPI.generateWorkflow({ ...payload, search: 'false' })
+  ).rejects.toThrow('布尔值');
+  expect(requests).toHaveLength(1);
+});
