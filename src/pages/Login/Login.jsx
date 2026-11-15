@@ -9,6 +9,7 @@ import {
   FiEyeOff,
 } from 'react-icons/fi';
 import useAuthStore from '../../store/authStore';
+import { SITE } from '../../config/site';
 import apiClient from '../../services/api';
 import './Login.css';
 
@@ -102,7 +103,7 @@ export default function Login() {
     <main className="login-page">
       <section className="login-story">
         <span className="login-story-label">
-          <FiGitBranch /> FLOW / CREATIVE WORKSPACE
+          <FiGitBranch /> {SITE.name} / {SITE.englishName.toUpperCase()}
         </span>
         <div>
           <span className="eyebrow">MAKE ROOM FOR YOUR NEXT IDEA</span>

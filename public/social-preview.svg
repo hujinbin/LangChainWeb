@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#f4f7ef"/>
+  <rect width="1200" height="10" fill="#174d3c"/>
+  <g transform="translate(76 70)">
+    <rect width="64" height="64" rx="18" fill="#174d3c"/>
+    <path d="M18 18h28L18 46h28" fill="none" stroke="#d9f59c" stroke-width="4" stroke-linejoin="round"/>
+    <g fill="#174d3c" stroke="#d9f59c" stroke-width="3"><circle cx="18" cy="18" r="5"/><circle cx="46" cy="18" r="5"/><circle cx="18" cy="46" r="5"/><circle cx="46" cy="46" r="5"/></g>
+  </g>
+  <g font-family="Microsoft YaHei, sans-serif" fill="#173e30">
+    <text x="162" y="114" font-size="40" font-weight="700">织流 AI <tspan font-size="24" fill="#63775b">ZhiFlow</tspan></text>
+    <text x="76" y="229" font-size="55" font-weight="700">把想法，编织成工作流。</text>
+    <text x="79" y="283" font-size="25" fill="#63775b">AI 工作流可视化编排 · 自然语言生成 · 多模型连接</text>
+    <g transform="translate(76 347)">
+      <rect width="296" height="140" rx="18" fill="#fff" stroke="#d6e1cc"/>
+      <text x="28" y="43" font-size="16" fill="#63775b">01 / TEXT</text><text x="28" y="94" font-size="32" font-weight="700">文本灵感</text>
+      <path d="M312 70h42m-10-10 10 10-10 10" fill="none" stroke="#74935a" stroke-width="3"/>
+      <rect x="376" width="296" height="140" rx="18" fill="#174d3c"/>
+      <text x="404" y="43" font-size="16" fill="#d9f59c">02 / IMAGE</text><text x="404" y="94" font-size="32" font-weight="700" fill="#fff">生成画面</text>
+      <path d="M688 70h42m-10-10 10 10-10 10" fill="none" stroke="#74935a" stroke-width="3"/>
+      <rect x="752" width="296" height="140" rx="18" fill="#fff" stroke="#d6e1cc"/>
+      <text x="780" y="43" font-size="16" fill="#63775b">03 / VIDEO</text><text x="780" y="94" font-size="32" font-weight="700">创意短片</text>
+    </g>
+    <text x="78" y="566" font-size="20" fill="#63775b">langchain.leheavengame.com</text>
+  </g>
+</svg>

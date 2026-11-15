@@ -32,6 +32,8 @@ import useAuthStore from './store/authStore';
 import { aiWorkflowAPI } from './services/api';
 import localStorageService from './services/localStorage';
 import { WORKFLOW_TEMPLATES } from './constants/workflowTemplates';
+import { SITE } from './config/site';
+import PageMetadata from './components/PageMetadata';
 import './App.css';
 
 export const STATUS_LABELS = {
@@ -170,7 +172,7 @@ function Dashboard() {
       <header className="page-heading">
         <div>
           <h1>工作台</h1>
-          <p>把一个想法，连接成一段完整的 AI 工作流。</p>
+          <p>{SITE.name} · AI 工作流可视化编排工具</p>
         </div>
         <span className="section-caption">
           {new Date().toLocaleDateString('zh-CN', {
@@ -193,7 +195,7 @@ function Dashboard() {
           <h2>
             描述需求，<em>生成工作流。</em>
           </h2>
-          <p>通过对话创建文本、图片和视频流程，生成后可继续调整节点并保存。</p>
+          <p>通过对话创建文本、图片和视频流程，拖拽连接节点、配置模型并保存，查看每一步的执行结果。</p>
           <form
             className="workflow-prompt-form"
             onSubmit={startFromConversation}
@@ -335,7 +337,7 @@ function Dashboard() {
         </section>
       </div>
       <footer className="studio-bottom">
-        <span>FLOW STUDIO / AI WORKFLOW</span>
+        <span>{SITE.englishName.toUpperCase()} / AI WORKFLOW</span>
         <span>灵感有起点，创作无边界。</span>
       </footer>
     </main>
@@ -530,9 +532,9 @@ function Navigation() {
     <nav className="app-nav" aria-label="主导航">
       <Link to="/" className="nav-brand">
         <span className="brand-mark">
-          <FiGitBranch />
+          <img src={`${process.env.PUBLIC_URL}/brand-mark.svg`} alt="" width="35" height="35" />
         </span>
-        <strong>Flow</strong>
+        <strong>{SITE.name}</strong>
         <small>AI 工作流</small>
       </Link>
       <div className="nav-links">
@@ -583,6 +585,7 @@ function Navigation() {
 export default function App() {
   return (
     <Router>
+      <PageMetadata />
       <div className="app-shell">
         <Navigation />
         <div className="app-content">

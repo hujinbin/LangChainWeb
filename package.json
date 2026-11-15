@@ -20,6 +20,11 @@
     "uuid": "^9.0.1"
   },
   "scripts": {
+    "predev": "node scripts/seo.cjs",
+    "prestart": "node scripts/seo.cjs",
+    "prebuild": "node scripts/seo.cjs",
+    "postbuild": "node scripts/seo.cjs --build",
+    "check:seo": "node scripts/check-seo.cjs",
     "dev": "react-scripts start",
     "start": "react-scripts start",
     "build": "react-scripts build",

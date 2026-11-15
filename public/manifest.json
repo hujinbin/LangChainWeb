@@ -1,25 +1,26 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "织流 AI",
+  "name": "织流 AI - AI 工作流可视化编排",
+  "description": "织流 AI（ZhiFlow）是一款 AI 工作流可视化编排工具，支持节点拖拽、自然语言生成工作流、文本、图片与视频模型配置及执行结果查看。访客可保存本地草稿，登录后可同步并运行工作流。",
+  "lang": "zh-CN",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "theme_color": "#174d3c",
+  "background_color": "#f5f7f0",
   "icons": [
     {
-      "src": "favicon.ico",
-      "sizes": "64x64 32x32 24x24 16x16",
-      "type": "image/x-icon"
-    },
-    {
       "src": "logo192.png",
+      "sizes": "192x192",
       "type": "image/png",
-      "sizes": "192x192"
+      "purpose": "any"
     },
     {
       "src": "logo512.png",
+      "sizes": "512x512",
       "type": "image/png",
-      "sizes": "512x512"
+      "purpose": "any"
     }
-  ],
-  "start_url": ".",
-  "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  ]
 }
