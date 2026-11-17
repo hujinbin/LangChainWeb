@@ -3,6 +3,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import ConfigPanel from './ConfigPanel';
 import { nodeAPI } from '../../services/api';
 import { DEFAULT_NODE_TYPES } from '../../constants/nodeTypes';
+import { listKnowledgeBases } from '../../services/knowledgeApi';
 
 let mockState;
 
@@ -13,8 +14,13 @@ jest.mock('../../store/workflowStore', () => ({
 jest.mock('../../services/api', () => ({
   nodeAPI: { getNodeSchema: jest.fn() },
 }));
+jest.mock('../../services/knowledgeApi', () => ({
+  listKnowledgeBases: jest.fn(),
+}));
 
 beforeEach(() => {
+  jest.clearAllMocks();
+  listKnowledgeBases.mockResolvedValue([]);
   mockState = {
     selectedNode: {
       id: 'llm-1',
@@ -32,6 +38,53 @@ beforeEach(() => {
   nodeAPI.getNodeSchema.mockResolvedValue({
     data: DEFAULT_NODE_TYPES.find((node) => node.type === 'llm').config_schema,
   });
+});
+
+function selectKnowledgeNode(config = {}) {
+  mockState.selectedNode = {
+    id: 'knowledge-1',
+    data: { type: 'knowledgeRetrieval', label: '资料检索', config },
+  };
+  nodeAPI.getNodeSchema.mockResolvedValue({
+    data: DEFAULT_NODE_TYPES.find((node) => node.type === 'knowledgeRetrieval').config_schema,
+  });
+}
+
+test('知识库节点只能选择当前账号已启用的知识库并保存真实 ID', async () => {
+  selectKnowledgeNode();
+  listKnowledgeBases.mockResolvedValue([
+    { id: 'mine', name: '产品手册', enabled: true },
+    { id: 'disabled', name: '已关闭资料', enabled: false },
+  ]);
+  render(<ConfigPanel />);
+  await screen.findByRole('option', { name: '产品手册' });
+  expect(screen.queryByRole('option', { name: '已关闭资料' })).not.toBeInTheDocument();
+  fireEvent.change(screen.getByRole('combobox', { name: '知识库' }), { target: { value: 'mine' } });
+  fireEvent.click(screen.getByRole('button', { name: '保存配置' }));
+  expect(mockState.updateNode.mock.calls[0][1].data.config).toEqual({
+    datasetId: 'mine', query: '{{input.question}}', topK: 3,
+  });
+});
+
+test('已失效知识库不会作为可用 ID 保存，空列表提示创建资料', async () => {
+  selectKnowledgeNode({ datasetId: 'foreign' });
+  render(<ConfigPanel />);
+  await screen.findByText('还没有已启用的知识库，请先在知识库中创建资料。');
+  fireEvent.click(screen.getByRole('button', { name: '保存配置' }));
+  expect(mockState.updateNode).not.toHaveBeenCalled();
+  expect(screen.getByRole('alert')).toHaveTextContent('请选择当前账号已启用的知识库');
+});
+
+test('知识库加载失败可以重试，加载完成前禁止保存', async () => {
+  selectKnowledgeNode();
+  listKnowledgeBases.mockRejectedValueOnce(new Error('offline'));
+  listKnowledgeBases.mockResolvedValueOnce([{ id: 'mine', name: '产品手册', enabled: true }]);
+  render(<ConfigPanel />);
+  expect(screen.getByRole('button', { name: '保存配置' })).toBeDisabled();
+  fireEvent.click(await screen.findByRole('button', { name: '重试加载知识库' }));
+  await screen.findByRole('option', { name: '产品手册' });
+  expect(listKnowledgeBases).toHaveBeenCalledTimes(2);
+  expect(mockState.updateNode).not.toHaveBeenCalled();
 });
 
 test('保存实际默认模型并保留温度 0 和关闭联网，空消息列表保持省略', async () => {

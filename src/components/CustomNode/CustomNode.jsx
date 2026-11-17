@@ -28,11 +28,7 @@ const icons = {
   condition: FiGitBranch,
   response: FiArrowUpRight,
 };
-const previewTypes = new Set([
-  'knowledgeRetrieval',
-  'httpRequest',
-  'condition',
-]);
+const previewTypes = new Set(['httpRequest', 'condition']);
 
 const CustomNode = ({ id, data, selected }) => {
   const {
@@ -48,6 +44,7 @@ const CustomNode = ({ id, data, selected }) => {
   const model = config.model === 'default' ? 'agnes-3.0-flash' : config.model;
   const summary =
     config.prompt ||
+    config.query ||
     config.template ||
     (type === 'manualTrigger'
       ? '由手动运行启动此工作流'

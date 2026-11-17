@@ -774,7 +774,7 @@
 @media (max-width: 520px) {
   .app-nav {
     padding: 0 15px;
-    gap: 17px;
+    gap: 10px;
   }
   .brand-mark {
     width: 29px;
@@ -785,10 +785,13 @@
     gap: 7px;
   }
   .nav-brand strong {
-    font-size: 17px;
+    font-size: 15px;
   }
   .nav-links {
-    gap: 13px;
+    gap: 10px;
+  }
+  .nav-link {
+    font-size: 11px;
   }
   .nav-link svg,
   .nav-avatar,
@@ -828,6 +831,11 @@
     padding: 18px;
   }
   .studio-bottom span:last-child {
+    display: none;
+  }
+}
+@media (max-width: 380px) {
+  .nav-brand strong {
     display: none;
   }
 }

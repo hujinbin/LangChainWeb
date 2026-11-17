@@ -64,3 +64,12 @@ test('新节点默认值为独立数据，messages 缺省不会覆盖 prompt', (
     model: 'agnes-3.0-flash',
   });
 });
+
+test('知识库检索登记为真实执行节点且要求知识库与检索问题', () => {
+  const node = mergeNodeTypes().find((item) => item.type === 'knowledgeRetrieval');
+  expect(node.executable).toBe(true);
+  expect(node.previewOnly).toBe(false);
+  expect(node.outputs).toEqual([{ name: 'main', type: 'object' }]);
+  expect(node.config_schema.required).toEqual(['datasetId', 'query']);
+  expect(getDefaultParameters(node)).toEqual({ query: '{{input.question}}', topK: 3 });
+});

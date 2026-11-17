@@ -31,11 +31,7 @@ const icons = {
   condition: FiGitBranch,
   response: FiArrowUpRight,
 };
-const previewTypes = new Set([
-  'knowledgeRetrieval',
-  'httpRequest',
-  'condition',
-]);
+const previewTypes = new Set(['httpRequest', 'condition']);
 const categoryOrder = [
   'trigger',
   'ai',

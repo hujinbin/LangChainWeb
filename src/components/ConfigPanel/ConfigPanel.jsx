@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import useWorkflowStore from '../../store/workflowStore';
 import { nodeAPI } from '../../services/api';
+import { listKnowledgeBases } from '../../services/knowledgeApi';
 import { DEFAULT_NODE_TYPES } from '../../constants/nodeTypes';
 import './ConfigPanel.css';
 
@@ -246,6 +247,10 @@ const ConfigPanel = () => {
   const [fallback, setFallback] = useState(false);
   const [touched, setTouched] = useState({});
   const [attempted, setAttempted] = useState(false);
+  const [knowledgeBases, setKnowledgeBases] = useState([]);
+  const [knowledgeLoading, setKnowledgeLoading] = useState(false);
+  const [knowledgeError, setKnowledgeError] = useState('');
+  const [knowledgeReload, setKnowledgeReload] = useState(0);
   const formRef = useRef(null);
   const nodeId = selectedNode?.id;
   const nodeData = selectedNode?.data;
@@ -290,9 +295,45 @@ const ConfigPanel = () => {
     };
   }, [nodeId, nodeData, isConfigPanelOpen]);
 
+  useEffect(() => {
+    if (type !== 'knowledgeRetrieval' || !isConfigPanelOpen) return;
+    let active = true;
+    const controller = new AbortController();
+    setKnowledgeLoading(true);
+    setKnowledgeError('');
+    setKnowledgeBases([]);
+    listKnowledgeBases({}, { signal: controller.signal })
+      .then((bases) => {
+        if (active)
+          setKnowledgeBases(bases.filter((base) => base.enabled !== false));
+      })
+      .catch(() => {
+        if (active) setKnowledgeError('知识库列表加载失败，请重试。');
+      })
+      .finally(() => {
+        if (active) setKnowledgeLoading(false);
+      });
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [type, nodeId, isConfigPanelOpen, knowledgeReload]);
+
   const validation = useMemo(
-    () => validateConfig(schema, nodeConfig, type),
-    [schema, nodeConfig, type]
+    () => {
+      const result = validateConfig(schema, nodeConfig, type);
+      if (type === 'knowledgeRetrieval') {
+        if (knowledgeLoading) result.errors.datasetId = '正在加载知识库。';
+        else if (knowledgeError) result.errors.datasetId = knowledgeError;
+        else if (
+          result.values.datasetId &&
+          !knowledgeBases.some((base) => base.id === result.values.datasetId)
+        )
+          result.errors.datasetId = '请选择当前账号已启用的知识库。';
+      }
+      return result;
+    },
+    [schema, nodeConfig, type, knowledgeBases, knowledgeLoading, knowledgeError]
   );
   const properties = schema?.properties || {};
   const updateField = (key, value) => {
@@ -305,7 +346,12 @@ const ConfigPanel = () => {
   const handleSave = (event) => {
     event.preventDefault();
     setAttempted(true);
-    if (!selectedNode || loading) return;
+    if (
+      !selectedNode ||
+      loading ||
+      (type === 'knowledgeRetrieval' && knowledgeLoading)
+    )
+      return;
     if (!nodeName.trim() || Object.keys(validation.errors).length) {
       formRef.current?.querySelector('[aria-invalid="true"]')?.focus();
       return;
@@ -336,6 +382,7 @@ const ConfigPanel = () => {
       error &&
       (touched[key] ||
         attempted ||
+        (key === 'datasetId' && (value || knowledgeError)) ||
         (key === 'model' && value) ||
         (json && String(value || '').trim()))
     );
@@ -346,7 +393,42 @@ const ConfigPanel = () => {
       'aria-describedby': `${id}-help${visibleError ? ` ${id}-error` : ''}`,
     };
     let control;
-    if (field.type === 'boolean') {
+    if (type === 'knowledgeRetrieval' && key === 'datasetId') {
+      control = (
+        <div className="cfg-select-wrap">
+          <select
+            {...common}
+            className="cfg-select"
+            value={value ?? ''}
+            disabled={knowledgeLoading || Boolean(knowledgeError)}
+            onChange={(event) => updateField(key, event.target.value)}
+          >
+            <option value="" disabled>
+              {knowledgeLoading ? '正在加载知识库…' : '请选择知识库'}
+            </option>
+            {value && !knowledgeBases.some((base) => base.id === value) && (
+              <option value={value} disabled>
+                原知识库不可用，请重新选择
+              </option>
+            )}
+            {knowledgeBases.map((base) => (
+              <option key={base.id} value={base.id}>
+                {base.name}
+              </option>
+            ))}
+          </select>
+          {knowledgeError && (
+            <button
+              type="button"
+              className="cfg-cancel"
+              onClick={() => setKnowledgeReload((current) => current + 1)}
+            >
+              重试加载知识库
+            </button>
+          )}
+        </div>
+      );
+    } else if (field.type === 'boolean') {
       control = (
         <label className="cfg-switch" htmlFor={id}>
           <input
@@ -453,7 +535,13 @@ const ConfigPanel = () => {
         </div>
         {control}
         <p className="cfg-description" id={`${id}-help`}>
-          {field.description || defaultDescriptions[key] || ''}
+          {type === 'knowledgeRetrieval' &&
+          key === 'datasetId' &&
+          !knowledgeLoading &&
+          !knowledgeError &&
+          !knowledgeBases.length
+            ? '还没有已启用的知识库，请先在知识库中创建资料。'
+            : field.description || defaultDescriptions[key] || ''}
         </p>
         {visibleError && (
           <p className="cfg-error" id={`${id}-error`} role="alert">
@@ -584,7 +672,11 @@ const ConfigPanel = () => {
             <button className="cfg-cancel" type="button" onClick={closePanel}>
               取消
             </button>
-            <button className="cfg-save" type="submit" disabled={loading}>
+            <button
+              className="cfg-save"
+              type="submit"
+              disabled={loading || (type === 'knowledgeRetrieval' && knowledgeLoading)}
+            >
               <svg viewBox="0 0 18 18" aria-hidden="true">
                 <path d="m4 9 3 3 7-7" />
               </svg>

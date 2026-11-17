@@ -23,10 +23,13 @@ import {
   FiArrowLeft,
   FiRefreshCw,
   FiLogOut,
+  FiDatabase,
 } from 'react-icons/fi';
 import WorkflowList from './pages/WorkflowList/WorkflowList';
 import WorkflowEditor from './pages/WorkflowEditor/WorkflowEditor';
 import Login from './pages/Login/Login';
+import KnowledgeBase from './pages/KnowledgeBase/KnowledgeBase';
+import KnowledgeBaseDetail from './pages/KnowledgeBase/KnowledgeBaseDetail';
 import ExecutionResult from './components/ExecutionResult/ExecutionResult';
 import useAuthStore from './store/authStore';
 import { aiWorkflowAPI } from './services/api';
@@ -544,6 +547,9 @@ function Navigation() {
         <NavLink to="/workflows" className="nav-link">
           <FiGitBranch /> 工作流
         </NavLink>
+        <NavLink to="/knowledge" className="nav-link">
+          <FiDatabase /> 知识库
+        </NavLink>
         <NavLink to="/executions" className="nav-link">
           <FiClock /> 执行记录
         </NavLink>
@@ -596,6 +602,9 @@ export default function App() {
             <Route path="/executions/:id" element={<RecordDetail />} />
             <Route path="/workflows" element={<WorkflowList />} />
             <Route path="/workflows/:id/edit" element={<WorkflowEditor />} />
+            {/* 知识库管理与文档检索测试沿用当前账号空间。 */}
+            <Route path="/knowledge" element={<KnowledgeBase />} />
+            <Route path="/knowledge/:id" element={<KnowledgeBaseDetail />} />
             <Route
               path="*"
               element={

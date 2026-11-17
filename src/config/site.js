@@ -21,9 +21,11 @@ function getPageMetadata(pathname) {
   else if (/^\/workflows\/[^/]+\/edit$/.test(path)) label = '工作流编辑器';
   else if (path === '/executions') label = '执行记录';
   else if (/^\/executions\/[^/]+$/.test(path)) label = '执行详情';
+  else if (path === '/knowledge') label = '知识库';
+  else if (/^\/knowledge\/[^/]+$/.test(path)) label = '知识库详情';
   return {
     title: `${label} - ${SITE.name}（${SITE.englishName}）`,
-    description: `${SITE.name}${label}。${label === '页面未找到' ? '返回首页，开始编排 AI 工作流。' : '编排、保存与管理你的 AI 工作流。'}`,
+    description: `${SITE.name}${label}。${path.startsWith('/knowledge') ? '管理文档、预览分段并测试知识检索。' : label === '页面未找到' ? '返回首页，开始编排 AI 工作流。' : '编排、保存与管理你的 AI 工作流。'}`,
     indexable: false,
   };
 }
