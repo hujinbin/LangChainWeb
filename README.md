@@ -7,7 +7,7 @@ AI 工作流可视化编排工具。通过自然语言生成工作流，在画�
 - 技术栈为 React 19、TypeScript、React Flow、Zustand、Axios、Create React App 5。
 - 访客可编排并保存本地草稿；登录后可同步和运行工作流。模型调用依赖后端服务与账号权限。
 
-前端项目位于 `E:\github\LangChainWeb`，业务代码使用严格 TypeScript，源码入口为 `src/App.tsx`。前端开发建议使用 Node.js 20+，Jue 后端的运行目标为 Node.js 16.20.2。
+项目使用严格 TypeScript，源码入口为 `src/App.tsx`，前端开发建议使用 Node.js 20+。
 
 ## 功能
 
@@ -32,10 +32,10 @@ npm run dev
 
 | 环境变量 | 用途 |
 | --- | --- |
-| `REACT_APP_PROXY_TARGET` | 开发代理的 Jue 地址，默认 `https://jue.leheavengame.com` |
+| `REACT_APP_PROXY_TARGET` | 开发环境的后端 API 代理地址 |
 | `REACT_APP_API_URL` | 浏览器直接请求的 API 域名，留空使用同源 `/api` |
 
-修改开发代理配置后需重启开发服务。跨域直连时，Jue 需允许前端来源和鉴权请求头。
+修改开发代理配置后需重启开发服务。跨域直连时，后端服务需允许前端来源和鉴权请求头。
 
 ## 检查与构建
 
@@ -49,7 +49,7 @@ npm run check:proxy
 
 `typecheck` 同时执行前端和工具脚本的严格类型检查，生产构建也会先执行这两项检查。SEO 脚本与代理配置通过 `tsx` 运行，`tsx` 不替代 `tsc` 类型检查。`check:proxy` 仅使用本地测试服务器验证转发和流式回复，无需访问真实模型。
 
-构建产物位于 `build/`。静态托管需将前端路由回退到 `index.html`，并将 `/api` 转发到 Jue。`REACT_APP_API_URL` 在构建时读取。
+构建产物位于 `build/`。静态托管需将前端路由回退到 `index.html`，并将 `/api` 转发到后端服务。`REACT_APP_API_URL` 在构建时读取。
 
 ## TypeScript 项目结构
 
@@ -63,10 +63,8 @@ npm run check:proxy
 
 `src/setupProxy.js` 仅保留 CRA 固定文件名要求的加载桥接，代理逻辑全部位于 `scripts/setupProxy.ts`。该入口直接加载受类型检查的 TS 配置，不维护第二份 JavaScript 实现。
 
-## 后端与视频合成
+## 服务端技术概述
 
-后端代码位于 `E:\gitee\jue`，智能体 API 前缀为 `/api/aiAgents`，沿用 Jue 账号登录令牌。项目、任务、素材引用和视频任务 ID 持久化保存，已完成素材可用于续跑。提交结果未知时，页面会提示核查上游任务，再明确选择重新生成。
+服务端使用 Node.js 与 Koa 提供业务接口，结合 LangChain、LangGraph 完成工作流编排和模型调用。MongoDB 保存项目与任务状态，Zilliz 向量检索支持知识库问答。
 
-人生视频合成需要在 Jue 服务端安装 FFmpeg 和中文字体，配置 `AI_AGENT_FFMPEG_PATH`、`AI_AGENT_FONT_PATH` 与私有素材目录。旁白稿用于字幕和脚本导出，当前无独立 TTS。开启分镜参考图时，视频上游需要公开 HTTPS 图片地址，图片服务仅返回 Base64 时会保留图片并提示处理。
-
-完整 API、环境配置和任务恢复说明见 Jue 仓库的 `docs/ai-workflow/AI_AGENTS.md`，环境模板为其根目录 `.env.agents.example`。
+图文与视频生成采用统一的模型调用流程，保存分镜和任务状态以支持进度查看与失败恢复。视频使用 FFmpeg 合成多段画面、字幕和源音轨，输出可预览和下载的成片。
