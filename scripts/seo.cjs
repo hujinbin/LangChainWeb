@@ -1,6 +1,6 @@
 const fs = require('node:fs');
 const path = require('node:path');
-const { SITE, getPageMetadata, getStructuredData } = require('../src/config/site');
+const { SITE, getPageMetadata, getStructuredData } = require('./load-site.cjs');
 
 const root = path.resolve(__dirname, '..');
 const escape = (text) => text.replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
@@ -52,7 +52,7 @@ if (process.argv.includes('--build')) {
     .replace(/<div id="root">[\s\S]*?<\/div>/, `<div id="root">${intro(pathname)}</div>`);
   for (const [filename, pathname] of [
     ['login/index.html', '/login'], ['workflows/index.html', '/workflows'],
-    ['executions/index.html', '/executions'], ['app.html', '/workflows/new/edit'],
+    ['executions/index.html', '/executions'], ['agents/index.html', '/agents'], ['app.html', '/workflows/new/edit'],
     ['404.html', '/not-found'],
   ]) {
     const destination = path.join(build, filename);
