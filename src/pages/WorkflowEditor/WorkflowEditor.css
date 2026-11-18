@@ -233,6 +233,16 @@
   font: inherit;
   font-size: 11px;
 }
+.editor-credit-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-right: 9px;
+  font-size: 11px;
+  color: #6e8261;
+  white-space: nowrap;
+}
+.editor-credit-link svg { font-size: 14px; }
 
 .editor-parameter-toggle {
   display: flex;

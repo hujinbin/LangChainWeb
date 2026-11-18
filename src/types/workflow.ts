@@ -1,4 +1,5 @@
 import type { Edge, Node } from 'reactflow';
+import type { WorkflowBilling } from './credits';
 
 export type Parameters = Record<string, unknown>;
 export type WorkflowInput = Record<string, unknown>;
@@ -146,6 +147,7 @@ export interface NodeExecution {
   status: string;
   output?: NodeOutput;
   error?: string;
+  billing?: WorkflowBilling;
 }
 
 export interface Execution {
@@ -167,6 +169,7 @@ export interface Execution {
   input?: WorkflowInput;
   isLocal?: boolean;
   _source?: WorkflowSource;
+  billing?: WorkflowBilling;
 }
 
 export interface RunOptions {
@@ -194,4 +197,5 @@ export interface GenerateWorkflowResult {
   workflow: Workflow | null;
   warnings?: string[];
   input?: WorkflowInput;
+  billing?: WorkflowBilling;
 }

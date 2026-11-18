@@ -1,0 +1,73 @@
+.page-wrap.workflow-credits-page { max-width: 1200px; }
+.credit-account-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 20px; }
+.credit-balance-card { background: #174d3c; color: #fff; border-radius: 15px; padding: 28px 30px; }
+.credit-balance-card > div { display: flex; align-items: center; gap: 9px; font-size: 12px; color: #c3d9ca; }
+.credit-balance-card > strong { display: block; margin: 20px 0 13px; font-size: 48px; font-weight: 500; letter-spacing: -1px; overflow-wrap: anywhere; }
+.credit-balance-card small { font-size: 12px; margin-left: 10px; letter-spacing: 0; color: #c3d9ca; }
+.credit-balance-card p { color: #b3ccb9; line-height: 1.8; font-size: 11px; }
+.credit-reserved { display: inline-flex; align-items: center; gap: 8px; padding: 7px 10px; background: #ffffff0d; border: 1px solid #ffffff1c; border-radius: 7px; font-size: 11px; color: #c3d9ca; }
+.credit-reserved b { color: #d8ef8b; font-weight: 500; }
+.credit-account-detail { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 30px; gap: 20px; }
+.credit-account-detail > div > span { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #7a8a77; }
+.credit-account-detail strong { display: block; margin-top: 21px; font-size: 30px; font-weight: 500; overflow-wrap: anywhere; }
+.credit-account-detail small { display: block; font-size: 10px; color: #8e9a86; margin-top: 8px; }
+.credit-account-detail p { grid-column: 1 / -1; border-top: 1px solid #e8eee0; padding-top: 17px; margin: 0; font-size: 11px; color: #8a977e; line-height: 1.8; }
+.credit-rules-section,
+.credit-plan-section { margin-top: 34px; }
+.credit-rule-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.credit-rule-card { padding: 25px; }
+.credit-rule-icon { display: grid; place-items: center; width: 35px; height: 35px; border-radius: 9px; background: #edf4df; color: #647b47; font-size: 17px; }
+.credit-rule-card h3 { font-size: 13px; margin: 16px 0 14px; }
+.credit-rule-card > strong { font-size: 28px; font-weight: 500; }
+.credit-rule-card > strong > small { font-size: 11px; font-weight: 400; color: #8b9983; margin-left: 8px; }
+.credit-rule-card p { font-size: 12px; line-height: 1.9; color: #7c8b73; margin-bottom: 14px; }
+.credit-rule-card > small { color: #8c9c7d; font-size: 10px; }
+.credit-size-rates { display: flex; flex-wrap: wrap; gap: 6px; }
+.credit-size-rates > span { display: inline-flex; gap: 8px; padding: 5px 8px; background: #f3f6ed; border-radius: 5px; font-size: 10px; color: #8c9a7b; }
+.credit-size-rates b { font-weight: 600; color: #547047; }
+.credit-rule-notes { color: #849177; font-size: 11px; line-height: 1.9; padding-left: 18px; margin-top: 16px; }
+.credit-plan-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.credit-plan-card { padding: 23px 25px; display: flex; justify-content: space-between; gap: 18px; align-items: center; }
+.credit-plan-card > div > span { font-size: 14px; font-weight: 700; letter-spacing: 1px; }
+.credit-plan-card p { font-size: 10px; color: #87957c; margin-bottom: 0; line-height: 1.7; }
+.credit-plan-card > strong { flex-shrink: 0; font-size: 24px; font-weight: 500; text-align: right; }
+.credit-plan-card small { display: block; font-size: 10px; color: #86947c; margin-top: 5px; }
+.credit-ledger { margin-top: 32px; padding: 25px; }
+.credit-ledger-table-wrap { overflow-x: auto; }
+.credit-ledger-table { width: 100%; border-collapse: collapse; text-align: left; min-width: 570px; font-size: 12px; }
+.credit-ledger-table th { font-weight: 500; color: #8d9c80; font-size: 10px; padding: 12px; background: #f7f9f3; }
+.credit-ledger-table td { border-bottom: 1px solid #edf1e7; padding: 16px 12px; vertical-align: top; }
+.credit-ledger-table td:first-child { width: 185px; }
+.credit-ledger-table td:nth-child(2),
+.credit-ledger-table td:nth-child(3) { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.credit-ledger-table td strong { font-size: 11px; font-weight: 600; }
+.credit-ledger-table td small { display: block; font-size: 10px; color: #99a38f; margin-top: 6px; }
+.credit-ledger-table td:last-child { max-width: 300px; overflow-wrap: anywhere; }
+.credit-ledger-table td:last-child > span { display: block; font-size: 11px; color: #839077; }
+.credit-ledger-table a { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; margin-top: 8px; }
+.credit-positive { color: #23775b; }
+.credit-loading { color: #87967c; font-size: 11px; }
+@media (max-width: 800px) {
+  .credit-account-grid { grid-template-columns: 1fr; }
+  .credit-plan-card { padding: 20px; }
+  .credit-plan-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 520px) {
+  .credit-rule-grid { grid-template-columns: 1fr; }
+  .credit-balance-card { padding: 23px; }
+  .credit-balance-card > strong { font-size: 40px; }
+  .credit-account-detail { padding: 22px; }
+  .credit-account-detail strong { font-size: 25px; }
+  .credit-ledger { padding: 17px; }
+  .credit-ledger-table { min-width: 0; }
+  .credit-ledger-table thead { display: none; }
+  .credit-ledger-table tbody { display: grid; gap: 12px; }
+  .credit-ledger-table tr { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 8px 0 14px; border-bottom: 1px solid #edf1e7; }
+  .credit-ledger-table td { display: block; border: 0; padding: 8px 4px; }
+  .credit-ledger-table td:first-child { width: auto; grid-column: 1 / -1; }
+  .credit-ledger-table td:nth-child(2)::before,
+  .credit-ledger-table td:nth-child(3)::before { display: block; font-size: 10px; color: #94a087; margin-bottom: 7px; }
+  .credit-ledger-table td:nth-child(2)::before { content: '积分变动'; }
+  .credit-ledger-table td:nth-child(3)::before { content: '变动后可用'; }
+  .credit-ledger-table td:last-child { max-width: none; grid-column: 1 / -1; }
+}

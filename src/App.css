@@ -92,6 +92,15 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.nav-credit-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  color: #53784d;
+  font-size: 11px;
+}
+.execution-row .billing-inline { margin-top: 5px; }
 .nav-avatar {
   display: grid;
   place-items: center;
@@ -789,7 +798,13 @@
   }
   .nav-links {
     gap: 10px;
+    overflow-x: auto;
+    flex: 1;
+    min-width: 0;
   }
+  .nav-link { flex-shrink: 0; }
+  .nav-user { flex-shrink: 0; }
+  .nav-credit-link svg { display: none; }
   .nav-link {
     font-size: 11px;
   }
@@ -834,7 +849,7 @@
     display: none;
   }
 }
-@media (max-width: 380px) {
+@media (max-width: 460px) {
   .nav-brand strong {
     display: none;
   }

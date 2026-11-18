@@ -30,6 +30,7 @@ import {
   FiLogOut,
   FiDatabase,
   FiCpu,
+  FiCreditCard,
 } from 'react-icons/fi';
 import WorkflowList from './pages/WorkflowList/WorkflowList';
 import WorkflowEditor from './pages/WorkflowEditor/WorkflowEditor';
@@ -37,6 +38,8 @@ import Login from './pages/Login/Login';
 import KnowledgeBase from './pages/KnowledgeBase/KnowledgeBase';
 import KnowledgeBaseDetail from './pages/KnowledgeBase/KnowledgeBaseDetail';
 import ExecutionResult from './components/ExecutionResult/ExecutionResult';
+import { BillingUsageInline } from './components/BillingUsage/BillingUsage';
+import WorkflowCreditsPage from './pages/WorkflowCredits/WorkflowCredits';
 import useAuthStore from './store/authStore';
 import { aiWorkflowAPI } from './services/api';
 import localStorageService from './services/localStorage';
@@ -100,6 +103,7 @@ function ExecutionRows({ records }: { records: Execution[] }) {
               : '时间未知'}
             {record.simulated ? ' · 模拟预览' : ' · 模型运行'}
           </small>
+          <BillingUsageInline billing={record.billing} simulated={record.simulated} />
         </div>
       </div>
       <div className="execution-row-end">
@@ -542,7 +546,7 @@ function Navigation() {
   const navigate = useNavigate();
   return (
     <nav className="app-nav" aria-label="主导航">
-      <Link to="/" className="nav-brand">
+      <Link to="/" className="nav-brand" aria-label={SITE.name}>
         <span className="brand-mark">
           <img src={`${process.env.PUBLIC_URL}/brand-mark.svg`} alt="" width="35" height="35" />
         </span>
@@ -567,6 +571,7 @@ function Navigation() {
         </NavLink>
       </div>
       <div className="nav-user">
+        <Link to="/credits" className="nav-credit-link" aria-label="工作流积分"><FiCreditCard /><span>积分</span></Link>
         {isLoggedIn ? (
           <>
             <span className="nav-avatar">
@@ -612,6 +617,7 @@ export default function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/executions" element={<ExecutionList />} />
             <Route path="/executions/:id" element={<RecordDetail />} />
+            <Route path="/credits" element={<WorkflowCreditsPage />} />
             <Route path="/agents" element={<AgentsPage />} />
             <Route path="/agents/:id" element={<AgentStudio />} />
             <Route path="/workflows" element={<WorkflowList />} />

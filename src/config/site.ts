@@ -24,6 +24,7 @@ export function getPageMetadata(pathname: string) {
   else if (path === '/workflows') label = '我的工作流';
   else if (/^\/workflows\/[^/]+\/edit$/.test(path)) label = '工作流编辑器';
   else if (path === '/executions') label = '执行记录';
+  else if (path === '/credits') label = '工作流积分';
   else if (/^\/executions\/[^/]+$/.test(path)) label = '执行详情';
   else if (path === '/knowledge') label = '知识库';
   else if (/^\/knowledge\/[^/]+$/.test(path)) label = '知识库详情';

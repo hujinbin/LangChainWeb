@@ -1,4 +1,5 @@
 import type { ChatMessage, GenerateWorkflowResult, Workflow } from '../../types/workflow';
+import type { WorkflowBilling } from '../../types/credits';
 import { normalizeError } from '../../types/api';
 import React, { useEffect, useRef, useState } from 'react';
 import {
@@ -14,10 +15,12 @@ import {
 import { Link, useLocation } from 'react-router-dom';
 import { aiWorkflowAPI } from '../../services/api';
 import { FLASH_MODEL_CATALOG } from '../../constants/nodeTypes';
+import { BillingUsageInline } from '../BillingUsage/BillingUsage';
 import './WorkflowAssistant.css';
 
 interface AssistantMessage extends ChatMessage {
   warnings?: string[];
+  billing?: WorkflowBilling;
 }
 interface WorkflowAssistantProps {
   open: boolean;
@@ -195,7 +198,7 @@ export default function WorkflowAssistant({
       historyRef.current = historyMessages.slice(-20);
       setMessages((current) => [
         ...current,
-        { role: 'assistant', content: result.reply, warnings },
+        { role: 'assistant', content: result.reply, warnings, billing: result.billing },
       ]);
     } catch (caughtError) {
       const cause = normalizeError(caughtError);
@@ -300,6 +303,7 @@ export default function WorkflowAssistant({
           >
             <span>{message.role === 'user' ? '你' : '工作流助手'}</span>
             <div>{message.content}</div>
+            {message.billing && <BillingUsageInline billing={message.billing} />}
             {message.warnings?.map((warning, warningIndex) => (
               <p className="assistant-warning" key={warningIndex}>
                 {warning}

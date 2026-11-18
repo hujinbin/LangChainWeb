@@ -8,6 +8,7 @@ import {
 import { WORKFLOW_TIMEOUT } from '../constants';
 import { asRecord, normalizeError } from '../types/api';
 import type { ApiEnvelope, ApiError, ErrorData } from '../types/api';
+import type { WorkflowBilling, WorkflowCredits, WorkflowCreditLedger } from '../types/credits';
 import type {
   Execution,
   GenerateWorkflowRequest,
@@ -27,6 +28,8 @@ const apiClient = axios.create({
   baseURL: process.env.REACT_APP_API_URL || '',
   headers: { 'Content-Type': 'application/json' },
 });
+export const WORKFLOW_CREDITS_CHANGED = 'workflow-credits-changed';
+const notifyCreditChange = () => window.dispatchEvent(new Event(WORKFLOW_CREDITS_CHANGED));
 
 apiClient.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
@@ -55,6 +58,27 @@ const strings = (value: unknown): string[] =>
     : [];
 const identifier = (value: unknown): string | undefined =>
   text(value) || (number(value) !== undefined ? String(value) : undefined);
+
+export function normalizeBilling(value: unknown): WorkflowBilling | undefined {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+  const billing = asRecord(value);
+  if (!['settled', 'simulated', 'pending', 'released'].includes(String(billing.status))) return undefined;
+  const nonnegative = (value: unknown) => {
+    const count = number(value);
+    return count !== undefined && count >= 0 ? count : undefined;
+  };
+  return {
+    pointsCharged: nonnegative(billing.pointsCharged) ?? 0,
+    inputTokens: nonnegative(billing.inputTokens) ?? null,
+    outputTokens: nonnegative(billing.outputTokens) ?? null,
+    totalTokens: nonnegative(billing.totalTokens) ?? null,
+    billableTokens: nonnegative(billing.billableTokens) ?? 0,
+    imageCount: nonnegative(billing.imageCount) ?? 0,
+    estimated: billing.estimated === true,
+    status: billing.status as WorkflowBilling['status'],
+    ruleVersion: text(billing.ruleVersion),
+  };
+}
 
 function normalizeDefinitionNode(
   value: unknown,
@@ -193,6 +217,7 @@ export const normalizeExecution = (value: unknown = {}): Execution => {
     error_msg: text(execution.error_msg) || text(execution.error),
     simulated:
       typeof execution.simulated === 'boolean' ? execution.simulated : true,
+    billing: normalizeBilling(execution.billing),
     nodeResults: Array.isArray(execution.nodeResults)
       ? execution.nodeResults.map((value) => {
           const node = asRecord(value);
@@ -204,6 +229,7 @@ export const normalizeExecution = (value: unknown = {}): Execution => {
             status: text(node.status) || '',
             output: node.output ? normalizeNodeOutput(node.output) : undefined,
             error: text(node.error),
+            billing: normalizeBilling(node.billing),
           };
         })
       : [],
@@ -254,6 +280,14 @@ type QueryParams = Record<string, unknown>;
 type RequestOptions = { signal?: AbortSignal };
 
 export const aiWorkflowAPI = {
+  credits: (options: RequestOptions = {}) =>
+    apiClient
+      .get<ApiEnvelope<WorkflowCredits>>('/api/aiWorkflow/credits', { signal: options.signal })
+      .then(unwrap),
+  creditLedger: (params: QueryParams = {}, options: RequestOptions = {}) =>
+    apiClient
+      .get<ApiEnvelope<WorkflowCreditLedger>>('/api/aiWorkflow/credits/ledger', { params, signal: options.signal })
+      .then(unwrap),
   getFeatures: () =>
     apiClient
       .get<ApiEnvelope<Record<string, unknown>>>('/api/aiWorkflow/features')
@@ -337,7 +371,8 @@ export const aiWorkflowAPI = {
       .post<
         ApiEnvelope<GenerateWorkflowResult>
       >('/api/aiWorkflow/generate', data, { timeout: 210000, signal: options.signal })
-      .then(unwrap);
+      .then(unwrap)
+      .finally(notifyCreditChange);
   },
   run: async (
     id: string,
@@ -357,7 +392,7 @@ export const aiWorkflowAPI = {
         timeout: budget + 30000,
         signal: options.signal,
       }
-    );
+    ).finally(notifyCreditChange);
     return unwrap({
       ...response,
       data: { ...response.data, data: normalizeExecution(response.data?.data) },

@@ -36,6 +36,7 @@ import WorkflowCanvas from '../../components/WorkflowCanvas/WorkflowCanvas';
 import ConfigPanel from '../../components/ConfigPanel/ConfigPanel';
 import ExecutionResult from '../../components/ExecutionResult/ExecutionResult';
 import WorkflowAssistant from '../../components/WorkflowAssistant/WorkflowAssistant';
+import CreditBalanceLink from '../../components/CreditBalanceLink';
 import useWorkflowStore from '../../store/workflowStore';
 import { aiWorkflowAPI, workflowDefAPI } from '../../services/api';
 import localStorageService from '../../services/localStorage';
@@ -857,6 +858,7 @@ const WorkflowEditor = () => {
           </button>
         </div>
         <div className="editor-run-settings">
+          <CreditBalanceLink refreshKey={executing} />
           <select
             aria-label="执行模式"
             value={simulate ? 'simulated' : 'real'}

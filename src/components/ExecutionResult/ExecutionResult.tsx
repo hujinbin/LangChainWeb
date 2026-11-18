@@ -12,6 +12,7 @@ import {
   FiCopy,
 } from 'react-icons/fi';
 import { mediaAPI } from '../../services/api';
+import BillingUsage from '../BillingUsage/BillingUsage';
 import './ExecutionResult.css';
 
 interface VideoTask {
@@ -281,6 +282,7 @@ export default function ExecutionResult({ record }: { record: Execution | null }
           {record.simulated ? 'SIMULATION' : 'LIVE RUN'}
         </span>
       </header>
+      <BillingUsage billing={record.billing} simulated={record.simulated} />
       {(record.error || record.error_msg) && (
         <div className="result-inline-error" role="alert">
           {record.error || record.error_msg}
@@ -312,6 +314,9 @@ export default function ExecutionResult({ record }: { record: Execution | null }
                 <FiChevronDown className="result-chevron" />
               </summary>
               <div className="result-node-content">
+                {(node.billing || ['llm', 'imageGeneration', 'videoGeneration'].includes(node.nodeType)) && (
+                  <BillingUsage billing={node.billing} simulated={record.simulated} compact />
+                )}
                 {node.error && (
                   <div className="result-inline-error">{node.error}</div>
                 )}
