@@ -44,9 +44,24 @@ npm run typecheck
 npm test -- --watchAll=false --runInBand
 npm run build
 npm run check:seo
+npm run check:proxy
 ```
 
-构建产物位于 `build/`。静态托管需将前端路由回退到 `index.html`，并将 `/api` 转发到 Jue。`REACT_APP_API_URL` 在构建时读取。CRA 开发代理入口沿用 `src/setupProxy.js`。
+`typecheck` 同时执行前端和工具脚本的严格类型检查，生产构建也会先执行这两项检查。SEO 脚本与代理配置通过 `tsx` 运行，`tsx` 不替代 `tsc` 类型检查。`check:proxy` 仅使用本地测试服务器验证转发和流式回复，无需访问真实模型。
+
+构建产物位于 `build/`。静态托管需将前端路由回退到 `index.html`，并将 `/api` 转发到 Jue。`REACT_APP_API_URL` 在构建时读取。
+
+## TypeScript 项目结构
+
+| 位置 | 用途 |
+| --- | --- |
+| `src/**/*.ts`、`src/**/*.tsx` | 页面、组件、接口、状态与业务类型 |
+| `tsconfig.json` | 浏览器代码严格类型检查，`strict: true`、`allowJs: false` |
+| `scripts/seo.ts`、`scripts/check-seo.ts` | SEO 生成与构建结果检查，共享同一份 TS 站点配置 |
+| `scripts/setupProxy.ts` | 开发代理实现 |
+| `tsconfig.tools.json` | Node 工具脚本与代理配置的严格类型检查 |
+
+`src/setupProxy.js` 仅保留 CRA 固定文件名要求的加载桥接，代理逻辑全部位于 `scripts/setupProxy.ts`。该入口直接加载受类型检查的 TS 配置，不维护第二份 JavaScript 实现。
 
 ## 后端与视频合成
 

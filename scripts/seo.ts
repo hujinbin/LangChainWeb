@@ -1,11 +1,14 @@
-const fs = require('node:fs');
-const path = require('node:path');
-const { SITE, getPageMetadata, getStructuredData } = require('./load-site.cjs');
+import fs from 'node:fs';
+import path from 'node:path';
+import { SITE, getPageMetadata, getStructuredData } from '../src/config/site';
 
 const root = path.resolve(__dirname, '..');
-const escape = (text) => text.replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+const escapedCharacters: Record<string, string> = {
+  '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+};
+const escape = (text: string): string => text.replace(/[&<>"']/g, (char) => escapedCharacters[char]);
 
-function metadata(pathname) {
+function metadata(pathname: string): string {
   const page = getPageMetadata(pathname);
   return `<!-- site-metadata:start -->
     <title>${escape(page.title)}</title>
@@ -31,7 +34,7 @@ function metadata(pathname) {
     <!-- site-metadata:end -->`;
 }
 
-function intro(pathname) {
+function intro(pathname: string): string {
   const page = getPageMetadata(pathname);
   return `<main style="max-width:880px;margin:64px auto;padding:24px;font:16px/1.8 system-ui,sans-serif;color:#173e30">
       <h1>${page.indexable ? `${SITE.name}（${SITE.englishName}）` : escape(page.title)}</h1>
@@ -47,14 +50,15 @@ if (process.argv.includes('--build')) {
   const original = fs.readFileSync(path.join(build, 'index.html'), 'utf8');
   // CRA removes HTML comments, so replace the metadata using the stable title
   // and stylesheet/icon boundary in the generated template.
-  const replacePage = (pathname) => original
+  const replacePage = (pathname: string): string => original
     .replace(/<title>[\s\S]*?(?=<link rel="icon")/, metadata(pathname))
     .replace(/<div id="root">[\s\S]*?<\/div>/, `<div id="root">${intro(pathname)}</div>`);
-  for (const [filename, pathname] of [
+  const appPages: [filename: string, pathname: string][] = [
     ['login/index.html', '/login'], ['workflows/index.html', '/workflows'],
     ['executions/index.html', '/executions'], ['agents/index.html', '/agents'], ['app.html', '/workflows/new/edit'],
     ['404.html', '/not-found'],
-  ]) {
+  ];
+  for (const [filename, pathname] of appPages) {
     const destination = path.join(build, filename);
     fs.mkdirSync(path.dirname(destination), { recursive: true });
     fs.writeFileSync(destination, replacePage(pathname));
