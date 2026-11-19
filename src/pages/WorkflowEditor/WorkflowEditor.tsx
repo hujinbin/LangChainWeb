@@ -30,6 +30,7 @@ import {
   FiCloud,
   FiHardDrive,
   FiMessageSquare,
+  FiDatabase,
 } from 'react-icons/fi';
 import NodePanel from '../../components/NodePanel/NodePanel';
 import WorkflowCanvas from '../../components/WorkflowCanvas/WorkflowCanvas';
@@ -37,6 +38,7 @@ import ConfigPanel from '../../components/ConfigPanel/ConfigPanel';
 import ExecutionResult from '../../components/ExecutionResult/ExecutionResult';
 import WorkflowAssistant from '../../components/WorkflowAssistant/WorkflowAssistant';
 import CreditBalanceLink from '../../components/CreditBalanceLink';
+import WorkflowResources from '../../components/WorkflowResources/WorkflowResources';
 import useWorkflowStore from '../../store/workflowStore';
 import { aiWorkflowAPI, workflowDefAPI } from '../../services/api';
 import localStorageService from '../../services/localStorage';
@@ -44,7 +46,7 @@ import {
   DEFAULT_NODE_TYPES,
   getDefaultParameters,
 } from '../../constants/nodeTypes';
-import { WORKFLOW_TEMPLATES } from '../../constants/workflowTemplates';
+import { WORKFLOW_TEMPLATES, createBlankWorkflow } from '../../constants/workflowTemplates';
 import './WorkflowEditor.css';
 
 interface EditorMetadata {
@@ -78,9 +80,16 @@ const toCanvasNode = (
       category:
         node.data?.category || node.category || meta?.category || 'other',
       icon: node.data?.icon || node.icon || meta?.icon,
+      description: node.data?.description || meta?.description,
       hasInput: node.data?.hasInput ?? Boolean(meta?.inputs?.length),
       hasOutput: node.data?.hasOutput ?? Boolean(meta?.outputs?.length),
       previewOnly: meta?.previewOnly || meta?.executable === false,
+      executable: meta?.executable,
+      inputs: node.data?.inputs || meta?.inputs,
+      outputs: node.data?.outputs || meta?.outputs,
+      outputSchema: node.data?.outputSchema || meta?.outputSchema,
+      inputMapping: node.inputMapping || node.data?.inputMapping,
+      outputMapping: node.outputMapping || node.data?.outputMapping,
       config: {
         ...getDefaultParameters(meta),
         ...(node.data?.config || node.parameters || node.config || {}),
@@ -95,6 +104,8 @@ const toWorkflowNode = (node: WorkflowNode): WorkflowDefinitionNode => ({
   name: node.data?.label || node.name || node.id,
   position: node.position,
   parameters: node.data?.config || node.parameters || {},
+  inputMapping: node.data.inputMapping,
+  outputMapping: node.data.outputMapping,
 });
 const toWorkflowEdge = (edge: WorkflowEdge): WorkflowEdge => ({
   id: edge.id,
@@ -103,14 +114,16 @@ const toWorkflowEdge = (edge: WorkflowEdge): WorkflowEdge => ({
   sourceHandle: edge.sourceHandle,
   targetHandle: edge.targetHandle,
   type: edge.type || 'smoothstep',
+  label: edge.label,
 });
 const metaFingerprint = (
   name: string,
   description: string,
   variables: string,
   timeout: number | string,
+  input: string = '{}',
 ) =>
-  JSON.stringify([name, description, variables, String(timeout)]);
+  JSON.stringify([name, description, variables, String(timeout), input]);
 const errorText = (cause: unknown) => {
   const error = normalizeError(cause);
   return (
@@ -160,6 +173,8 @@ const WorkflowEditor = () => {
     canRedo,
   } = useWorkflowStore();
   const [workflowName, setWorkflowName] = useState('未命名工作流');
+  const [resourcesOpen, setResourcesOpen] = useState(false);
+  const [resourceRevision, setResourceRevision] = useState(0);
   const [description, setDescription] = useState('');
   const [variablesText, setVariablesText] = useState('{}');
   const [inputText, setInputText] = useState('{}');
@@ -189,7 +204,7 @@ const WorkflowEditor = () => {
   const busy = loading || saving || publishing || executing;
   const metadataDirty =
     metadataBaseline !==
-    metaFingerprint(workflowName, description, variablesText, timeoutValue);
+    metaFingerprint(workflowName, description, variablesText, timeoutValue, inputText);
   const dirty = isDirty || metadataDirty;
 
   const applyDocument = useCallback(
@@ -198,6 +213,7 @@ const WorkflowEditor = () => {
       const details = workflow.description || '';
       const variables = JSON.stringify(workflow.variables || {}, null, 2);
       const timeout = String(workflow.settings?.timeoutMs || 180000);
+      const input = JSON.stringify(workflow.input || workflow.settings?.inputExample || {}, null, 2);
       loadWorkflow(
         {
           ...workflow,
@@ -215,8 +231,8 @@ const WorkflowEditor = () => {
       setDescription(details);
       setVariablesText(variables);
       setTimeoutValue(timeout);
-      setMetadataBaseline(metaFingerprint(name, details, variables, timeout));
-      setInputText(JSON.stringify(workflow.input || {}, null, 2));
+      setMetadataBaseline(metaFingerprint(name, details, variables, timeout, input));
+      setInputText(input);
       setValidation(workflow.latestValidation || null);
       setExecutionRecord(null);
       generatedChangesRef.current.clear();
@@ -243,12 +259,13 @@ const WorkflowEditor = () => {
     const load = async () => {
       if (id === 'new') {
         const template = WORKFLOW_TEMPLATES.find((item) => item.id === starter);
+        const initial = template || createBlankWorkflow();
         applyDocument(
           {
-            ...(template || {}),
+            ...initial,
             id: null,
-            nodes: template?.nodes || [],
-            edges: template?.edges || [],
+            nodes: initial.nodes || [],
+            edges: initial.edges || [],
             settings: { timeoutMs: 180000 },
           },
           'new'
@@ -324,7 +341,7 @@ const WorkflowEditor = () => {
       nodes: graph.nodes.map(toWorkflowNode),
       edges: graph.edges.map(toWorkflowEdge),
       variables: parseObject(variablesText, '工作流变量'),
-      settings: { ...currentWorkflow?.settings, timeoutMs },
+      settings: { ...currentWorkflow?.settings, timeoutMs, inputExample: parseObject(inputText, '运行输入') },
     };
   };
 
@@ -458,12 +475,14 @@ const WorkflowEditor = () => {
       markSaved();
       setWorkflowName(payload.name);
       setVariablesText(JSON.stringify(payload.variables, null, 2));
+      setInputText(JSON.stringify(payload.settings.inputExample, null, 2));
       setMetadataBaseline(
         metaFingerprint(
           payload.name,
           payload.description,
           JSON.stringify(payload.variables, null, 2),
-          payload.settings.timeoutMs
+          payload.settings.timeoutMs,
+          JSON.stringify(payload.settings.inputExample, null, 2)
         )
       );
       setValidation(response.data?.validation || null);
@@ -507,12 +526,14 @@ const WorkflowEditor = () => {
       markSaved();
       setWorkflowName(payload.name);
       setVariablesText(JSON.stringify(payload.variables, null, 2));
+      setInputText(JSON.stringify(payload.settings.inputExample, null, 2));
       setMetadataBaseline(
         metaFingerprint(
           payload.name,
           payload.description,
           JSON.stringify(payload.variables, null, 2),
-          payload.settings.timeoutMs
+          payload.settings.timeoutMs,
+          JSON.stringify(payload.settings.inputExample, null, 2)
         )
       );
       if (id !== saved.id || search !== '?local=true') {
@@ -587,6 +608,7 @@ const WorkflowEditor = () => {
     setAssistantOpen(false);
     selectNode(null);
     setExecuting(true);
+    useWorkflowStore.getState().setExecutionStatuses(Object.fromEntries(useWorkflowStore.getState().nodes.map(node => [node.id, 'running'])));
     setResultOpen(true);
     setNotice({ type: 'info', text: '正在保存当前画布，然后开始执行…' });
     setExecutionRecord({
@@ -611,6 +633,7 @@ const WorkflowEditor = () => {
         signal: controller.signal,
         timeoutMs: saved.payload.settings.timeoutMs,
       });
+      useWorkflowStore.getState().setExecutionStatuses(Object.fromEntries((response.data.nodeResults || []).flatMap(node => node.nodeId ? [[node.nodeId, node.status]] : [])));
       setExecutionRecord({
         ...response.data,
         id: response.data.id || response.data.executionId,
@@ -625,6 +648,7 @@ const WorkflowEditor = () => {
       const error = normalizeError(caughtError);
       const record =
         error.execution || (error.data?.executionId ? error.data : null);
+      useWorkflowStore.getState().setExecutionStatuses(Object.fromEntries((record?.nodeResults || []).flatMap(node => node.nodeId ? [[node.nodeId, node.status]] : [])));
       const cancelled =
         controller.signal.aborted || error.code === 'ERR_CANCELED';
       const message = cancelled
@@ -858,6 +882,7 @@ const WorkflowEditor = () => {
           </button>
         </div>
         <div className="editor-run-settings">
+          <button className="editor-parameter-toggle" disabled={busy} onClick={() => setResourcesOpen(true)}><FiDatabase />资源管理</button>
           <CreditBalanceLink refreshKey={executing} />
           <select
             aria-label="执行模式"
@@ -867,7 +892,7 @@ const WorkflowEditor = () => {
             }
             disabled={busy}
           >
-            <option value="real">真实执行 · Flash</option>
+            <option value="real">真实执行</option>
             <option value="simulated">模拟预览</option>
           </select>
           <button
@@ -958,7 +983,7 @@ const WorkflowEditor = () => {
           <WorkflowCanvas ref={canvasRef} disabled={busy} />
           {loading && <div className="editor-loading">正在加载工作流…</div>}
         </div>
-        {isConfigPanelOpen && <ConfigPanel />}
+        {isConfigPanelOpen && <ConfigPanel inputText={inputText} variablesText={variablesText} onInputChange={setInputText} resourceRevision={resourceRevision} />}
         <WorkflowAssistant
           key={conversationKey}
           open={assistantOpen}
@@ -975,6 +1000,7 @@ const WorkflowEditor = () => {
           onClose={() => setAssistantOpen(false)}
         />
       </div>
+      <WorkflowResources open={resourcesOpen} onClose={() => setResourcesOpen(false)} onChanged={() => setResourceRevision(value => value + 1)} />
       {executionRecord && (
         <section className={`editor-execution ${resultOpen ? 'is-open' : ''}`}>
           <div className="editor-execution-header">

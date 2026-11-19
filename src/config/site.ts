@@ -29,6 +29,8 @@ export function getPageMetadata(pathname: string) {
   else if (path === '/knowledge') label = '知识库';
   else if (/^\/knowledge\/[^/]+$/.test(path)) label = '知识库详情';
   else if (path === '/agents') label = '智能体工作台';
+  else if (path === '/agents/custom/new') label = '创建智能体';
+  else if (/^\/agents\/custom\/[^/]+$/.test(path)) label = '智能体编辑器';
   else if (/^\/agents\/[^/]+$/.test(path)) label = '智能体创作';
   return {
     title: `${label} - ${SITE.name}（${SITE.englishName}）`,

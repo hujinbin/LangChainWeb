@@ -7,6 +7,7 @@ import type {
   SchemaField,
 } from '../types/workflow';
 import { asRecord } from '../types/api';
+import offlineCatalog from './workflowNodeCatalog.json';
 
 export const FLASH_MODEL_CATALOG: Record<ModelKind, string[]> = {
   text: ['agnes-3.0-flash', 'agnes-2.5-flash'],
@@ -22,6 +23,9 @@ export const MODEL_NODE_KINDS: Record<string, ModelKind | undefined> = {
   llm: 'text',
   imageGeneration: 'image',
   videoGeneration: 'video',
+  imageEdit: 'image',
+  promptOptimize: 'text',
+  intentRecognition: 'text',
 };
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 const port = (type = 'any') => [{ name: 'main', type }];
@@ -47,7 +51,7 @@ const modelSchema = (kind: ModelKind): SchemaField => ({
   default: FLASH_MODEL_CATALOG[kind][0],
 });
 
-export const DEFAULT_NODE_TYPES: NodeTypeMetadata[] = [
+const LEGACY_NODE_TYPES: NodeTypeMetadata[] = [
   {
     type: 'manualTrigger',
     name: '手动触发',
@@ -341,6 +345,30 @@ export const DEFAULT_NODE_TYPES: NodeTypeMetadata[] = [
   },
 ];
 
+// 离线目录仅用于编排；在线时继续以服务器返回的节点能力为准。
+export const DEFAULT_NODE_TYPES: NodeTypeMetadata[] = offlineCatalog.map(raw => {
+  const old = LEGACY_NODE_TYPES.find(node => node.type === raw.type);
+  const properties: Record<string, SchemaField> = { ...old?.config_schema.properties, ...normalizeSchemaProperties(raw.parameterSchema.properties) };
+  if ((MODEL_NODE_KINDS[raw.type] || raw.type === 'knowledgeRetrieval') && old) Object.assign(properties, old.config_schema.properties);
+  const kind = MODEL_NODE_KINDS[raw.type];
+  if (kind) properties.model = { ...properties.model, ...modelSchema(kind) };
+  Object.entries(properties).forEach(([key, field]) => {
+    if (!field.type) field.format = 'json';
+    if (field.type === 'array') field.format = key === 'images' ? 'urls' : 'json';
+    if (['expression', 'sql', 'prompt', 'systemPrompt', 'text', 'content', 'template'].includes(key) && field.type === 'string') field.format = key === 'expression' || key === 'sql' ? 'code' : 'textarea';
+    const labels: Record<string, string> = key === 'operator' ? { eq: '等于', ne: '不等于', gt: '大于', gte: '大于等于', lt: '小于', lte: '小于等于', contains: '包含', exists: '有值' } : key === 'operation' ? { template: '模板', split: '分割', join: '拼接', replace: '替换', slice: '截取', trim: '去首尾空格', upper: '转大写', lower: '转小写', resize: '调整尺寸', crop: '裁剪', convert: '转换格式', removeBackground: '单色去背景', upscale: '普通缩放放大' } : key === 'mode' && raw.type === 'variableAggregate' ? { array: '组成列表', firstNonEmpty: '首个非空值', merge: '合并对象' } : {};
+    if (field.enum && Object.keys(labels).length) field.enumNames = field.enum.map(value => labels[String(value)] || String(value));
+  });
+  if (['response', 'output'].includes(raw.type)) properties.outputs = { type: 'object', title: '命名输出', format: 'json', description: '例如 {"answer":"{{nodes.model.output.text}}"}。配置后作为最终输出。' };
+  return {
+    type: raw.type, name: raw.name, category: raw.group, icon: old?.icon || '◇', description: raw.description,
+    executable: raw.executable, previewOnly: false,
+    inputs: old?.inputs || raw.inputs.map(name => ({ name, type: 'any' })), outputs: old?.outputs || raw.outputs.map(name => ({ name, type: 'any' })),
+    outputSchema: normalizeSchemaField(raw.outputSchema),
+    config_schema: { properties, required: raw.parameterSchema.required },
+  };
+});
+
 export const normalizeModelCatalog = (value: unknown = {}): ModelCatalog => {
   const catalog = asRecord(value);
   const defaults = asRecord(catalog.defaults);
@@ -394,7 +422,7 @@ function normalizeSchemaField(value: unknown): SchemaField {
     type: text(field.type),
     title: text(field.title),
     description: text(field.description),
-    format: text(field.format),
+    format: text(field.format) || (!field.type ? 'json' : field.type === 'array' ? 'json' : undefined),
     enum: Array.isArray(field.enum)
       ? field.enum.filter(
           (item): item is string | number | boolean =>
@@ -433,7 +461,7 @@ function normalizeRemoteNode(
   value: unknown
 ): Partial<NodeTypeMetadata> & { type: string } {
   const node = asRecord(value);
-  const schema = asRecord(node.config_schema);
+  const schema = asRecord(node.config_schema || node.parameterSchema);
   return {
     ...node,
     type: typeof node.type === 'string' ? node.type : '',
@@ -443,12 +471,17 @@ function normalizeRemoteNode(
     icon: typeof node.icon === 'string' ? node.icon : undefined,
     description:
       typeof node.description === 'string' ? node.description : undefined,
+    executable: typeof node.executable === 'boolean' ? node.executable : undefined,
+    previewOnly: typeof node.previewOnly === 'boolean' ? node.previewOnly : undefined,
+    outputSchema: node.outputSchema ? normalizeSchemaField(node.outputSchema) : undefined,
+    keywords: Array.isArray(node.keywords) ? node.keywords.filter((item): item is string => typeof item === 'string') : undefined,
     inputs: Array.isArray(node.inputs)
       ? node.inputs.map((value: unknown) => {
           const port = asRecord(value);
           return {
-            name: typeof port.name === 'string' ? port.name : 'main',
+            name: typeof value === 'string' ? value : typeof port.name === 'string' ? port.name : 'main',
             type: typeof port.type === 'string' ? port.type : 'any',
+            ...(typeof port.label === 'string' ? { label: port.label } : {}),
           };
         })
       : undefined,
@@ -456,8 +489,9 @@ function normalizeRemoteNode(
       ? node.outputs.map((value: unknown) => {
           const port = asRecord(value);
           return {
-            name: typeof port.name === 'string' ? port.name : 'main',
+            name: typeof value === 'string' ? value : typeof port.name === 'string' ? port.name : 'main',
             type: typeof port.type === 'string' ? port.type : 'any',
+            ...(typeof port.label === 'string' ? { label: port.label } : {}),
           };
         })
       : undefined,
@@ -468,14 +502,14 @@ function normalizeRemoteNode(
       : undefined,
     defaultModel:
       typeof node.defaultModel === 'string' ? node.defaultModel : undefined,
-    config_schema: {
+    config_schema: schema.properties ? {
       properties: normalizeSchemaProperties(schema.properties),
       required: Array.isArray(schema.required)
         ? schema.required.filter(
             (item): item is string => typeof item === 'string'
           )
         : [],
-    },
+    } : undefined,
   };
 }
 
@@ -499,13 +533,20 @@ export const mergeNodeTypes = (
       local?.config_schema || { properties: {}, required: [] }
     );
     const schema: ConfigSchema = {
-      ...server?.config_schema,
       ...localSchema,
+      ...server?.config_schema,
       properties: {
-        ...server?.config_schema?.properties,
         ...localSchema.properties,
+        ...server?.config_schema?.properties,
+        // 模型输入保留前端的类型约束与 Flash 白名单。
+        ...(MODEL_NODE_KINDS[type] ? localSchema.properties : {}),
       },
     };
+    Object.keys(schema.properties).forEach(key => {
+      const localField = localSchema.properties[key];
+      const serverField = server?.config_schema?.properties[key];
+      if (!MODEL_NODE_KINDS[type] || !localField) schema.properties[key] = { ...localField, ...serverField, format: serverField?.format || localField?.format, enumNames: serverField?.enumNames || localField?.enumNames };
+    });
     const merged: NodeTypeMetadata = {
       ...local,
       ...server,
@@ -517,8 +558,8 @@ export const mergeNodeTypes = (
       category: server?.category || server?.group || local?.category || 'other',
       icon: server?.icon || local?.icon || '',
       config_schema: schema,
-      executable: local?.executable === true,
-      previewOnly: local?.executable !== true,
+      executable: server?.executable ?? local?.executable ?? false,
+      previewOnly: server?.previewOnly ?? (server?.executable ?? local?.executable) !== true,
     };
     const kind = MODEL_NODE_KINDS[type];
     if (kind) {

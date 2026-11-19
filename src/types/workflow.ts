@@ -29,6 +29,20 @@ export interface ConfigSchema {
   required: string[];
 }
 
+export interface NodePort {
+  name: string;
+  type: string;
+  label?: string;
+}
+
+export interface WorkflowResources {
+  workflows: Array<{ id: string; name: string }>;
+  knowledgeBases: Array<{ id: string; name: string }>;
+  tools: Array<{ id: string; name: string; description?: string }>;
+  tables: Array<{ name: string }>;
+  conversations: Array<{ id: string; title: string }>;
+}
+
 export interface NodeTypeMetadata {
   type: string;
   name: string;
@@ -38,8 +52,10 @@ export interface NodeTypeMetadata {
   description?: string;
   executable?: boolean;
   previewOnly?: boolean;
-  inputs?: Array<{ name: string; type: string }>;
-  outputs?: Array<{ name: string; type: string }>;
+  inputs?: NodePort[];
+  outputs?: NodePort[];
+  outputSchema?: SchemaField;
+  keywords?: string[];
   config_schema: ConfigSchema;
   models?: string[];
   defaultModel?: string;
@@ -65,6 +81,11 @@ export interface WorkflowNodeData {
   hasOutput?: boolean;
   executable?: boolean;
   previewOnly?: boolean;
+  inputs?: NodePort[];
+  outputs?: NodePort[];
+  outputSchema?: SchemaField;
+  inputMapping?: Parameters;
+  outputMapping?: Record<string, string>;
 }
 
 export type WorkflowNode = Node<WorkflowNodeData> & {
@@ -91,6 +112,8 @@ export interface WorkflowDefinitionNode {
   data?: WorkflowNodeData;
   category?: string;
   icon?: string;
+  inputMapping?: Parameters;
+  outputMapping?: Record<string, string>;
 }
 
 export interface WorkflowValidation {
@@ -109,7 +132,7 @@ export interface Workflow {
   edges?: WorkflowEdge[];
   input?: WorkflowInput;
   variables?: Parameters;
-  settings?: { timeoutMs?: number };
+  settings?: { timeoutMs?: number; inputExample?: WorkflowInput };
   latestValidation?: WorkflowValidation | null;
   validation?: WorkflowValidation;
   tags?: string[];

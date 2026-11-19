@@ -151,7 +151,7 @@ test('首页对话只生成一次，图和参数可撤销重做，保存使用�
   expect(useWorkflowStore.getState().isDirty).toBe(true);
   fireEvent.click(screen.getByRole('button', { name: '撤销' }));
   expect(screen.getByLabelText('工作流名称')).toHaveValue('未命名工作流');
-  expect(useWorkflowStore.getState().nodes).toHaveLength(0);
+  expect(useWorkflowStore.getState().nodes.map(node => node.id)).toEqual(['workflow-start', 'workflow-end']);
   fireEvent.click(screen.getByRole('button', { name: '重做' }));
   expect(screen.getByLabelText('工作流名称')).toHaveValue('产品文案');
   expect(useWorkflowStore.getState().nodes).toHaveLength(2);
@@ -226,4 +226,21 @@ test('对话只修改名称也可撤销，既有工作流的ID和服务端来源
   expect(screen.getByLabelText('工作流名称')).toHaveValue('产品文案');
   fireEvent.click(screen.getByRole('button', { name: '重做' }));
   expect(screen.getByLabelText('工作流名称')).toHaveValue('改名后的流程');
+});
+
+test('新建默认含唯一开始结束，保存重开保留映射且不会重复补节点', async () => {
+  const view = render(<MemoryRouter initialEntries={['/workflows/new/edit']}><Routes><Route path="/workflows/:id/edit" element={<WorkflowEditor />} /></Routes></MemoryRouter>);
+  await waitFor(() => expect(useWorkflowStore.getState().nodes.map(node => node.id)).toEqual(['workflow-start', 'workflow-end']));
+  expect(useWorkflowStore.getState().edges).toHaveLength(1);
+  await act(async () => useWorkflowStore.getState().updateNode('workflow-end', { data: { inputMapping: { template: '{{input}}' }, outputMapping: { answer: 'result' } } }));
+  fireEvent.click(screen.getByRole('button', { name: '保存' }));
+  await waitFor(() => expect(mockWorkflowAPI.createWorkflow).toHaveBeenCalledTimes(1));
+  const saved = mockWorkflowAPI.createWorkflow.mock.calls[0][0];
+  expect(saved.nodes?.find(node => node.id === 'workflow-end')).toMatchObject({ inputMapping: { template: '{{input}}' }, outputMapping: { answer: 'result' } });
+  view.unmount();
+  mockWorkflowAPI.getWorkflow.mockResolvedValue({ code: 200, data: { ...saved, id: 'reopened' } });
+  render(<MemoryRouter initialEntries={['/workflows/reopened/edit']}><Routes><Route path="/workflows/:id/edit" element={<WorkflowEditor />} /></Routes></MemoryRouter>);
+  await waitFor(() => expect(useWorkflowStore.getState().currentWorkflow?.id).toBe('reopened'));
+  expect(useWorkflowStore.getState().nodes.map(node => node.id)).toEqual(['workflow-start', 'workflow-end']);
+  expect(useWorkflowStore.getState().nodes[1].data.outputMapping).toEqual({ answer: 'result' });
 });

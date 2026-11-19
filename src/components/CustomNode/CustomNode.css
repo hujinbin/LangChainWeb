@@ -190,10 +190,16 @@
   box-shadow: 0 0 0 3px #23775b20;
 }
 
+.custom-node-ports { margin-top: 10px; padding-top: 6px; border-top: 1px solid #eef1e8; }
+.custom-node-port { position: relative; min-height: 25px; padding: 4px 1px; color: #657a61; font-size: 10px; text-align: right; }
+.custom-node-port .custom-handle { right: -20px; top: 50%; }
+
 .custom-node.failed,
 .custom-node.error {
   border-color: #d9a48b;
 }
+
+.custom-node.skipped { opacity: .5; border-style: dashed; }
 
 @keyframes custom-node-spin {
   to {

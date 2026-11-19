@@ -1,0 +1,6 @@
+import type { IconType } from 'react-icons';
+import { FiPlay, FiGlobe, FiType, FiImage, FiVideo, FiDatabase, FiGitBranch, FiArrowUpRight, FiBox, FiCode, FiRepeat, FiLayers, FiMessageSquare, FiTool, FiSliders, FiSave, FiEdit3, FiCpu, FiFilm } from 'react-icons/fi';
+
+const icons: Record<string, IconType> = { manualTrigger: FiPlay, input: FiPlay, webhookTrigger: FiGlobe, llm: FiType, imageGeneration: FiImage, imageEdit: FiEdit3, videoGeneration: FiVideo, knowledgeRetrieval: FiDatabase, condition: FiGitBranch, selector: FiGitBranch, response: FiArrowUpRight, output: FiArrowUpRight, httpRequest: FiGlobe, plugin: FiTool, code: FiCode, jsonParse: FiCode, jsonSerialize: FiCode, jsonGet: FiCode, loop: FiRepeat, batch: FiLayers, subWorkflow: FiLayers, variableAssign: FiSliders, variableRead: FiSliders, variableAggregate: FiLayers, memoryRead: FiSave, memoryWrite: FiSave, promptOptimize: FiEdit3 };
+const groups: Record<string, IconType> = { trigger: FiPlay, ai: FiCpu, logic: FiGitBranch, data: FiDatabase, integration: FiTool, media: FiFilm, conversation: FiMessageSquare, output: FiArrowUpRight };
+export const getNodeIcon = (type: string, category?: string) => icons[type] || groups[category || ''] || FiBox;

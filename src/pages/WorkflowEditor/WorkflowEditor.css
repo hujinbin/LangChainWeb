@@ -597,3 +597,7 @@
     gap: 0;
   }
 }
+@media (max-width: 760px) {
+  .editor-run-settings { flex-wrap: wrap; justify-content: flex-end; }
+  .editor-run-settings > button, .editor-run-settings > .editor-credit-link { flex-shrink: 0; white-space: nowrap; }
+}

@@ -33,6 +33,7 @@ import {
   mergeNodeTypes,
 } from '../../constants/nodeTypes';
 import './WorkflowCanvas.css';
+import { createsCycle, nodePorts, portLabel } from '../../utils/workflowNodes';
 
 export interface WorkflowCanvasHandle {
   addNodeAtCenter: (metadata: NodeTypeMetadata | undefined) => void;
@@ -130,9 +131,14 @@ const WorkflowCanvas = forwardRef<WorkflowCanvasHandle, WorkflowCanvasProps>(({ 
           type: meta.type,
           category: meta.category || 'other',
           icon: meta.icon,
+          description: meta.description,
           hasInput: Boolean(meta.inputs?.length),
           hasOutput: Boolean(meta.outputs?.length),
           previewOnly: meta.previewOnly || meta.executable === false,
+          executable: meta.executable,
+          inputs: meta.inputs,
+          outputs: meta.outputs,
+          outputSchema: meta.outputSchema,
           config: getDefaultParameters(meta),
         },
       };
@@ -179,6 +185,9 @@ const WorkflowCanvas = forwardRef<WorkflowCanvasHandle, WorkflowCanvasProps>(({ 
         connection.source &&
         connection.target &&
         connection.source !== connection.target &&
+        !createsCycle(edges, connection.source, connection.target) &&
+        nodes.some(node => node.id === connection.source && nodePorts(node.data, 'outputs').some(port => port.name === (connection.sourceHandle || 'main'))) &&
+        nodes.some(node => node.id === connection.target && nodePorts(node.data, 'inputs').some(port => port.name === (connection.targetHandle || 'main'))) &&
         !edges.some(
           (edge) =>
             edge.source === connection.source &&
@@ -187,7 +196,7 @@ const WorkflowCanvas = forwardRef<WorkflowCanvasHandle, WorkflowCanvasProps>(({ 
             (edge.targetHandle || null) === (connection.targetHandle || null)
         )
       ),
-    [edges]
+    [edges, nodes]
   );
 
   const onConnect = useCallback(
@@ -199,10 +208,11 @@ const WorkflowCanvas = forwardRef<WorkflowCanvasHandle, WorkflowCanvasProps>(({ 
           target: connection.target,
           id: `edge-${uuidv4()}`,
           type: 'smoothstep',
+          label: connection.sourceHandle && connection.sourceHandle !== 'main' ? portLabel(nodePorts(nodes.find(node => node.id === connection.source)!.data, 'outputs').find(port => port.name === connection.sourceHandle)!) : undefined,
         });
       }
     },
-    [addEdge, disabled, isValidConnection]
+    [addEdge, disabled, isValidConnection, nodes]
   );
 
   const onDrop = useCallback(

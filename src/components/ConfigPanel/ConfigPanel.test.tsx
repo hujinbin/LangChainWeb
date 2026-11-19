@@ -8,12 +8,15 @@ import type {
   Parameters,
   WorkflowNode,
   WorkflowNodeData,
+  WorkflowEdge,
 } from '../../types/workflow';
 
 const nodeAPI = jest.mocked(actualNodeAPI);
 const listKnowledgeBases = jest.mocked(actualListKnowledgeBases);
 
 interface ConfigTestState {
+  nodes?: WorkflowNode[];
+  edges?: WorkflowEdge[];
   selectedNode: Pick<WorkflowNode, 'id' | 'data'>;
   isConfigPanelOpen: boolean;
   updateNode: jest.Mock<void, [string, { data: WorkflowNodeData }]>;
@@ -182,4 +185,41 @@ test('无效 JSON 显示行内错误并阻止保存，修正后按消息数组�
   expect(mockState.updateNode.mock.calls[0][1].data.config.messages).toEqual([
     { role: 'user', content: '你好' },
   ]);
+});
+
+test('参数映射可以提供必填输入，并将映射按独立字段保存', async () => {
+  mockState.selectedNode.data.config = { prompt: '' };
+  render(<ConfigPanel inputText='{"question":"测试问题"}' />);
+  await screen.findByLabelText('提示词');
+  fireEvent.change(screen.getByLabelText('输入映射 JSON'), { target: { value: '{"prompt":"{{input.question}}","search":false}' } });
+  fireEvent.change(screen.getByLabelText('输出映射 JSON'), { target: { value: '{"answer":"text"}' } });
+  fireEvent.click(screen.getByRole('button', { name: '保存配置' }));
+  const saved = mockState.updateNode.mock.calls[0][1].data;
+  expect(saved.inputMapping).toEqual({ prompt: '{{input.question}}', search: false });
+  expect(saved.outputMapping).toEqual({ answer: 'text' });
+});
+
+test('结束节点可选择真正上游变量作为命名输出', async () => {
+  mockState.selectedNode = { id: 'end', data: { type: 'response', label: '结束', config: { outputs: { answer: '' } } } };
+  mockState.nodes = [{ id: 'model', type: 'custom', position: { x: 0, y: 0 }, data: { type: 'llm', label: '生成文本', config: {} } }];
+  mockState.edges = [{ id: 'edge', source: 'model', target: 'end' }];
+  nodeAPI.getNodeSchema.mockResolvedValue({ code: 200, data: DEFAULT_NODE_TYPES.find(node => node.type === 'response')!.config_schema });
+  render(<ConfigPanel />);
+  await screen.findByLabelText('answer 输出值');
+  fireEvent.click(screen.getAllByRole('button', { name: '选择变量' })[0]);
+  fireEvent.click(screen.getByRole('button', { name: /生成文本 · text nodes.model.output.text/ }));
+  expect(screen.getByLabelText('answer 输出值')).toHaveValue('{{nodes.model.output.text}}');
+  fireEvent.click(screen.getByRole('button', { name: '保存配置' }));
+  expect(mockState.updateNode.mock.calls[0][1].data.config.outputs).toEqual({ answer: '{{nodes.model.output.text}}' });
+});
+
+test('开始节点声明输入变量的数据类型和必填项', async () => {
+  mockState.selectedNode = { id: 'workflow-start', data: { type: 'manualTrigger', label: '开始', config: {} } };
+  nodeAPI.getNodeSchema.mockResolvedValue({ code: 200, data: DEFAULT_NODE_TYPES.find(node => node.type === 'manualTrigger')!.config_schema });
+  render(<ConfigPanel inputText="{}" onInputChange={jest.fn()} />);
+  fireEvent.click(await screen.findByRole('button', { name: '＋ 添加输入变量' }));
+  fireEvent.change(screen.getByLabelText('input1 数据类型'), { target: { value: 'number' } });
+  fireEvent.click(screen.getByRole('checkbox'));
+  fireEvent.click(screen.getByRole('button', { name: '保存配置' }));
+  expect(mockState.updateNode.mock.calls[0][1].data.config.inputSchema).toMatchObject({ type: 'object', properties: { input1: { type: 'number' } }, required: ['input1'] });
 });

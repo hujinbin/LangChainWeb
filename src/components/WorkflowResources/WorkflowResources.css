@@ -1,0 +1,31 @@
+.kb-modal:has(.workflow-resources) { max-width: 1000px; width: min(1000px, calc(100vw - 32px)); }
+.workflow-resource-tabs { display: flex; gap: 8px; border-bottom: 1px solid #e2e9db; padding-bottom: 13px; margin-bottom: 18px; }
+.workflow-resource-tabs > button { display: inline-flex; align-items: center; gap: 7px; border: 0; border-radius: 6px; background: #f3f6ee; color: #849976; padding: 8px 12px; font-size: 12px; }
+.workflow-resource-tabs > button.active { background: #e8f1dc; color: #387040; }
+.workflow-resource-tabs > button:last-child { margin-left: auto; }
+.workflow-resource-layout { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 23px; }
+.workflow-resource-list { border-right: 1px solid #e2e9db; padding-right: 17px; }
+.workflow-resource-list > .btn { width: 100%; margin-bottom: 14px; }
+.workflow-resource-list > div { position: relative; border-radius: 7px; margin-bottom: 7px; border: 1px solid #e6ecdf; }
+.workflow-resource-list > div.active { background: #f0f6e7; border-color: #cbdcbb; }
+.workflow-resource-list > div > button:first-child { width: 100%; padding: 12px 30px 12px 10px; border: 0; background: transparent; text-align: left; color: #54764b; }
+.workflow-resource-list strong { display: block; font-size: 11px; overflow-wrap: anywhere; }
+.workflow-resource-list small { display: block; font-size: 9px; color: #95a387; line-height: 1.8; margin-top: 5px; }
+.workflow-resource-remove { position: absolute; right: 5px; top: 10px; background: transparent; border: 0; color: #98a58d; padding: 4px; }
+.workflow-resource-form,.workflow-resource-data { border: 0; padding: 0; margin: 0; min-width: 0; }
+.workflow-resources h3 { font-size: 13px; margin: 0 0 15px; color: #3f6236; }
+.workflow-resources label { display: block; font-size: 11px; font-weight: 500; color: #718663; margin-bottom: 14px; }
+.workflow-resources input,.workflow-resources textarea,.workflow-resources select { display: block; width: 100%; min-width: 0; padding: 9px 10px; border: 1px solid #dce6d2; border-radius: 6px; color: #35552a; background: #fff; margin-top: 7px; font-size: 12px; }
+.workflow-resource-json { font: 11px/1.8 Consolas,monospace !important; resize: vertical; }
+.workflow-resource-pair { display: grid; grid-template-columns: 90px minmax(0,1fr); gap: 11px; }
+.workflow-resource-help { font-size: 10px; line-height: 1.9; color: #91a281; }
+.workflow-resource-error,.workflow-resource-notice { padding: 10px 12px; font-size: 11px; line-height: 1.8; border-radius: 6px; }
+.workflow-resource-error { color: #a45d45; background: #fff3ed; }
+.workflow-resource-notice { color: #5b7f44; background: #eef6e2; }
+.workflow-resource-create-table { display: flex; align-items: flex-end; gap: 12px; }
+.workflow-resource-create-table > label { flex: 1; }
+.workflow-resource-create-table > button { margin-bottom: 14px; }
+.workflow-resource-data-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 24px; border-top: 1px solid #e2e9db; padding-top: 20px; margin-top: 20px; }
+.workflow-resource-result { margin-top: 23px; }
+.workflow-resource-result pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 280px; overflow: auto; background: #f3f7ec; border: 1px solid #e2ead9; border-radius: 7px; padding: 14px; color: #71895a; font-size: 11px; line-height: 1.8; }
+@media(max-width:650px) { .workflow-resource-layout { grid-template-columns: 1fr; } .workflow-resource-list { border: 0; padding: 0 0 15px; border-bottom: 1px solid #e2e9db; } .workflow-resource-data-grid { grid-template-columns: 1fr; gap: 20px; } }

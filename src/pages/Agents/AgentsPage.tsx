@@ -20,6 +20,7 @@ import {
 import { KnowledgeModal } from '../KnowledgeBase/KnowledgeBaseShared';
 import '../KnowledgeBase/KnowledgeBase.css';
 import './Agents.css';
+import CustomAgentList from '../CustomAgents/CustomAgentList';
 
 export default function AgentsPage(): React.JSX.Element {
   const navigate = useNavigate();
@@ -112,6 +113,7 @@ export default function AgentsPage(): React.JSX.Element {
           </button>
         </div>
       )}
+      <CustomAgentList />
       <section className="agent-presets" aria-label="选择创作智能体">
         <article className="agent-preset comic">
           <AgentArtwork kind="comic" />

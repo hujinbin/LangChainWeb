@@ -21,6 +21,7 @@ jest.mock('../../services/agentApi', () => ({
     delete: jest.fn(),
   },
 }));
+jest.mock('../CustomAgents/CustomAgentList', () => () => <section>我的智能体</section>);
 
 const api = jest.mocked(agentAPI, true);
 const catalog: AgentCatalog = {

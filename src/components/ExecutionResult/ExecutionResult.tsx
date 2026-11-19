@@ -2,6 +2,7 @@ import { asRecord } from '../../types/api';
 import type { Execution, NodeOutput as WorkflowNodeOutput } from '../../types/workflow';
 import { normalizeError } from '../../types/api';
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   FiCheckCircle,
   FiAlertCircle,
@@ -13,6 +14,7 @@ import {
 } from 'react-icons/fi';
 import { mediaAPI } from '../../services/api';
 import BillingUsage from '../BillingUsage/BillingUsage';
+import WorkflowAsset, { isWorkflowAsset } from './WorkflowAsset';
 import './ExecutionResult.css';
 
 interface VideoTask {
@@ -30,10 +32,13 @@ const LABELS: Record<string, string> = {
   queued: '排队中',
   in_progress: '生成中',
   completed: '视频已完成',
+  skipped: '分支跳过',
 };
+const COST_NODE_TYPES = ['llm', 'imageGeneration', 'videoGeneration', 'intentRecognition', 'promptOptimize', 'imageEdit', 'loop', 'batch', 'subWorkflow'];
 
 function mediaUrl(value: unknown) {
   if (typeof value !== 'string') return '';
+  if (isWorkflowAsset(value)) return value;
   try {
     const url = new URL(value);
     return ['https:', 'http:'].includes(url.protocol) ? url.href : '';
@@ -113,6 +118,8 @@ function NodeOutput({
   const video = { ...output, ...task };
   const videoId = output.videoId;
   const videoSrc = mediaUrl(video.videoUrl);
+  const audioSrc = mediaUrl(output.audioUrl);
+  const childExecutions = [output, ...(Array.isArray(output.items) ? output.items : [])].map(item => asRecord(item).executionId).filter((value): value is string => typeof value === 'string' && /^[a-f\d]{24}$/i.test(value));
   const imageUrls = [
     ...new Set(
       (
@@ -151,16 +158,13 @@ function NodeOutput({
   };
   return (
     <div className="result-node-output">
+      {audioSrc && <WorkflowAsset url={audioSrc} kind="audio" />}
+      {childExecutions.length > 0 && <div className="result-child-tasks">{childExecutions.map((id, index) => <Link className="text-action" key={id} to={`/executions/${id}`}>查看子流程任务 {index + 1} <FiExternalLink /></Link>)}</div>}
       {output.text && <div className="result-text">{output.text}</div>}
       {imageUrls.length > 0 && (
         <div className="result-images">
           {imageUrls.map((url, index) => (
-            <a key={url} href={url} target="_blank" rel="noreferrer">
-              <img src={url} alt={`生成图片 ${index + 1}`} loading="lazy" />
-              <span>
-                打开原图 <FiExternalLink />
-              </span>
-            </a>
+            <WorkflowAsset key={url} url={url} kind="image" alt={`生成图片 ${index + 1}`} />
           ))}
         </div>
       )}
@@ -275,7 +279,7 @@ export default function ExecutionResult({ record }: { record: Execution | null }
           <p>
             {results.length} 个节点 ·{' '}
             {((record.durationMs || 0) / 1000).toFixed(2)} 秒
-            {record.simulated ? ' · 模拟预览' : ' · 模型运行'}
+            {record.simulated ? ' · 模拟预览' : ' · 真实执行'}
           </p>
         </div>
         <span className={`badge ${record.simulated ? 'simulated' : 'success'}`}>
@@ -295,7 +299,7 @@ export default function ExecutionResult({ record }: { record: Execution | null }
               className={`result-node ${node.status}`}
               key={node.nodeId || index}
               open={
-                ['llm', 'imageGeneration', 'videoGeneration'].includes(
+                COST_NODE_TYPES.includes(
                   node.nodeType
                 ) || node.status === 'failed'
               }
@@ -314,11 +318,11 @@ export default function ExecutionResult({ record }: { record: Execution | null }
                 <FiChevronDown className="result-chevron" />
               </summary>
               <div className="result-node-content">
-                {(node.billing || ['llm', 'imageGeneration', 'videoGeneration'].includes(node.nodeType)) && (
+                {node.status !== 'skipped' && (node.billing || COST_NODE_TYPES.includes(node.nodeType)) && (
                   <BillingUsage billing={node.billing} simulated={record.simulated} compact />
                 )}
                 {node.error && (
-                  <div className="result-inline-error">{node.error}</div>
+                  <div className={node.status === 'skipped' ? 'result-skip-hint' : 'result-inline-error'}>{node.error}</div>
                 )}
                 <NodeOutput output={node.output} simulated={record.simulated} />
               </div>

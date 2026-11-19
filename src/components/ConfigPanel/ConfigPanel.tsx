@@ -2,17 +2,22 @@ import type {
   ConfigSchema,
   Parameters,
   SchemaField,
+  WorkflowResources,
 } from '../../types/workflow';
 import type { KnowledgeBase } from '../../types/knowledge';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import useWorkflowStore from '../../store/workflowStore';
-import { nodeAPI } from '../../services/api';
+import { nodeAPI, aiWorkflowAPI } from '../../services/api';
 import { listKnowledgeBases } from '../../services/knowledgeApi';
 import { DEFAULT_NODE_TYPES } from '../../constants/nodeTypes';
 import './ConfigPanel.css';
+import VariablePicker from './VariablePicker';
+import InputSchemaEditor from './InputSchemaEditor';
+import { asRecord } from '../../types/api';
+import { variableOptions } from '../../utils/workflowNodes';
 
 const WHOLE_REFERENCE = /^\s*{{\s*[^{}]+\s*}}\s*$/;
-const MODEL_TYPES = new Set(['llm', 'imageGeneration', 'videoGeneration']);
+const MODEL_TYPES = new Set(['llm', 'imageGeneration', 'videoGeneration', 'imageEdit', 'promptOptimize', 'intentRecognition']);
 const PRIMARY_FIELDS = new Set(['model', 'prompt', 'systemPrompt', 'messages']);
 const TASK_FIELDS = new Set(['videoId', 'waitForCompletion']);
 
@@ -49,12 +54,13 @@ function usesJSON(key: string, field: SchemaField) {
   return (
     field.format === 'json' ||
     field.type === 'object' ||
-    (key === 'messages' && field.type === 'array')
+    (field.type === 'array' && key !== 'images' && field.format !== 'urls')
   );
 }
 
 function displayValue(key: string, field: SchemaField, value: unknown) {
-  if (value === undefined || value === null) return '';
+  if (value === undefined) return '';
+  if (value === null) return usesJSON(key, field) ? 'null' : '';
   if (typeof value === 'string') return value;
   if (usesJSON(key, field)) return JSON.stringify(value, null, 2);
   if (Array.isArray(value)) return value.join('\n');
@@ -97,6 +103,7 @@ function validateConfig(
           draft.mode !== 'keyframe'));
     if (inactiveVideoReference) return;
     let value = draft[key];
+    if (value === null && !field.type && usesJSON(key, field)) return;
     if (value === '' && field.enum?.includes('')) return;
     if (value === '' || value === undefined || value === null) {
       delete values[key];
@@ -105,8 +112,7 @@ function validateConfig(
     if (
       typeof value === 'string' &&
       WHOLE_REFERENCE.test(value) &&
-      key !== 'model' &&
-      !field.enum
+      key !== 'model'
     )
       return;
     if (usesJSON(key, field)) {
@@ -201,6 +207,14 @@ function validateConfig(
       Array.from(value).length > field.maxLength
     )
       errors[key] = `最多可填写 ${field.maxLength} 个字符。`;
+    if (Array.isArray(value)) {
+      if (field.minItems !== undefined && value.length < field.minItems) errors[key] = `至少需要 ${field.minItems} 项。`;
+      if (field.maxItems !== undefined && value.length > field.maxItems) errors[key] = `最多支持 ${field.maxItems} 项。`;
+      if (['cases', 'categories'].includes(key)) {
+        const ids = value.map(item => asRecord(item).id);
+        if (ids.some(id => typeof id !== 'string' || !/^[\w-]+$/.test(id)) || new Set(ids).size !== ids.length) errors[key] = '分支 ID 仅支持字母、数字、下划线和短横线，且不能重复。';
+      }
+    }
     values[key] = value;
   });
 
@@ -213,6 +227,7 @@ function validateConfig(
   required.forEach((key) => {
     if (key === 'prompt' && (hasMessages || existingVideo)) return;
     const value = values[key];
+    if (!properties[key]?.type && Object.prototype.hasOwnProperty.call(values, key)) return;
     if (
       value === undefined ||
       value === null ||
@@ -263,8 +278,18 @@ function validateConfig(
   return { values, errors };
 }
 
-const ConfigPanel = () => {
-  const { selectedNode, updateNode, isConfigPanelOpen, toggleConfigPanel } =
+const EMPTY_RESOURCES: WorkflowResources = { workflows: [], knowledgeBases: [], tools: [], tables: [], conversations: [] };
+const parseValues = (text: string, stringsOnly = false) => {
+  try {
+    const result: unknown = JSON.parse(text || '{}');
+    if (!result || typeof result !== 'object' || Array.isArray(result)) throw new Error();
+    if (stringsOnly && Object.values(result).some(value => typeof value !== 'string' || /{{|}}/.test(value))) return { values: {}, error: '输出映射填写结果属性路径，例如 {"answer":"result"}，无需 {{ }}。' };
+    return { values: result as Parameters, error: '' };
+  } catch { return { values: {}, error: '映射需要为有效的 JSON 对象。' }; }
+};
+
+const ConfigPanel = ({ inputText, variablesText, onInputChange, resourceRevision = 0 }: { inputText?: string; variablesText?: string; onInputChange?: (value: string) => void; resourceRevision?: number }) => {
+  const { selectedNode, updateNode, isConfigPanelOpen, toggleConfigPanel, nodes = [], edges = [], currentWorkflow } =
     useWorkflowStore();
   const [nodeConfig, setNodeConfig] = useState<Parameters>({});
   const [nodeName, setNodeName] = useState('');
@@ -277,6 +302,13 @@ const ConfigPanel = () => {
   const [knowledgeLoading, setKnowledgeLoading] = useState(false);
   const [knowledgeError, setKnowledgeError] = useState('');
   const [knowledgeReload, setKnowledgeReload] = useState(0);
+  const [resources, setResources] = useState<WorkflowResources>(EMPTY_RESOURCES);
+  const [resourceError, setResourceError] = useState('');
+  const [resourceReload, setResourceReload] = useState(0);
+  const [referenceTarget, setReferenceTarget] = useState('');
+  const [inputMapping, setInputMapping] = useState('{}');
+  const [outputMapping, setOutputMapping] = useState('{}');
+  const [mappingTarget, setMappingTarget] = useState('');
   const formRef = useRef<HTMLFormElement>(null);
   const nodeId = selectedNode?.id;
   const nodeData = selectedNode?.data;
@@ -293,6 +325,9 @@ const ConfigPanel = () => {
     )?.config_schema || { properties: {}, required: [] };
     setNodeName(nodeData?.label || '');
     setNodeConfig(applyDefaults(localSchema, initial, nodeType));
+    setInputMapping(JSON.stringify(nodeData?.inputMapping || {}, null, 2));
+    setOutputMapping(JSON.stringify(nodeData?.outputMapping || {}, null, 2));
+    setReferenceTarget('');
     setSchema(localSchema);
     setTouched({});
     setAttempted(false);
@@ -322,6 +357,15 @@ const ConfigPanel = () => {
   }, [nodeId, nodeData, isConfigPanelOpen]);
 
   useEffect(() => {
+    if (!isConfigPanelOpen || !/^(subWorkflow|loop|batch|plugin|database|knowledgeWrite|knowledgeDelete|conversation|history|message)/.test(type)) return;
+    let active = true;
+    const controller = new AbortController();
+    setResourceError('');
+    aiWorkflowAPI?.getResources?.({ signal: controller.signal }).then(response => { if (active) setResources({ ...EMPTY_RESOURCES, ...response.data }); }).catch(() => { if (active) setResourceError('可用资源加载失败，可重试或填写已有资源 ID。'); });
+    return () => { active = false; controller.abort(); };
+  }, [type, isConfigPanelOpen, resourceReload, resourceRevision]);
+
+  useEffect(() => {
     if (type !== 'knowledgeRetrieval' || !isConfigPanelOpen) return;
     let active = true;
     const controller = new AbortController();
@@ -346,7 +390,7 @@ const ConfigPanel = () => {
   }, [type, nodeId, isConfigPanelOpen, knowledgeReload]);
 
   const validation = useMemo(() => {
-    const result = validateConfig(schema, nodeConfig, type);
+    const result = validateConfig(schema, { ...nodeConfig, ...parseValues(inputMapping).values }, type);
     if (type === 'knowledgeRetrieval') {
       if (knowledgeLoading) result.errors.datasetId = '正在加载知识库。';
       else if (knowledgeError) result.errors.datasetId = knowledgeError;
@@ -364,8 +408,13 @@ const ConfigPanel = () => {
     knowledgeBases,
     knowledgeLoading,
     knowledgeError,
+    inputMapping,
   ]);
   const properties = schema?.properties || {};
+  const mappedInput = parseValues(inputMapping);
+  const mappedOutput = parseValues(outputMapping, true);
+  const readSample = (text: string | undefined, fallback: Parameters = {}) => { try { return text === undefined ? fallback : asRecord(JSON.parse(text)); } catch { return fallback; } };
+  const references = variableOptions(nodes, edges, selectedNode?.id || '', readSample(inputText, currentWorkflow?.input), readSample(variablesText, currentWorkflow?.variables));
   const updateField = (key: string, value: unknown) => {
     setNodeConfig((current) => ({ ...current, [key]: value }));
     setTouched((current) => ({ ...current, [key]: true }));
@@ -376,13 +425,16 @@ const ConfigPanel = () => {
   const handleSave = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setAttempted(true);
+    const invalidDefault = formRef.current?.querySelector<HTMLInputElement>('.cfg-input-schema input:invalid');
+    if (invalidDefault) { invalidDefault.reportValidity(); return; }
     if (
       !selectedNode ||
       loading ||
       (type === 'knowledgeRetrieval' && knowledgeLoading)
     )
       return;
-    if (!nodeName.trim() || Object.keys(validation.errors).length) {
+    if (!nodeName.trim() || Object.keys(validation.errors).length || mappedInput.error || mappedOutput.error) {
+      if (mappedInput.error || mappedOutput.error) formRef.current?.querySelector('.cfg-mappings')?.setAttribute('open', '');
       formRef.current
         ?.querySelector<HTMLElement>('[aria-invalid="true"]')
         ?.focus();
@@ -393,6 +445,8 @@ const ConfigPanel = () => {
         ...selectedNode.data,
         label: nodeName.trim(),
         config: validation.values,
+        inputMapping: mappedInput.values,
+        outputMapping: mappedOutput.values as Record<string, string>,
       },
     });
     closePanel();
@@ -425,8 +479,25 @@ const ConfigPanel = () => {
       'aria-invalid': Boolean(error),
       'aria-describedby': `${id}-help${visibleError ? ` ${id}-error` : ''}`,
     };
+    const choices = key === 'workflowId' ? resources.workflows.filter(flow => flow.id !== currentWorkflow?.id && flow.id !== currentWorkflow?._id).map(flow => ({ value: flow.id, label: flow.name }))
+      : key === 'toolId' ? resources.tools.map(tool => ({ value: tool.id, label: tool.name }))
+      : key === 'tableName' ? resources.tables.map(table => ({ value: table.name, label: table.name }))
+      : key === 'conversationId' ? resources.conversations.map(conversation => ({ value: conversation.id, label: conversation.title || conversation.id }))
+      : key === 'datasetId' && type !== 'knowledgeRetrieval' ? resources.knowledgeBases.map(base => ({ value: base.id, label: base.name })) : [];
     let control;
-    if (type === 'knowledgeRetrieval' && key === 'datasetId') {
+    if (key === 'inputSchema') {
+      control = <fieldset className="cfg-schema-fieldset" aria-label={field.title}><InputSchemaEditor value={value} onChange={next => updateField(key, next)} /></fieldset>;
+    } else if (key === 'outputs' && ['response', 'output'].includes(type)) {
+      const values = asRecord(typeof value === 'string' ? (() => { try { return JSON.parse(value); } catch { return {}; } })() : value);
+      control = <div className="cfg-named-outputs">{Object.entries(values).map(([name, result], index) => <div className="cfg-output-definition" key={name}>
+        <div className="cfg-mapping-row"><input className="cfg-input" aria-label={`输出变量名称 ${index + 1}`} defaultValue={name} onBlur={event => { const next = event.target.value.trim(); if (next && next !== name && !Object.prototype.hasOwnProperty.call(values, next)) updateField(key, Object.fromEntries(Object.entries(values).map(([old, item]) => [old === name ? next : old, item]))); }} /><button type="button" className="cfg-link-button" aria-label={`删除输出 ${name}`} onClick={() => updateField(key, Object.fromEntries(Object.entries(values).filter(([old]) => old !== name)))}>删除</button></div>
+        <div className="cfg-mapping-row"><input className="cfg-input" aria-label={`${name} 输出值`} value={typeof result === 'string' ? result : JSON.stringify(result)} onChange={event => updateField(key, { ...values, [name]: event.target.value })} placeholder="字面文本或完整变量引用" /><button type="button" className="cfg-link-button" onClick={() => setReferenceTarget(`output:${name}`)}>选择变量</button></div>
+      </div>)}<button type="button" className="cfg-cancel" onClick={() => { let index = Object.keys(values).length + 1; while (`output${index}` in values) index += 1; updateField(key, { ...values, [`output${index}`]: '' }); }}>＋ 添加输出变量</button><p className="cfg-description">配置命名输出后，将返回这些字段。留空时使用输出值或上游结果。</p></div>;
+    } else if (typeof value === 'string' && WHOLE_REFERENCE.test(value) && key !== 'model') {
+      control = <input {...common} className="cfg-input cfg-code" value={value} onChange={event => updateField(key, event.target.value)} />;
+    } else if (choices.length && type !== 'knowledgeRetrieval') {
+      control = <select {...common} className="cfg-select" value={displayValue(key, field, value)} onChange={event => updateField(key, event.target.value)}><option value="">请选择{field.title || '资源'}</option>{Boolean(value) && !choices.some(choice => choice.value === value) && <option value={String(value)}>{String(value)}</option>}{choices.map(choice => <option key={choice.value} value={choice.value}>{choice.label}</option>)}</select>;
+    } else if (type === 'knowledgeRetrieval' && key === 'datasetId') {
       control = (
         <div className="cfg-select-wrap">
           <select
@@ -506,7 +577,7 @@ const ConfigPanel = () => {
           </select>
         </div>
       );
-    } else if (json || field.type === 'array' || field.format === 'textarea') {
+    } else if (json || field.type === 'array' || field.format === 'textarea' || field.format === 'code') {
       let placeholder = field.description || '支持 {{input.question}} 等变量';
       if (json)
         placeholder =
@@ -518,7 +589,7 @@ const ConfigPanel = () => {
       control = (
         <textarea
           {...common}
-          className={`cfg-textarea${json ? ' cfg-code' : ''}`}
+          className={`cfg-textarea${json || field.format === 'code' ? ' cfg-code' : ''}`}
           value={displayValue(key, field, value)}
           onChange={(event) => updateField(key, event.target.value)}
           rows={json || key === 'prompt' ? 5 : 3}
@@ -570,6 +641,7 @@ const ConfigPanel = () => {
           <span className="cfg-field-type">
             {json ? 'JSON' : fieldLabels[field.type || ''] || ''}
           </span>
+          {!['model', 'inputSchema', 'outputs', 'expression', 'sql'].includes(key) && <button type="button" className="cfg-link-button" onClick={() => setReferenceTarget(key)} aria-label={`为${field.title || key}选择变量`}>引用变量</button>}
         </div>
         {control}
         <p className="cfg-description" id={`${id}-help`}>
@@ -661,6 +733,16 @@ const ConfigPanel = () => {
               </p>
             )}
           </section>
+          {['manualTrigger', 'input', 'webhookTrigger'].includes(type) && <section className="cfg-section"><div className="cfg-section-heading"><h4>运行输入样例</h4><p>用于试运行，也会出现在下游变量列表中。</p></div><textarea className="cfg-textarea cfg-code" aria-label="运行输入样例" value={inputText ?? JSON.stringify(currentWorkflow?.input || {}, null, 2)} readOnly={!onInputChange} onChange={event => onInputChange?.(event.target.value)} rows={4} /></section>}
+          {resourceError && <div className="cfg-notice" role="status">{resourceError}<button type="button" className="cfg-link-button" onClick={() => setResourceReload(value => value + 1)}>重试加载</button></div>}
+          {['loop', 'batch'].includes(type) && <div className="cfg-notice">选择本人工作流作为执行体。每次迭代通过 input.item 和 input.index 读取当前项与序号，最多 50 项；也可配置内嵌流程。</div>}
+          {type === 'code' && <div className="cfg-notice">支持路径、字面量、算术、比较、布尔和三元表达式。例如 {'{value: input.price * 2}'}。不支持任意脚本或依赖包。</div>}
+          {referenceTarget && <VariablePicker options={references} onClose={() => setReferenceTarget('')} onChoose={reference => {
+            if (referenceTarget.startsWith('output:')) updateField('outputs', { ...asRecord(nodeConfig.outputs), [referenceTarget.slice(7)]: reference });
+            else if (referenceTarget === '__inputMapping') setInputMapping(JSON.stringify({ ...mappedInput.values, [mappingTarget]: reference }, null, 2));
+            else updateField(referenceTarget, reference);
+            setReferenceTarget('');
+          }} />}
           <details className="cfg-variable-guide">
             <summary>
               <span>使用变量引用</span>
@@ -703,6 +785,15 @@ const ConfigPanel = () => {
               <p>该节点按工作流输入执行，可直接保存。</p>
             </div>
           )}
+          <details className="cfg-variable-guide cfg-mappings"><summary>输入 / 输出映射 <span>{Object.keys(mappedInput.values).length + Object.keys(mappedOutput.values).length} 项</span></summary>
+            <p>输入映射覆盖同名节点参数，支持 JSON 值或变量引用。</p>
+            <div className="cfg-mapping-row"><select className="cfg-select" aria-label="映射目标参数" value={mappingTarget} onChange={event => setMappingTarget(event.target.value)}><option value="">选择目标参数</option>{Object.entries(properties).map(([key, field]) => <option key={key} value={key}>{field.title || key}</option>)}</select><button type="button" className="cfg-link-button" disabled={!mappingTarget} onClick={() => setReferenceTarget('__inputMapping')}>选择变量</button></div>
+            <textarea className="cfg-textarea cfg-code" aria-label="输入映射 JSON" aria-invalid={Boolean(mappedInput.error)} rows={4} value={inputMapping} onChange={event => setInputMapping(event.target.value)} />
+            {mappedInput.error && <p className="cfg-error" role="alert">{mappedInput.error}</p>}
+            <p>输出映射将本节点结果属性重命名。例如 {'{"answer":"result"}'}。路径会在节点执行后读取。</p>
+            <textarea className="cfg-textarea cfg-code" aria-label="输出映射 JSON" aria-invalid={Boolean(mappedOutput.error)} rows={4} value={outputMapping} onChange={event => setOutputMapping(event.target.value)} />
+            {mappedOutput.error && <p className="cfg-error" role="alert">{mappedOutput.error}</p>}
+          </details>
         </div>
         <footer className="cfg-footer">
           <p>应用到当前节点后，保存工作流即可生效。</p>

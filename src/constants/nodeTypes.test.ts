@@ -85,3 +85,13 @@ test('知识库检索登记为真实执行节点且要求知识库与检索问�
     topK: 3,
   });
 });
+
+test('扩展目录支持数据、循环、会话和媒体节点，并采用服务器能力与具名端口', () => {
+  const nodes = mergeNodeTypes([{ type: 'selector', executable: false, inputs: ['main'], outputs: ['sales', 'default'], parameterSchema: { properties: { cases: { type: 'array', maxItems: 4 } }, required: ['cases'] }, outputSchema: { type: 'object', properties: { branch: { type: 'string' } } } }]);
+  expect(nodes).toEqual(expect.arrayContaining(['batch', 'code', 'jsonGet', 'memoryWrite', 'conversationCreate', 'imageProcess'].map(type => expect.objectContaining({ type }))));
+  const selector = nodes.find(node => node.type === 'selector')!;
+  expect(selector.executable).toBe(false);
+  expect(selector.outputs?.map(port => port.name)).toEqual(['sales', 'default']);
+  expect(selector.config_schema.properties.cases.maxItems).toBe(4);
+  expect(selector.outputSchema?.properties?.branch.type).toBe('string');
+});

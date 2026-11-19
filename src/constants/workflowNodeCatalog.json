@@ -1,0 +1,3375 @@
+[
+  {
+    "type": "manualTrigger",
+    "name": "开始",
+    "group": "trigger",
+    "description": "接收本次运行的输入数据",
+    "executable": true,
+    "inputs": [],
+    "outputs": [
+      "main"
+    ],
+    "parameters": [
+      "inputSchema"
+    ],
+    "parameterSchema": {
+      "type": "object",
+      "properties": {
+        "inputSchema": {
+          "type": "object",
+          "title": "输入变量声明（JSON Schema）"
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "input": {
+          "type": "object",
+          "title": "运行输入"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  {
+    "type": "webhookTrigger",
+    "name": "Webhook 输入",
+    "group": "trigger",
+    "description": "接收运行输入；外部公开触发地址需另外配置",
+    "executable": true,
+    "inputs": [],
+    "outputs": [
+      "main"
+    ],
+    "parameters": [
+      "path",
+      "method",
+      "inputSchema"
+    ],
+    "parameterSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "title": "路径"
+        },
+        "method": {
+          "type": "string",
+          "title": "请求方式",
+          "enum": [
+            "POST",
+            "GET"
+          ],
+          "default": "POST"
+        },
+        "inputSchema": {
+          "type": "object",
+          "title": "输入变量声明（JSON Schema）"
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "input": {
+          "type": "object",
+          "title": "运行输入"
+        },
+        "trigger": {
+          "type": "string",
+          "title": "触发类型"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  {
+    "type": "input",
+    "name": "输入",
+    "group": "trigger",
+    "description": "读取本次运行输入，支持声明输入变量",
+    "executable": true,
+    "inputs": [],
+    "outputs": [
+      "main"
+    ],
+    "parameters": [
+      "value",
+      "inputSchema"
+    ],
+    "parameterSchema": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "title": "输入值",
+          "description": "支持 JSON 值或完整的 {{input.field}} 变量引用"
+        },
+        "inputSchema": {
+          "type": "object",
+          "title": "输入变量声明（JSON Schema）"
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": true
+    }
+  },
+  {
+    "type": "llm",
+    "name": "大模型",
+    "group": "ai",
+    "description": "调用 Flash 文本模型，记录真实或估算用量",
+    "executable": true,
+    "inputs": [
+      "main"
+    ],
+    "outputs": [
+      "main"
+    ],
+    "parameters": [
+      "model",
+      "prompt",
+      "messages",
+      "systemPrompt",
+      "temperature",
+      "search"
+    ],
+    "parameterSchema": {
+      "type": "object",
+      "properties": {
+        "model": {
+          "type": "string",
+          "title": "模型",
+          "enum": [
+            "agnes-3.0-flash",
+            "agnes-2.5-flash"
+          ]
+        },
+        "prompt": {
+          "type": "string",
+          "title": "提示词"
+        },
+        "messages": {
+          "type": "array",
+          "title": "消息列表"
+        },
+        "systemPrompt": {
+          "type": "string",
+          "title": "系统提示词"
+        },
+        "temperature": {
+          "type": "number",
+          "title": "温度",
+          "minimum": 0,
+          "maximum": 2,
+          "default": 0.7
+        },
+        "search": {
+          "type": "boolean",
+          "title": "联网搜索",
+          "default": false
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string",
+          "title": "生成文本"
+        },
+        "usage": {
+          "type": "object",
+          "title": "模型用量"
+        },
+        "billing": {
+          "type": "object",
+          "title": "积分消耗"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  {
+    "type": "imageGeneration",
+    "name": "图片生成",
+    "group": "ai",
+    "description": "按实际生成张数和尺寸结算积分",
+    "executable": true,
+    "inputs": [
+      "main"
+    ],
+    "outputs": [
+      "main"
+    ],
+    "parameters": [
+      "prompt",
+      "images",
+      "size",
+      "ratio",
+      "model"
+    ],
+    "parameterSchema": {
+      "type": "object",
+      "properties": {
+        "prompt": {
+          "type": "string",
+          "title": "图片描述",
+          "maxLength": 8000
+        },
+        "images": {
+          "type": "array",
+          "title": "参考图",
+          "items": {
+            "type": "string",
+            "title": "图片地址"
+          },
+          "maxItems": 5
+        },
+        "size": {
+          "type": "string",
+          "title": "图片尺寸",
+          "enum": [
+            "1K",
+            "2K",
+            "3K",
+            "4K",
+            "1024x1024",
+            "1536x1024",
+            "1024x1536"
+          ],
+          "default": "1K"
+        },
+        "ratio": {
+          "type": "string",
+          "title": "图片比例",
+          "enum": [
+            "1:1",
+            "3:4",
+            "4:3",
+            "16:9",
+            "9:16",
+            "2:3",
+            "3:2",
+            "21:9"
+          ],
+          "default": "1:1"
+        },
+        "model": {
+          "type": "string",
+          "title": "模型",
+          "enum": [
+            "agnes-image-2.5-flash",
+            "agnes-image-2.1-flash",
+            "agnes-image-2.0-flash"
+          ]
+        }
+      },
+      "required": [
+        "prompt"
+      ],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "images": {
+          "type": "array",
+          "title": "图片"
+        },
+        "urls": {
+          "type": "array",
+          "title": "图片地址"
+        },
+        "billing": {
+          "type": "object",
+          "title": "积分消耗"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  {
+    "type": "imageEdit",
+    "name": "图片编辑",
+    "group": "media",
+    "description": "使用参考图片和提示词调用图片模型，按生图规则结算",
+    "executable": true,
+    "inputs": [
+      "main"
+    ],
+    "outputs": [
+      "main"
+    ],
+    "parameters": [
+      "prompt",
+      "images",
+      "size",
+      "ratio",
+      "model"
+    ],
+    "parameterSchema": {
+      "type": "object",
+      "properties": {
+        "prompt": {
+          "type": "string",
+          "title": "图片描述",
+          "maxLength": 8000
+        },
+        "images": {
+          "type": "array",
+          "title": "参考图",
+          "items": {
+            "type": "string",
+            "title": "图片地址"
+          },
+          "maxItems": 5
+        },
+        "size": {
+          "type": "string",
+          "title": "图片尺寸",
+          "enum": [
+            "1K",
+            "2K",
+            "3K",
+            "4K",
+            "1024x1024",
+            "1536x1024",
+            "1024x1536"
+          ],
+          "default": "1K"
+        },
+        "ratio": {
+          "type": "string",
+          "title": "图片比例",
+          "enum": [
+            "1:1",
+            "3:4",
+            "4:3",
+            "16:9",
+            "9:16",
+            "2:3",
+            "3:2",
+            "21:9"
+          ],
+          "default": "1:1"
+        },
+        "model": {
+          "type": "string",
+          "title": "模型",
+          "enum": [
+            "agnes-image-2.5-flash",
+            "agnes-image-2.1-flash",
+            "agnes-image-2.0-flash"
+          ]
+        }
+      },
+      "required": [
+        "prompt",
+        "images"
+      ],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "model": {
+          "type": "string",
+          "title": "模型"
+        },
+        "images": {
+          "type": "array",
+          "title": "图片列表",
+          "items": {
+            "type": "object",
+            "title": "图片",
+            "properties": {
+              "url": {
+                "type": "string",
+                "title": "图片地址"
+              }
+            }
+          }
+        },
+        "urls": {
+          "type": "array",
+          "title": "媒体地址列表",
+          "items": {
+            "type": "string",
+            "title": "地址"
+          }
+        },
+        "usage": {
+          "type": "object",
+          "title": "模型用量"
+        },
+        "billing": {
+          "type": "object",
+          "title": "积分消耗"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  {
+    "type": "promptOptimize",
+    "name": "提示词优化",
+    "group": "ai",
+    "description": "调用文本模型改写提示词，按文本用量结算",
+    "executable": true,
+    "inputs": [
+      "main"
+    ],
+    "outputs": [
+      "main"
+    ],
+    "parameters": [
+      "prompt",
+      "model"
+    ],
+    "parameterSchema": {
+      "type": "object",
+      "properties": {
+        "prompt": {
+          "type": "string",
+          "title": "待优化提示词",
+          "maxLength": 8000
+        },
+        "model": {
+          "type": "string",
+          "title": "模型",
+          "enum": [
+            "agnes-3.0-flash",
+            "agnes-2.5-flash"
+          ]
+        }
+      },
+      "required": [
+        "prompt"
+      ],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string",
+          "title": "优化后的提示词"
+        },
+        "model": {
+          "type": "string",
+          "title": "模型"
+        },
+        "usage": {
+          "type": "object",
+          "title": "模型用量"
+        },
+        "billing": {
+          "type": "object",
+          "title": "积分消耗"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  {
+    "type": "videoGeneration",
+    "name": "视频生成",
+    "group": "ai",
+    "description": "生成或查询 720P 视频任务，沿用现有视频服务",
+    "executable": true,
+    "inputs": [
+      "main"
+    ],
+    "outputs": [
+      "main"
+    ],
+    "parameters": [
+      "model",
+      "prompt",
+      "mode",
+      "size",
+      "seconds",
+      "aspect_ratio",
+      "images",
+      "first_frame",
+      "last_frame",
+      "videoId",
+      "waitForCompletion"
+    ],
+    "parameterSchema": {
+      "type": "object",
+      "properties": {
+        "model": {
+          "type": "string",
+          "title": "模型",
+          "enum": [
+            "agnes-video-2.5-flash"
+          ]
+        },
+        "prompt": {
+          "type": "string",
+          "title": "视频描述"
+        },
+        "mode": {
+          "type": "string",
+          "title": "生成模式",
+          "enum": [
+            "text",
+            "reference",
+            "keyframe"
+          ],
+          "default": "text"
+        },
+        "size": {
+          "type": "string",
+          "title": "视频尺寸",
+          "enum": [
+            "720P"
+          ],
+          "default": "720P"
+        },
+        "seconds": {
+          "type": "integer",
+          "title": "视频秒数",
+          "minimum": 4,
+          "maximum": 12,
+          "default": 5
+        },
+        "aspect_ratio": {
+          "type": "string",
+          "title": "画面比例",
+          "enum": [
+            "21:9",
+            "16:9",
+            "4:3",
+            "1:1",
+            "3:4",
+            "9:16"
+          ],
+          "default": "16:9"
+        },
+        "images": {
+          "type": "array",
+          "title": "参考图片"
+        },
+        "first_frame": {
+          "type": "string",
+          "title": "首帧图片"
+        },
+        "last_frame": {
+          "type": "string",
+          "title": "尾帧图片"
+        },
+        "videoId": {
+          "type": "string",
+          "title": "已有视频任务 ID"
+        },
+        "waitForCompletion": {
+          "type": "boolean",
+          "title": "等待生成完成",
+          "default": true
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "model": {
+          "type": "string",
+          "title": "模型"
+        },
+        "videoId": {
+          "type": "string",
+          "title": "视频任务 ID"
+        },
+        "status": {
+          "type": "string",
+          "title": "任务状态"
+        },
+        "videoUrl": {
+          "type": "string",
+          "title": "视频地址"
+        },
+        "progress": {
+          "type": "number",
+          "title": "进度"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  {
+    "type": "condition",
+    "name": "条件选择",
+    "group": "logic",
+    "description": "比较输入值或计算安全表达式，仅执行选中的分支",
+    "executable": true,
+    "inputs": [
+      "main"
+    ],
+    "outputs": [
+      "true",
+      "false"
+    ],
+    "parameters": [
+      "left",
+      "operator",
+      "right",
+      "expression"
+    ],
+    "parameterSchema": {
+      "type": "object",
+      "properties": {
+        "left": {
+          "title": "左值",
+          "description": "支持 JSON 值或完整的 {{input.field}} 变量引用"
+        },
+        "operator": {
+          "type": "string",
+          "title": "比较方式",
+          "enum": [
+            "eq",
+            "ne",
+            "gt",
+            "gte",
+            "lt",
+            "lte",
+            "contains",
+            "exists"
+          ],
+          "default": "eq"
+        },
+        "right": {
+          "title": "右值",
+          "description": "支持 JSON 值或完整的 {{input.field}} 变量引用"
+        },
+        "expression": {
+          "type": "string",
+          "title": "安全表达式（可选）",
+          "maxLength": 8000,
+          "description": "填写后使用表达式判断，例如 input.score >= 60；不执行任意 JavaScript"
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "matched": {
+          "type": "boolean"
+        },
+        "branch": {
+          "type": "string",
+          "title": "分支"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  {
+    "type": "selector",
+    "name": "多路选择",
+    "group": "logic",
+    "description": "按值选择匹配分支，其余分支跳过",
+    "executable": true,
+    "inputs": [
+      "main"
+    ],
+    "outputs": [
+      "default"
+    ],
+    "parameters": [
+      "value",
+      "cases",
+      "defaultBranch"
+    ],
+    "parameterSchema": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "title": "待匹配值",
+          "description": "支持 JSON 值或完整的 {{input.field}} 变量引用"
+        },
+        "cases": {
+          "type": "array",
+          "title": "分支条件",
+          "items": {
+            "type": "object",
+            "title": "分支",
+            "properties": {
+              "id": {
+                "type": "string",
+                "title": "分支 ID"
+              },
+              "value": {
+                "title": "匹配值",
+                "description": "支持 JSON 值或完整的 {{input.field}} 变量引用"
+              }
+            },
+            "required": [
+              "id",
+              "value"
+            ]
+          },
+          "maxItems": 30
+        },
+        "defaultBranch": {
+          "type": "string",
+          "title": "默认分支 ID",
+          "default": "default"
+        }
+      },
+      "required": [
+        "cases"
+      ],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "branch": {
+          "type": "string",
+          "title": "分支"
+        },
+        "value": {
+          "title": "输入值",
+          "description": "支持 JSON 值或完整的 {{input.field}} 变量引用"
+        }
+      },
+      "additionalProperties": true
+    },
+    "dynamicOutputs": "cases"
+  },
+  {
+    "type": "intentRecognition",
+    "name": "意图识别",
+    "group": "ai",
+    "description": "调用模型从指定意图列表中识别输入并选择分支",
+    "executable": true,
+    "inputs": [
+      "main"
+    ],
+    "outputs": [
+      "default"
+    ],
+    "parameters": [
+      "query",
+      "categories",
+      "model"
+    ],
+    "parameterSchema": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string",
+          "title": "用户输入",
+          "maxLength": 8000
+        },
+        "categories": {
+          "type": "array",
+          "title": "意图列表",
+          "items": {
+            "type": "object",
+            "title": "意图",
+            "properties": {
+              "id": {
+                "type": "string",
+                "title": "意图 ID"
+              },
+              "name": {
+                "type": "string",
+                "title": "意图名称"
+              },
+              "description": {
+                "type": "string",
+                "title": "意图说明"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "minItems": 1,
+          "maxItems": 20
+        },
+        "model": {
+          "type": "string",
+          "title": "模型",
+          "enum": [
+            "agnes-3.0-flash",
+            "agnes-2.5-flash"
+          ]
+        }
+      },
+      "required": [
+        "query",
+        "categories"
+      ],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "intent": {
+          "type": "string",
+          "title": "意图 ID"
+        },
+        "branch": {
+          "type": "string",
+          "title": "分支"
+        },
+        "billing": {
+          "type": "object",
+          "title": "积分消耗"
+        }
+      },
+      "additionalProperties": true
+    },
+    "dynamicOutputs": "categories"
+  },
+  {
+    "type": "loop",
+    "name": "循环",
+    "group": "logic",
+    "description": "逐项运行子工作流或内嵌流程，每项独立记录模型计费路径",
+    "executable": true,
+    "inputs": [
+      "main"
+    ],
+    "outputs": [
+      "main"
+    ],
+    "parameters": [
+      "items",
+      "workflowId",
+      "input",
+      "maxIterations",
+      "body"
+    ],
+    "parameterSchema": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "title": "输入列表",
+          "maxItems": 50
+        },
+        "workflowId": {
+          "type": "string",
+          "title": "子工作流 ID"
+        },
+        "input": {
+          "type": "object",
+          "title": "附加输入"
+        },
+        "maxIterations": {
+          "type": "integer",
+          "title": "最大迭代数",
+          "minimum": 1,
+          "maximum": 50,
+          "default": 50
+        },
+        "body": {
+          "type": "object",
+          "title": "内嵌流程（可选）",
+          "properties": {
+            "nodes": {
+              "type": "array",
+              "title": "节点"
+            },
+            "edges": {
+              "type": "array",
+              "title": "连线"
+            }
+          },
+          "required": [
+            "nodes",
+            "edges"
+          ]
+        }
+      },
+      "required": [
+        "items"
+      ],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "title": "逐项结果"
+        },
+        "count": {
+          "type": "integer",
+          "title": "处理数量"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  {
+    "type": "batch",
+    "name": "批处理",
+    "group": "logic",
+    "description": "逐项运行子工作流或内嵌流程，每项独立记录模型计费路径",
+    "executable": true,
+    "inputs": [
+      "main"
+    ],
+    "outputs": [
+      "main"
+    ],
+    "parameters": [
+      "items",
+      "workflowId",
+      "input",
+      "maxIterations",
+      "body"
+    ],
+    "parameterSchema": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "title": "输入列表",
+          "maxItems": 50
+        },
+        "workflowId": {
+          "type": "string",
+          "title": "子工作流 ID"
+        },
+        "input": {
+          "type": "object",
+          "title": "附加输入"
+        },
+        "maxIterations": {
+          "type": "integer",
+          "title": "最大迭代数",
+          "minimum": 1,
+          "maximum": 50,
+          "default": 50
+        },
+        "body": {
+          "type": "object",
+          "title": "内嵌流程（可选）",
+          "properties": {
+            "nodes": {
+              "type": "array",
+              "title": "节点"
+            },
+            "edges": {
+              "type": "array",
+              "title": "连线"
+            }
+          },
+          "required": [
+            "nodes",
+            "edges"
+          ]
+        }
+      },
+      "required": [
+        "items"
+      ],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "title": "逐项结果"
+        },
+        "count": {
+          "type": "integer",
+          "title": "处理数量"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  {
+    "type": "variableAssign",
+    "name": "变量赋值",
+    "group": "data",
+    "description": "更新本次运行的变量副本，不修改工作流模板",
+    "executable": true,
+    "inputs": [
+      "main"
+    ],
+    "outputs": [
+      "main"
+    ],
+    "parameters": [
+      "values"
+    ],
+    "parameterSchema": {
+      "type": "object",
+      "properties": {
+        "values": {
+          "type": "object",
+          "title": "变量与值"
+        }
+      },
+      "required": [
+        "values"
+      ],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "values": {
+          "type": "object",
+          "title": "已赋值变量"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  {
+    "type": "variableRead",
+    "name": "读取变量",
+    "group": "data",
+    "description": "读取本次运行中的变量或变量属性",
+    "executable": true,
+    "inputs": [
+      "main"
+    ],
+    "outputs": [
+      "main"
+    ],
+    "parameters": [
+      "name"
+    ],
+    "parameterSchema": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "title": "变量名称或属性路径",
+          "maxLength": 500
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "title": "变量名称"
+        },
+        "value": {
+          "title": "变量值",
+          "description": "支持 JSON 值或完整的 {{input.field}} 变量引用"
+        },
+        "exists": {
+          "type": "boolean",
+          "title": "是否存在"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  {
+    "type": "variableAggregate",
+    "name": "变量聚合",
+    "group": "data",
+    "description": "聚合多个上游结果，可组成列表、合并对象或选择首个非空值",
+    "executable": true,
+    "inputs": [
+      "main"
+    ],
+    "outputs": [
+      "main"
+    ],
+    "parameters": [
+      "values",
+      "mode"
+    ],
+    "parameterSchema": {
+      "type": "object",
+      "properties": {
+        "values": {
+          "type": "array",
+          "title": "待聚合值"
+        },
+        "mode": {
+          "type": "string",
+          "title": "聚合方式",
+          "enum": [
+            "array",
+            "firstNonEmpty",
+            "merge"
+          ],
+          "default": "array"
+        }
+      },
+      "required": [
+        "values"
+      ],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "title": "聚合结果",
+          "description": "支持 JSON 值或完整的 {{input.field}} 变量引用"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  {
+    "type": "code",
+    "name": "安全表达式",
+    "group": "logic",
+    "description": "计算受限表达式，支持算术、比较、布尔、三元及对象数组构造；不执行任意脚本",
+    "executable": true,
+    "inputs": [
+      "main"
+    ],
+    "outputs": [
+      "main"
+    ],
+    "parameters": [
+      "expression",
+      "input"
+    ],
+    "parameterSchema": {
+      "type": "object",
+      "properties": {
+        "expression": {
+          "type": "string",
+          "title": "表达式",
+          "maxLength": 8000,
+          "default": "{value: input.value}"
+        },
+        "input": {
+          "title": "表达式输入（可选）",
+          "description": "支持 JSON 值或完整的 {{input.field}} 变量引用"
+        }
+      },
+      "required": [
+        "expression"
+      ],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "title": "表达式结果",
+          "description": "支持 JSON 值或完整的 {{input.field}} 变量引用"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  {
+    "type": "textProcess",
+    "name": "文本处理",
+    "group": "data",
+    "description": "模板、分割、拼接、字面替换、截取及大小写处理",
+    "executable": true,
+    "inputs": [
+      "main"
+    ],
+    "outputs": [
+      "main"
+    ],
+    "parameters": [
+      "operation",
+      "text",
+      "value",
+      "separator",
+      "search",
+      "replacement",
+      "start",
+      "end"
+    ],
+    "parameterSchema": {
+      "type": "object",
+      "properties": {
+        "operation": {
+          "type": "string",
+          "title": "处理方式",
+          "enum": [
+            "template",
+            "split",
+            "join",
+            "replace",
+            "slice",
+            "trim",
+            "upper",
+            "lower"
+          ],
+          "default": "template"
+        },
+        "text": {
+          "type": "string",
+          "title": "文本"
+        },
+        "value": {
+          "title": "值或文本列表",
+          "description": "支持 JSON 值或完整的 {{input.field}} 变量引用"
+        },
+        "separator": {
+          "type": "string",
+          "title": "分隔符",
+          "default": ","
+        },
+        "search": {
+          "type": "string",
+          "title": "替换目标"
+        },
+        "replacement": {
+          "type": "string",
+          "title": "替换内容"
+        },
+        "start": {
+          "type": "integer",
+          "title": "起始位置"
+        },
+        "end": {
+          "type": "integer",
+          "title": "结束位置"
+        }
+      },
+      "required": [
+        "operation"
+      ],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string",
+          "title": "处理后文本"
+        },
+        "value": {
+          "title": "处理结果",
+          "description": "支持 JSON 值或完整的 {{input.field}} 变量引用"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  {
+    "type": "jsonParse",
+    "name": "解析 JSON",
+    "group": "data",
+    "description": "把 JSON 文本转换为结构化数据",
+    "executable": true,
+    "inputs": [
+      "main"
+    ],
+    "outputs": [
+      "main"
+    ],
+    "parameters": [
+      "text"
+    ],
+    "parameterSchema": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string",
+          "title": "JSON 文本"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "title": "结构化数据",
+          "description": "支持 JSON 值或完整的 {{input.field}} 变量引用"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  {
+    "type": "jsonSerialize",
+    "name": "序列化 JSON",
+    "group": "data",
+    "description": "把结构化数据转换为 JSON 文本",
+    "executable": true,
+    "inputs": [
+      "main"
+    ],
+    "outputs": [
+      "main"
+    ],
+    "parameters": [
+      "value",
+      "indent"
+    ],
+    "parameterSchema": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "title": "结构化数据",
+          "description": "支持 JSON 值或完整的 {{input.field}} 变量引用"
+        },
+        "indent": {
+          "type": "integer",
+          "title": "缩进空格数",
+          "minimum": 0,
+          "maximum": 8,
+          "default": 2
+        }
+      },
+      "required": [
+        "value"
+      ],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string",
+          "title": "JSON 文本"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  {
+    "type": "jsonGet",
+    "name": "提取 JSON 字段",
+    "group": "data",
+    "description": "按安全属性路径读取对象字段或数组元素",
+    "executable": true,
+    "inputs": [
+      "main"
+    ],
+    "outputs": [
+      "main"
+    ],
+    "parameters": [
+      "value",
+      "path"
+    ],
+    "parameterSchema": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "title": "结构化数据",
+          "description": "支持 JSON 值或完整的 {{input.field}} 变量引用"
+        },
+        "path": {
+          "type": "string",
+          "title": "属性路径",
+          "maxLength": 500
+        }
+      },
+      "required": [
+        "value",
+        "path"
+      ],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "title": "字段值",
+          "description": "支持 JSON 值或完整的 {{input.field}} 变量引用"
+        },
+        "exists": {
+          "type": "boolean",
+          "title": "是否存在"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  {
+    "type": "httpRequest",
+    "name": "HTTP 请求",
+    "group": "integration",
+    "description": "请求公网 HTTP 接口，限制时长和大小并阻止内网访问",
+    "executable": true,
+    "inputs": [
+      "main"
+    ],
+    "outputs": [
+      "main"
+    ],
+    "parameters": [
+      "url",
+      "method",
+      "headers",
+      "body",
+      "timeoutMs",
+      "responseType"
+    ],
+    "parameterSchema": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string",
+          "title": "公网接口地址"
+        },
+        "method": {
+          "type": "string",
+          "title": "请求方式",
+          "enum": [
+            "GET",
+            "POST",
+            "PUT",
+            "PATCH",
+            "DELETE",
+            "HEAD"
+          ],
+          "default": "GET"
+        },
+        "headers": {
+          "type": "object",
+          "title": "请求头"
+        },
+        "body": {
+          "title": "请求体",
+          "description": "支持 JSON 值或完整的 {{input.field}} 变量引用"
+        },
+        "timeoutMs": {
+          "type": "integer",
+          "title": "超时毫秒",
+          "minimum": 100,
+          "maximum": 30000,
+          "default": 15000
+        },
+        "responseType": {
+          "type": "string",
+          "title": "响应格式",
+          "enum": [
+            "json",
+            "text"
+          ],
+          "default": "json"
+        }
+      },
+      "required": [
+        "url"
+      ],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "statusCode": {
+          "type": "integer",
+          "title": "HTTP 状态"
+        },
+        "data": {
+          "title": "响应内容",
+          "description": "支持 JSON 值或完整的 {{input.field}} 变量引用"
+        },
+        "headers": {
+          "type": "object",
+          "title": "响应头"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  {
+    "type": "plugin",
+    "name": "插件调用",
+    "group": "integration",
+    "description": "调用已配置的插件工具，工具权限由服务端控制",
+    "executable": true,
+    "inputs": [
+      "main"
+    ],
+    "outputs": [
+      "main"
+    ],
+    "parameters": [
+      "toolId",
+      "arguments"
+    ],
+    "parameterSchema": {
+      "type": "object",
+      "properties": {
+        "toolId": {
+          "type": "string",
+          "title": "工具 ID",
+          "maxLength": 100
+        },
+        "arguments": {
+          "type": "object",
+          "title": "工具参数"
+        }
+      },
+      "required": [
+        "toolId"
+      ],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "statusCode": {
+          "type": "integer",
+          "title": "HTTP 状态"
+        },
+        "headers": {
+          "type": "object",
+          "title": "响应头"
+        },
+        "data": {
+          "title": "响应数据",
+          "description": "支持 JSON 值或完整的 {{input.field}} 变量引用"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  {
+    "type": "subWorkflow",
+    "name": "子工作流",
+    "group": "integration",
+    "description": "运行当前账号的子工作流，限制嵌套深度并阻止递归调用",
+    "executable": true,
+    "inputs": [
+      "main"
+    ],
+    "outputs": [
+      "main"
+    ],
+    "parameters": [
+      "workflowId",
+      "input"
+    ],
+    "parameterSchema": {
+      "type": "object",
+      "properties": {
+        "workflowId": {
+          "type": "string",
+          "title": "工作流 ID"
+        },
+        "input": {
+          "type": "object",
+          "title": "子工作流输入"
+        }
+      },
+      "required": [
+        "workflowId"
+      ],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "executionId": {
+          "type": "string",
+          "title": "子任务 ID"
+        },
+        "output": {
+          "type": "object",
+          "title": "子工作流输出"
+        },
+        "billing": {
+          "type": "object",
+          "title": "积分消耗"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  {
+    "type": "databaseInsert",
+    "name": "新增数据",
+    "group": "data",
+    "description": "向当前用户的数据表写入记录",
+    "executable": true,
+    "inputs": [
+      "main"
+    ],
+    "outputs": [
+      "main"
+    ],
+    "parameters": [
+      "tableName",
+      "values",
+      "records"
+    ],
+    "parameterSchema": {
+      "type": "object",
+      "properties": {
+        "tableName": {
+          "type": "string",
+          "title": "用户数据表",
+          "maxLength": 80,
+          "description": "仅访问当前用户的工作流数据表，不连接网站业务数据库"
+        },
+        "values": {
+          "type": "object",
+          "title": "记录数据"
+        },
+        "records": {
+          "type": "array",
+          "title": "多条记录"
+        }
+      },
+      "required": [
+        "tableName"
+      ],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "records": {
+          "type": "array",
+          "title": "写入记录",
+          "items": {
+            "type": "object",
+            "title": "用户数据记录",
+            "properties": {
+              "id": {
+                "type": "string",
+                "title": "记录 ID"
+              },
+              "createdAt": {
+                "type": "string",
+                "title": "创建时间"
+              },
+              "updatedAt": {
+                "type": "string",
+                "title": "更新时间"
+              }
+            },
+            "additionalProperties": true
+          }
+        },
+        "count": {
+          "type": "integer",
+          "title": "写入数量"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  {
+    "type": "databaseUpdate",
+    "name": "更新数据",
+    "group": "data",
+    "description": "按记录 ID 或条件更新当前用户的数据",
+    "executable": true,
+    "inputs": [
+      "main"
+    ],
+    "outputs": [
+      "main"
+    ],
+    "parameters": [
+      "tableName",
+      "recordId",
+      "where",
+      "values"
+    ],
+    "parameterSchema": {
+      "type": "object",
+      "properties": {
+        "tableName": {
+          "type": "string",
+          "title": "用户数据表",
+          "maxLength": 80,
+          "description": "仅访问当前用户的工作流数据表，不连接网站业务数据库"
+        },
+        "recordId": {
+          "type": "string",
+          "title": "记录 ID"
+        },
+        "where": {
+          "type": "object",
+          "title": "匹配条件"
+        },
+        "values": {
+          "type": "object",
+          "title": "更新字段"
+        }
+      },
+      "required": [
+        "tableName",
+        "values"
+      ],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "records": {
+          "type": "array",
+          "title": "更新记录",
+          "items": {
+            "type": "object",
+            "title": "用户数据记录",
+            "properties": {
+              "id": {
+                "type": "string",
+                "title": "记录 ID"
+              },
+              "createdAt": {
+                "type": "string",
+                "title": "创建时间"
+              },
+              "updatedAt": {
+                "type": "string",
+                "title": "更新时间"
+              }
+            },
+            "additionalProperties": true
+          }
+        },
+        "count": {
+          "type": "integer",
+          "title": "更新数量"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  {
+    "type": "databaseQuery",
+    "name": "查询数据",
+    "group": "data",
+    "description": "读取当前用户数据表中的记录，最多返回 100 条",
+    "executable": true,
+    "inputs": [
+      "main"
+    ],
+    "outputs": [
+      "main"
+    ],
+    "parameters": [
+      "tableName",
+      "where",
+      "limit"
+    ],
+    "parameterSchema": {
+      "type": "object",
+      "properties": {
+        "tableName": {
+          "type": "string",
+          "title": "用户数据表",
+          "maxLength": 80,
+          "description": "仅访问当前用户的工作流数据表，不连接网站业务数据库"
+        },
+        "where": {
+          "type": "object",
+          "title": "匹配条件"
+        },
+        "limit": {
+          "type": "integer",
+          "title": "最多返回条数",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 20
+        }
+      },
+      "required": [
+        "tableName"
+      ],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "records": {
+          "type": "array",
+          "title": "查询记录",
+          "items": {
+            "type": "object",
+            "title": "用户数据记录",
+            "properties": {
+              "id": {
+                "type": "string",
+                "title": "记录 ID"
+              },
+              "createdAt": {
+                "type": "string",
+                "title": "创建时间"
+              },
+              "updatedAt": {
+                "type": "string",
+                "title": "更新时间"
+              }
+            },
+            "additionalProperties": true
+          }
+        },
+        "count": {
+          "type": "integer",
+          "title": "查询数量"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  {
+    "type": "databaseDelete",
+    "name": "删除数据",
+    "group": "data",
+    "description": "按记录 ID 或明确条件删除当前用户的数据",
+    "executable": true,
+    "inputs": [
+      "main"
+    ],
+    "outputs": [
+      "main"
+    ],
+    "parameters": [
+      "tableName",
+      "recordId",
+      "where"
+    ],
+    "parameterSchema": {
+      "type": "object",
+      "properties": {
+        "tableName": {
+          "type": "string",
+          "title": "用户数据表",
+          "maxLength": 80,
+          "description": "仅访问当前用户的工作流数据表，不连接网站业务数据库"
+        },
+        "recordId": {
+          "type": "string",
+          "title": "记录 ID"
+        },
+        "where": {
+          "type": "object",
+          "title": "匹配条件"
+        }
+      },
+      "required": [
+        "tableName"
+      ],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "title": "删除数量"
+        },
+        "deleted": {
+          "type": "boolean",
+          "title": "已删除"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  {
+    "type": "sqlQuery",
+    "name": "SQL 查询",
+    "group": "data",
+    "description": "对用户数据表执行受限 SELECT 查询，不连接网站业务数据库",
+    "executable": true,
+    "inputs": [
+      "main"
+    ],
+    "outputs": [
+      "main"
+    ],
+    "parameters": [
+      "sql",
+      "parameters"
+    ],
+    "parameterSchema": {
+      "type": "object",
+      "properties": {
+        "sql": {
+          "type": "string",
+          "title": "SELECT 查询",
+          "maxLength": 4000
+        },
+        "parameters": {
+          "type": "object",
+          "title": "命名绑定参数",
+          "description": "SQL 使用 :name，参数填写 {\"name\":\"值\"}"
+        }
+      },
+      "required": [
+        "sql"
+      ],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "records": {
+          "type": "array",
+          "title": "查询记录",
+          "items": {
+            "type": "object",
+            "title": "用户数据记录",
+            "properties": {
+              "id": {
+                "type": "string",
+                "title": "记录 ID"
+              },
+              "createdAt": {
+                "type": "string",
+                "title": "创建时间"
+              },
+              "updatedAt": {
+                "type": "string",
+                "title": "更新时间"
+              }
+            },
+            "additionalProperties": true
+          }
+        },
+        "count": {
+          "type": "integer",
+          "title": "查询数量"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  {
+    "type": "knowledgeRetrieval",
+    "name": "知识检索",
+    "group": "ai",
+    "description": "检索当前账号拥有且启用的知识库",
+    "executable": true,
+    "inputs": [
+      "main"
+    ],
+    "outputs": [
+      "main"
+    ],
+    "parameters": [
+      "datasetId",
+      "query",
+      "topK",
+      "scoreThreshold"
+    ],
+    "parameterSchema": {
+      "type": "object",
+      "properties": {
+        "datasetId": {
+          "type": "string",
+          "title": "知识库 ID"
+        },
+        "query": {
+          "type": "string",
+          "title": "检索问题",
+          "maxLength": 2000
+        },
+        "topK": {
+          "type": "integer",
+          "title": "召回数量",
+          "minimum": 1,
+          "maximum": 20,
+          "default": 3
+        },
+        "scoreThreshold": {
+          "type": "number",
+          "title": "最低得分",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "datasetId",
+        "query"
+      ],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "documents": {
+          "type": "array",
+          "title": "命中文档片段"
+        },
+        "context": {
+          "type": "string",
+          "title": "参考资料"
+        },
+        "text": {
+          "type": "string",
+          "title": "参考资料"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  {
+    "type": "knowledgeWrite",
+    "name": "写入知识",
+    "group": "data",
+    "description": "向当前账号知识库导入文本并建立检索索引",
+    "executable": true,
+    "inputs": [
+      "main"
+    ],
+    "outputs": [
+      "main"
+    ],
+    "parameters": [
+      "datasetId",
+      "text",
+      "name"
+    ],
+    "parameterSchema": {
+      "type": "object",
+      "properties": {
+        "datasetId": {
+          "type": "string",
+          "title": "知识库 ID"
+        },
+        "text": {
+          "type": "string",
+          "title": "知识文本",
+          "maxLength": 1000000
+        },
+        "name": {
+          "type": "string",
+          "title": "文档名称",
+          "maxLength": 100
+        }
+      },
+      "required": [
+        "datasetId",
+        "text"
+      ],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "文档 ID"
+        },
+        "name": {
+          "type": "string",
+          "title": "文档名称"
+        },
+        "status": {
+          "type": "string",
+          "title": "索引状态"
+        },
+        "chunkCount": {
+          "type": "integer",
+          "title": "知识片段数量"
+        },
+        "characterCount": {
+          "type": "integer",
+          "title": "文字数量"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  {
+    "type": "knowledgeDelete",
+    "name": "删除知识",
+    "group": "data",
+    "description": "删除当前账号知识库中的指定文档及其索引",
+    "executable": true,
+    "inputs": [
+      "main"
+    ],
+    "outputs": [
+      "main"
+    ],
+    "parameters": [
+      "datasetId",
+      "documentId"
+    ],
+    "parameterSchema": {
+      "type": "object",
+      "properties": {
+        "datasetId": {
+          "type": "string",
+          "title": "知识库 ID"
+        },
+        "documentId": {
+          "type": "string",
+          "title": "文档 ID"
+        }
+      },
+      "required": [
+        "datasetId",
+        "documentId"
+      ],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "文档 ID"
+        },
+        "deleted": {
+          "type": "boolean",
+          "title": "已删除"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  {
+    "type": "memoryRead",
+    "name": "读取长期记忆",
+    "group": "data",
+    "description": "读取当前用户指定空间下的记忆",
+    "executable": true,
+    "inputs": [
+      "main"
+    ],
+    "outputs": [
+      "main"
+    ],
+    "parameters": [
+      "namespace",
+      "key"
+    ],
+    "parameterSchema": {
+      "type": "object",
+      "properties": {
+        "namespace": {
+          "type": "string",
+          "title": "记忆空间",
+          "default": "default",
+          "maxLength": 80
+        },
+        "key": {
+          "type": "string",
+          "title": "记忆键",
+          "maxLength": 200
+        }
+      },
+      "required": [
+        "key"
+      ],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "title": "记忆列表",
+          "items": {
+            "type": "object",
+            "title": "记忆",
+            "properties": {
+              "id": {
+                "type": "string",
+                "title": "记忆 ID"
+              },
+              "key": {
+                "type": "string",
+                "title": "记忆键"
+              },
+              "value": {
+                "title": "记忆内容",
+                "description": "支持 JSON 值或完整的 {{input.field}} 变量引用"
+              },
+              "updatedAt": {
+                "type": "string",
+                "title": "更新时间"
+              }
+            }
+          }
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  {
+    "type": "memoryWrite",
+    "name": "写入长期记忆",
+    "group": "data",
+    "description": "保存当前用户的结构化长期记忆",
+    "executable": true,
+    "inputs": [
+      "main"
+    ],
+    "outputs": [
+      "main"
+    ],
+    "parameters": [
+      "namespace",
+      "key",
+      "value"
+    ],
+    "parameterSchema": {
+      "type": "object",
+      "properties": {
+        "namespace": {
+          "type": "string",
+          "title": "记忆空间",
+          "default": "default",
+          "maxLength": 80
+        },
+        "key": {
+          "type": "string",
+          "title": "记忆键",
+          "maxLength": 200
+        },
+        "value": {
+          "title": "记忆内容",
+          "description": "支持 JSON 值或完整的 {{input.field}} 变量引用"
+        }
+      },
+      "required": [
+        "key",
+        "value"
+      ],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "记忆 ID"
+        },
+        "key": {
+          "type": "string",
+          "title": "记忆键"
+        },
+        "value": {
+          "title": "记忆内容",
+          "description": "支持 JSON 值或完整的 {{input.field}} 变量引用"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  {
+    "type": "memoryDelete",
+    "name": "删除长期记忆",
+    "group": "data",
+    "description": "删除当前用户指定空间中的记忆",
+    "executable": true,
+    "inputs": [
+      "main"
+    ],
+    "outputs": [
+      "main"
+    ],
+    "parameters": [
+      "namespace",
+      "key"
+    ],
+    "parameterSchema": {
+      "type": "object",
+      "properties": {
+        "namespace": {
+          "type": "string",
+          "title": "记忆空间",
+          "default": "default",
+          "maxLength": 80
+        },
+        "key": {
+          "type": "string",
+          "title": "记忆键",
+          "maxLength": 200
+        }
+      },
+      "required": [
+        "key"
+      ],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "deleted": {
+          "type": "boolean",
+          "title": "已删除"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  {
+    "type": "conversationCreate",
+    "name": "创建会话",
+    "group": "conversation",
+    "description": "为当前用户创建独立会话",
+    "executable": true,
+    "inputs": [
+      "main"
+    ],
+    "outputs": [
+      "main"
+    ],
+    "parameters": [
+      "title",
+      "metadata"
+    ],
+    "parameterSchema": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "title": "会话标题",
+          "maxLength": 120
+        },
+        "metadata": {
+          "type": "object",
+          "title": "会话数据"
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "title": "会话",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "会话 ID"
+        },
+        "conversationId": {
+          "type": "string",
+          "title": "会话 ID"
+        },
+        "title": {
+          "type": "string",
+          "title": "会话标题"
+        },
+        "metadata": {
+          "type": "object",
+          "title": "会话数据"
+        },
+        "variables": {
+          "type": "object",
+          "title": "会话变量"
+        },
+        "createdAt": {
+          "type": "string",
+          "title": "创建时间"
+        },
+        "updatedAt": {
+          "type": "string",
+          "title": "更新时间"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  {
+    "type": "conversationUpdate",
+    "name": "更新会话",
+    "group": "conversation",
+    "description": "更新当前用户会话的标题与附加数据",
+    "executable": true,
+    "inputs": [
+      "main"
+    ],
+    "outputs": [
+      "main"
+    ],
+    "parameters": [
+      "conversationId",
+      "title",
+      "metadata"
+    ],
+    "parameterSchema": {
+      "type": "object",
+      "properties": {
+        "conversationId": {
+          "type": "string",
+          "title": "会话 ID",
+          "maxLength": 100
+        },
+        "title": {
+          "type": "string",
+          "title": "会话标题",
+          "maxLength": 120
+        },
+        "metadata": {
+          "type": "object",
+          "title": "会话数据"
+        }
+      },
+      "required": [
+        "conversationId"
+      ],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "title": "会话",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "会话 ID"
+        },
+        "title": {
+          "type": "string",
+          "title": "会话标题"
+        },
+        "metadata": {
+          "type": "object",
+          "title": "会话数据"
+        },
+        "variables": {
+          "type": "object",
+          "title": "会话变量"
+        },
+        "createdAt": {
+          "type": "string",
+          "title": "创建时间"
+        },
+        "updatedAt": {
+          "type": "string",
+          "title": "更新时间"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  {
+    "type": "conversationDelete",
+    "name": "删除会话",
+    "group": "conversation",
+    "description": "删除当前用户的会话及其消息",
+    "executable": true,
+    "inputs": [
+      "main"
+    ],
+    "outputs": [
+      "main"
+    ],
+    "parameters": [
+      "conversationId"
+    ],
+    "parameterSchema": {
+      "type": "object",
+      "properties": {
+        "conversationId": {
+          "type": "string",
+          "title": "会话 ID",
+          "maxLength": 100
+        }
+      },
+      "required": [
+        "conversationId"
+      ],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "deleted": {
+          "type": "boolean",
+          "title": "已删除"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  {
+    "type": "conversationList",
+    "name": "查询会话",
+    "group": "conversation",
+    "description": "分页读取当前用户的会话列表",
+    "executable": true,
+    "inputs": [
+      "main"
+    ],
+    "outputs": [
+      "main"
+    ],
+    "parameters": [
+      "limit",
+      "keyword"
+    ],
+    "parameterSchema": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "integer",
+          "title": "最多返回条数",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 20
+        },
+        "keyword": {
+          "type": "string",
+          "title": "标题关键词"
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "title": "会话列表",
+          "items": {
+            "type": "object",
+            "title": "会话",
+            "properties": {
+              "id": {
+                "type": "string",
+                "title": "会话 ID"
+              },
+              "conversationId": {
+                "type": "string",
+                "title": "会话 ID"
+              },
+              "title": {
+                "type": "string",
+                "title": "会话标题"
+              },
+              "metadata": {
+                "type": "object",
+                "title": "会话数据"
+              },
+              "variables": {
+                "type": "object",
+                "title": "会话变量"
+              },
+              "createdAt": {
+                "type": "string",
+                "title": "创建时间"
+              },
+              "updatedAt": {
+                "type": "string",
+                "title": "更新时间"
+              }
+            },
+            "additionalProperties": true
+          }
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  {
+    "type": "historyRead",
+    "name": "读取历史消息",
+    "group": "conversation",
+    "description": "按时间顺序读取指定会话最近的消息",
+    "executable": true,
+    "inputs": [
+      "main"
+    ],
+    "outputs": [
+      "main"
+    ],
+    "parameters": [
+      "conversationId",
+      "limit"
+    ],
+    "parameterSchema": {
+      "type": "object",
+      "properties": {
+        "conversationId": {
+          "type": "string",
+          "title": "会话 ID",
+          "maxLength": 100
+        },
+        "limit": {
+          "type": "integer",
+          "title": "最多返回条数",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 20
+        }
+      },
+      "required": [
+        "conversationId"
+      ],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "conversationId": {
+          "type": "string",
+          "title": "会话 ID",
+          "maxLength": 100
+        },
+        "messages": {
+          "type": "array",
+          "title": "消息列表",
+          "items": {
+            "type": "object",
+            "title": "消息",
+            "properties": {
+              "id": {
+                "type": "string",
+                "title": "消息 ID"
+              },
+              "role": {
+                "type": "string",
+                "title": "角色"
+              },
+              "content": {
+                "type": "string",
+                "title": "消息内容"
+              },
+              "createdAt": {
+                "type": "string",
+                "title": "创建时间"
+              },
+              "updatedAt": {
+                "type": "string",
+                "title": "更新时间"
+              }
+            },
+            "additionalProperties": true
+          }
+        },
+        "variables": {
+          "type": "object",
+          "title": "会话变量"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  {
+    "type": "historyClear",
+    "name": "清空历史消息",
+    "group": "conversation",
+    "description": "清空当前用户指定会话的消息",
+    "executable": true,
+    "inputs": [
+      "main"
+    ],
+    "outputs": [
+      "main"
+    ],
+    "parameters": [
+      "conversationId"
+    ],
+    "parameterSchema": {
+      "type": "object",
+      "properties": {
+        "conversationId": {
+          "type": "string",
+          "title": "会话 ID",
+          "maxLength": 100
+        }
+      },
+      "required": [
+        "conversationId"
+      ],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "conversationId": {
+          "type": "string",
+          "title": "会话 ID",
+          "maxLength": 100
+        },
+        "cleared": {
+          "type": "boolean",
+          "title": "已清空"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  {
+    "type": "messageCreate",
+    "name": "新增消息",
+    "group": "conversation",
+    "description": "向当前用户会话添加消息",
+    "executable": true,
+    "inputs": [
+      "main"
+    ],
+    "outputs": [
+      "main"
+    ],
+    "parameters": [
+      "conversationId",
+      "role",
+      "content"
+    ],
+    "parameterSchema": {
+      "type": "object",
+      "properties": {
+        "conversationId": {
+          "type": "string",
+          "title": "会话 ID",
+          "maxLength": 100
+        },
+        "role": {
+          "type": "string",
+          "title": "消息角色",
+          "enum": [
+            "user",
+            "assistant"
+          ],
+          "default": "user"
+        },
+        "content": {
+          "type": "string",
+          "title": "消息内容",
+          "maxLength": 16000
+        }
+      },
+      "required": [
+        "conversationId",
+        "content"
+      ],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "conversationId": {
+          "type": "string",
+          "title": "会话 ID",
+          "maxLength": 100
+        },
+        "messageId": {
+          "type": "string",
+          "title": "消息 ID"
+        },
+        "message": {
+          "type": "object",
+          "title": "消息",
+          "properties": {
+            "id": {
+              "type": "string",
+              "title": "消息 ID"
+            },
+            "role": {
+              "type": "string",
+              "title": "角色"
+            },
+            "content": {
+              "type": "string",
+              "title": "消息内容"
+            },
+            "createdAt": {
+              "type": "string",
+              "title": "创建时间"
+            },
+            "updatedAt": {
+              "type": "string",
+              "title": "更新时间"
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  {
+    "type": "messageUpdate",
+    "name": "更新消息",
+    "group": "conversation",
+    "description": "更新当前用户会话中指定消息的内容",
+    "executable": true,
+    "inputs": [
+      "main"
+    ],
+    "outputs": [
+      "main"
+    ],
+    "parameters": [
+      "conversationId",
+      "messageId",
+      "content"
+    ],
+    "parameterSchema": {
+      "type": "object",
+      "properties": {
+        "conversationId": {
+          "type": "string",
+          "title": "会话 ID",
+          "maxLength": 100
+        },
+        "messageId": {
+          "type": "string",
+          "title": "消息 ID"
+        },
+        "content": {
+          "type": "string",
+          "title": "消息内容",
+          "maxLength": 16000
+        }
+      },
+      "required": [
+        "conversationId",
+        "messageId",
+        "content"
+      ],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "object",
+          "title": "消息",
+          "properties": {
+            "id": {
+              "type": "string",
+              "title": "消息 ID"
+            },
+            "role": {
+              "type": "string",
+              "title": "角色"
+            },
+            "content": {
+              "type": "string",
+              "title": "消息内容"
+            },
+            "createdAt": {
+              "type": "string",
+              "title": "创建时间"
+            },
+            "updatedAt": {
+              "type": "string",
+              "title": "更新时间"
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  {
+    "type": "messageDelete",
+    "name": "删除消息",
+    "group": "conversation",
+    "description": "删除当前用户会话中的指定消息",
+    "executable": true,
+    "inputs": [
+      "main"
+    ],
+    "outputs": [
+      "main"
+    ],
+    "parameters": [
+      "conversationId",
+      "messageId"
+    ],
+    "parameterSchema": {
+      "type": "object",
+      "properties": {
+        "conversationId": {
+          "type": "string",
+          "title": "会话 ID",
+          "maxLength": 100
+        },
+        "messageId": {
+          "type": "string",
+          "title": "消息 ID"
+        }
+      },
+      "required": [
+        "conversationId",
+        "messageId"
+      ],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "deleted": {
+          "type": "boolean",
+          "title": "已删除"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  {
+    "type": "messageList",
+    "name": "查询消息",
+    "group": "conversation",
+    "description": "分页查询当前用户指定会话中的消息",
+    "executable": true,
+    "inputs": [
+      "main"
+    ],
+    "outputs": [
+      "main"
+    ],
+    "parameters": [
+      "conversationId",
+      "limit"
+    ],
+    "parameterSchema": {
+      "type": "object",
+      "properties": {
+        "conversationId": {
+          "type": "string",
+          "title": "会话 ID",
+          "maxLength": 100
+        },
+        "limit": {
+          "type": "integer",
+          "title": "最多返回条数",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 20
+        }
+      },
+      "required": [
+        "conversationId"
+      ],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "conversationId": {
+          "type": "string",
+          "title": "会话 ID",
+          "maxLength": 100
+        },
+        "messages": {
+          "type": "array",
+          "title": "消息列表",
+          "items": {
+            "type": "object",
+            "title": "消息",
+            "properties": {
+              "id": {
+                "type": "string",
+                "title": "消息 ID"
+              },
+              "role": {
+                "type": "string",
+                "title": "角色"
+              },
+              "content": {
+                "type": "string",
+                "title": "消息内容"
+              },
+              "createdAt": {
+                "type": "string",
+                "title": "创建时间"
+              },
+              "updatedAt": {
+                "type": "string",
+                "title": "更新时间"
+              }
+            },
+            "additionalProperties": true
+          }
+        },
+        "variables": {
+          "type": "object",
+          "title": "会话变量"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  {
+    "type": "imageProcess",
+    "name": "图片处理",
+    "group": "media",
+    "description": "图片缩放、居中裁剪、格式转换；去背景采用单色背景色键，放大采用普通缩放",
+    "executable": true,
+    "inputs": [
+      "main"
+    ],
+    "outputs": [
+      "main"
+    ],
+    "parameters": [
+      "url",
+      "operation",
+      "width",
+      "height",
+      "format",
+      "color",
+      "similarity"
+    ],
+    "parameterSchema": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string",
+          "title": "图片地址"
+        },
+        "operation": {
+          "type": "string",
+          "title": "处理方式",
+          "enum": [
+            "resize",
+            "crop",
+            "convert",
+            "removeBackground",
+            "upscale"
+          ],
+          "default": "resize"
+        },
+        "width": {
+          "type": "integer",
+          "title": "目标宽度",
+          "minimum": 1,
+          "maximum": 4096
+        },
+        "height": {
+          "type": "integer",
+          "title": "目标高度",
+          "minimum": 1,
+          "maximum": 4096
+        },
+        "format": {
+          "type": "string",
+          "title": "输出格式",
+          "enum": [
+            "png",
+            "jpg",
+            "webp"
+          ],
+          "default": "png"
+        },
+        "color": {
+          "type": "string",
+          "title": "背景颜色",
+          "default": "white"
+        },
+        "similarity": {
+          "type": "number",
+          "title": "背景相似度",
+          "minimum": 0.01,
+          "maximum": 1,
+          "default": 0.1
+        }
+      },
+      "required": [
+        "url",
+        "operation"
+      ],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string",
+          "title": "媒体地址"
+        },
+        "urls": {
+          "type": "array",
+          "title": "媒体地址列表",
+          "items": {
+            "type": "string",
+            "title": "地址"
+          }
+        },
+        "images": {
+          "type": "array",
+          "title": "图片列表",
+          "items": {
+            "type": "object",
+            "title": "图片",
+            "properties": {
+              "url": {
+                "type": "string",
+                "title": "图片地址"
+              }
+            }
+          }
+        },
+        "mimeType": {
+          "type": "string",
+          "title": "媒体类型"
+        },
+        "operation": {
+          "type": "string",
+          "title": "处理方式"
+        },
+        "method": {
+          "type": "string",
+          "title": "处理方法"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  {
+    "type": "videoFrames",
+    "name": "视频抽帧",
+    "group": "media",
+    "description": "从公网视频的指定时间或均匀位置提取最多 10 张图片",
+    "executable": true,
+    "inputs": [
+      "main"
+    ],
+    "outputs": [
+      "main"
+    ],
+    "parameters": [
+      "url",
+      "seconds",
+      "count"
+    ],
+    "parameterSchema": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string",
+          "title": "视频地址"
+        },
+        "seconds": {
+          "type": "array",
+          "title": "时间点（秒）",
+          "items": {
+            "type": "number",
+            "title": "秒",
+            "minimum": 0
+          },
+          "maxItems": 10
+        },
+        "count": {
+          "type": "integer",
+          "title": "抽帧数量",
+          "minimum": 1,
+          "maximum": 10,
+          "default": 5
+        }
+      },
+      "required": [
+        "url"
+      ],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string",
+          "title": "媒体地址"
+        },
+        "urls": {
+          "type": "array",
+          "title": "媒体地址列表",
+          "items": {
+            "type": "string",
+            "title": "地址"
+          }
+        },
+        "images": {
+          "type": "array",
+          "title": "图片列表",
+          "items": {
+            "type": "object",
+            "title": "图片",
+            "properties": {
+              "url": {
+                "type": "string",
+                "title": "图片地址"
+              }
+            }
+          }
+        },
+        "mimeType": {
+          "type": "string",
+          "title": "媒体类型"
+        },
+        "operation": {
+          "type": "string",
+          "title": "处理方式"
+        },
+        "frames": {
+          "type": "array",
+          "title": "视频帧",
+          "items": {
+            "type": "object",
+            "title": "帧",
+            "properties": {
+              "url": {
+                "type": "string",
+                "title": "图片地址"
+              },
+              "second": {
+                "type": "number",
+                "title": "时间点（秒）"
+              }
+            }
+          }
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  {
+    "type": "videoAudio",
+    "name": "提取音频",
+    "group": "media",
+    "description": "提取公网视频中的音轨并保存为可下载音频",
+    "executable": true,
+    "inputs": [
+      "main"
+    ],
+    "outputs": [
+      "main"
+    ],
+    "parameters": [
+      "url"
+    ],
+    "parameterSchema": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string",
+          "title": "视频地址"
+        }
+      },
+      "required": [
+        "url"
+      ],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string",
+          "title": "音频地址"
+        },
+        "audioUrl": {
+          "type": "string",
+          "title": "音频地址"
+        },
+        "mimeType": {
+          "type": "string",
+          "title": "媒体类型"
+        },
+        "operation": {
+          "type": "string",
+          "title": "处理方式"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  {
+    "type": "output",
+    "name": "结束",
+    "group": "output",
+    "description": "返回最终结果，支持映射为指定字段",
+    "executable": true,
+    "inputs": [
+      "main"
+    ],
+    "outputs": [],
+    "parameters": [
+      "outputs",
+      "template"
+    ],
+    "parameterSchema": {
+      "type": "object",
+      "properties": {
+        "outputs": {
+          "type": "object",
+          "title": "命名输出字段"
+        },
+        "template": {
+          "title": "输出值",
+          "description": "支持 JSON 值或完整的 {{input.field}} 变量引用"
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "title": "最终结果",
+          "description": "支持 JSON 值或完整的 {{input.field}} 变量引用"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  {
+    "type": "response",
+    "name": "结束",
+    "group": "output",
+    "description": "兼容历史工作流的最终输出节点",
+    "executable": true,
+    "inputs": [
+      "main"
+    ],
+    "outputs": [],
+    "parameters": [
+      "outputs",
+      "template"
+    ],
+    "parameterSchema": {
+      "type": "object",
+      "properties": {
+        "outputs": {
+          "type": "object",
+          "title": "命名输出字段"
+        },
+        "template": {
+          "title": "输出值",
+          "description": "支持 JSON 值或完整的 {{input.field}} 变量引用"
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "title": "最终结果",
+          "description": "支持 JSON 值或完整的 {{input.field}} 变量引用"
+        }
+      },
+      "additionalProperties": true
+    }
+  }
+]

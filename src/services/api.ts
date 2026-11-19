@@ -22,6 +22,7 @@ import type {
   WorkflowEdge,
   WorkflowInput,
   WorkflowValidation,
+  WorkflowResources,
 } from '../types/workflow';
 
 const apiClient = axios.create({
@@ -100,6 +101,8 @@ function normalizeDefinitionNode(
       y: number(position.y) ?? 180,
     },
     parameters: node.parameters ? asRecord(node.parameters) : undefined,
+    inputMapping: node.inputMapping ? asRecord(node.inputMapping) : undefined,
+    outputMapping: node.outputMapping ? Object.fromEntries(Object.entries(asRecord(node.outputMapping)).filter((entry): entry is [string, string] => typeof entry[1] === 'string')) : undefined,
     config: node.config ? asRecord(node.config) : undefined,
     data: node.data
       ? {
@@ -292,6 +295,7 @@ export const aiWorkflowAPI = {
     apiClient
       .get<ApiEnvelope<Record<string, unknown>>>('/api/aiWorkflow/features')
       .then(unwrap),
+  getResources: (options: RequestOptions = {}) => apiClient.get<ApiEnvelope<WorkflowResources>>('/api/aiWorkflow/resources', { signal: options.signal }).then(unwrap),
   getModels: () =>
     apiClient
       .get<ApiEnvelope<unknown>>('/api/aiWorkflow/models')

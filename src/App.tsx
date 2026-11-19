@@ -3,6 +3,7 @@ import type { IconType } from 'react-icons';
 import type { Execution } from './types/workflow';
 import AgentsPage from './pages/Agents/AgentsPage';
 import AgentStudio from './pages/Agents/AgentStudio';
+import CustomAgentEditor from './pages/CustomAgents/CustomAgentEditor';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   BrowserRouter as Router,
@@ -60,7 +61,7 @@ export function TemplateCards() {
   return (
     <div className="template-grid">
       {WORKFLOW_TEMPLATES.map((template, index) => {
-        const Icon = TEMPLATE_ICONS[index];
+        const Icon = TEMPLATE_ICONS[index] || FiGitBranch;
         return (
           <button
             key={template.id}
@@ -75,7 +76,7 @@ export function TemplateCards() {
             </span>
             <strong>{template.name}</strong>
             <p>{template.description}</p>
-            <small>03 NODES · FLASH</small>
+            <small>{template.nodes?.length || 0} 个节点</small>
           </button>
         );
       })}
@@ -619,6 +620,8 @@ export default function App() {
             <Route path="/executions/:id" element={<RecordDetail />} />
             <Route path="/credits" element={<WorkflowCreditsPage />} />
             <Route path="/agents" element={<AgentsPage />} />
+            <Route path="/agents/custom/new" element={<CustomAgentEditor />} />
+            <Route path="/agents/custom/:id" element={<CustomAgentEditor />} />
             <Route path="/agents/:id" element={<AgentStudio />} />
             <Route path="/workflows" element={<WorkflowList />} />
             <Route path="/workflows/:id/edit" element={<WorkflowEditor />} />

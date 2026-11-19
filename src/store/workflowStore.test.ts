@@ -1,4 +1,5 @@
 import useWorkflowStore from './workflowStore';
+import { createBlankWorkflow } from '../constants/workflowTemplates';
 
 const node = (id = 'node-1') => ({
   id,
@@ -113,4 +114,24 @@ test('加载工作流重建历史与来源，重复同步不发出新状态', ()
   state().applyNodeChanges([]);
   expect(listener).not.toHaveBeenCalled();
   dispose();
+});
+test('默认开始结束不能被按钮或键盘删除，历史普通节点仍可删除', () => {
+  const blank = createBlankWorkflow();
+  useWorkflowStore.getState().loadWorkflow({ ...blank, nodes: blank.nodes!.map(node => ({ ...node, type: 'custom', data: { type: node.type, config: node.parameters || {} } })) });
+  useWorkflowStore.getState().deleteNode('workflow-start');
+  useWorkflowStore.getState().applyNodeChanges([{ type: 'remove', id: 'workflow-end' }]);
+  expect(useWorkflowStore.getState().nodes).toHaveLength(2);
+  expect(useWorkflowStore.getState().edges).toHaveLength(1);
+  useWorkflowStore.getState().clearCanvas();
+  expect(useWorkflowStore.getState().nodes).toHaveLength(2);
+});
+
+test('修改选择器分支会清理失效连线，撤销恢复原分支；运行状态不污染草稿', () => {
+  state().loadWorkflow({ nodes: [{ ...node('switch'), data: { type: 'selector', config: { cases: [{ id: 'sales', value: '售前' }] } } }, node('next')], edges: [{ id: 'edge', source: 'switch', target: 'next', sourceHandle: 'sales', targetHandle: 'main' }] });
+  state().setExecutionStatuses({ switch: 'success' });
+  expect(state().isDirty).toBe(false);
+  state().updateNode('switch', { data: { config: { cases: [{ id: 'support', value: '售后' }] } } });
+  expect(state().edges).toHaveLength(0);
+  state().undo();
+  expect(state().edges[0].sourceHandle).toBe('sales');
 });

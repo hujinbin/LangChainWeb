@@ -252,3 +252,8 @@
     padding: 11px;
   }
 }
+.result-node.skipped { opacity: .65; }
+.result-node .badge.skipped { background: #f0f2ec; color: #899280; }
+.result-node-output audio { width: 100%; margin: 12px 0; }
+.result-child-tasks { display: flex; flex-wrap: wrap; gap: 12px; margin: 12px 0; }
+.result-skip-hint { color: var(--text-secondary); font-size: 12px; }

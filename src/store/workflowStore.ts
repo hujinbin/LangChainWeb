@@ -9,6 +9,7 @@ import type {
 } from '../types/workflow';
 
 import { create } from 'zustand';
+import { isBaseNode, nodePorts } from '../utils/workflowNodes';
 import {
   applyNodeChanges as applyFlowNodeChanges,
   applyEdgeChanges as applyFlowEdgeChanges,
@@ -37,6 +38,8 @@ export interface WorkflowStore extends GraphSnapshot {
   workflows: Workflow[];
   workflowSource: WorkflowSource;
   selectedNode: WorkflowNode | null;
+  executionStatuses: Record<string, string>;
+  setExecutionStatuses: (statuses: Record<string, string>) => void;
   isNodePanelOpen: boolean;
   isConfigPanelOpen: boolean;
   history: GraphSnapshot[];
@@ -193,6 +196,8 @@ const useWorkflowStore = create<WorkflowStore>((set, get) => ({
   nodes: [],
   edges: [],
   selectedNode: null,
+  executionStatuses: {},
+  setExecutionStatuses: (executionStatuses) => set({ executionStatuses }),
   isNodePanelOpen: true,
   isConfigPanelOpen: false,
   history: [emptyGraph()],
@@ -260,9 +265,8 @@ const useWorkflowStore = create<WorkflowStore>((set, get) => ({
   addNode: (node) =>
     set((state) => changeGraph(state, { nodes: [...state.nodes, copy(node)] })),
   updateNode: (id, updates) =>
-    set((state) =>
-      changeGraph(state, {
-        nodes: state.nodes.map((node) => {
+    set((state) => {
+      const nodes = state.nodes.map((node) => {
           if (node.id !== id) return node;
           const patch = typeof updates === 'function' ? updates(node) : updates;
           return {
@@ -270,12 +274,14 @@ const useWorkflowStore = create<WorkflowStore>((set, get) => ({
             ...patch,
             data: patch.data ? { ...node.data, ...patch.data } : node.data,
           };
-        }),
-      })
-    ),
+        });
+      const updated = nodes.find(node => node.id === id);
+      const ports = updated ? nodePorts(updated.data, 'outputs').map(port => port.name) : [];
+      return changeGraph(state, { nodes, edges: state.edges.filter(edge => edge.source !== id || !edge.sourceHandle || ports.includes(edge.sourceHandle)) });
+    }),
   deleteNode: (id) =>
     set((state) =>
-      changeGraph(state, {
+      state.nodes.some(node => node.id === id && isBaseNode(node)) ? state : changeGraph(state, {
         nodes: state.nodes.filter((node) => node.id !== id),
         edges: state.edges.filter(
           (edge) => edge.source !== id && edge.target !== id
@@ -306,6 +312,7 @@ const useWorkflowStore = create<WorkflowStore>((set, get) => ({
 
   applyNodeChanges: (changes) =>
     set((state) => {
+      changes = changes.filter(change => change.type !== 'remove' || !state.nodes.some(node => node.id === change.id && isBaseNode(node)));
       const nodes: WorkflowNode[] = applyFlowNodeChanges(
         changes,
         state.nodes
@@ -362,10 +369,15 @@ const useWorkflowStore = create<WorkflowStore>((set, get) => ({
         !state.isConfigPanelOpen && Boolean(state.selectedNode),
     })),
   clearCanvas: () =>
-    set((state) => changeGraph(state, emptyGraph(), { clearSelection: true })),
+    set((state) => {
+      const nodes = state.nodes.filter(isBaseNode);
+      const edges = nodes.length === 2 ? [{ id: 'start-end', source: 'workflow-start', target: 'workflow-end', sourceHandle: 'main', targetHandle: 'main' }] : [];
+      return changeGraph(state, { nodes, edges }, { clearSelection: true });
+    }),
   loadWorkflow: (workflow, options = {}) => {
     if (!workflow) return;
     set((state) => ({
+      executionStatuses: {},
       ...changeGraph(
         state,
         {

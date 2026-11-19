@@ -1,19 +1,9 @@
-import type { IconType } from 'react-icons';
 import type { NodeTypeMetadata } from '../../types/workflow';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   FiSearch,
   FiChevronDown,
   FiPlus,
-  FiType,
-  FiImage,
-  FiVideo,
-  FiPlay,
-  FiGlobe,
-  FiDatabase,
-  FiGitBranch,
-  FiArrowUpRight,
-  FiBox,
   FiX,
 } from 'react-icons/fi';
 import { nodeAPI } from '../../services/api';
@@ -21,25 +11,16 @@ import { CATEGORY_LABELS } from '../../constants';
 import { DEFAULT_NODE_TYPES } from '../../constants/nodeTypes';
 import useWorkflowStore from '../../store/workflowStore';
 import './NodePanel.css';
-
-const icons: Record<string, IconType> = {
-  manualTrigger: FiPlay,
-  webhookTrigger: FiGlobe,
-  llm: FiType,
-  imageGeneration: FiImage,
-  videoGeneration: FiVideo,
-  knowledgeRetrieval: FiDatabase,
-  httpRequest: FiGlobe,
-  condition: FiGitBranch,
-  response: FiArrowUpRight,
-};
-const previewTypes = new Set(['httpRequest', 'condition']);
+import { getNodeIcon } from '../../constants/nodeIcons';
 const categoryOrder = [
   'trigger',
   'ai',
   'output',
   'integration',
   'logic',
+  'data',
+  'media',
+  'conversation',
   'other',
 ];
 
@@ -52,6 +33,7 @@ const NodePanel = ({
 }) => {
   const [nodeTypes, setNodeTypes] = useState(DEFAULT_NODE_TYPES);
   const [searchTerm, setSearchTerm] = useState('');
+  const [activeCategory, setActiveCategory] = useState('all');
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [source, setSource] = useState('loading');
   const toggleNodePanel = useWorkflowStore((state) => state.toggleNodePanel);
@@ -76,25 +58,26 @@ const NodePanel = ({
 
   const categories = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
-    return categoryOrder
+    return [...new Set([...categoryOrder, ...nodeTypes.map(node => node.category || 'other')])]
       .map((category) => ({
         category,
         nodes: nodeTypes
           .filter(
             (node) =>
               (node.category || 'other') === category &&
-              `${node.name} ${node.description || ''} ${node.type}`
+              (activeCategory === 'all' || activeCategory === category) &&
+              `${node.name} ${node.description || ''} ${node.type} ${CATEGORY_LABELS[category] || ''} ${(node.keywords || []).join(' ')}`
                 .toLowerCase()
                 .includes(query)
           )
           .sort(
             (left, right) =>
-              Number(left.previewOnly || previewTypes.has(left.type)) -
-              Number(right.previewOnly || previewTypes.has(right.type))
+              Number(left.previewOnly || left.executable === false) -
+              Number(right.previewOnly || right.executable === false)
           ),
       }))
       .filter((group) => group.nodes.length);
-  }, [nodeTypes, searchTerm]);
+  }, [nodeTypes, searchTerm, activeCategory]);
 
   const startDrag = (event: React.DragEvent<HTMLButtonElement>, node: NodeTypeMetadata) => {
     if (disabled) {
@@ -131,6 +114,10 @@ const NodePanel = ({
           aria-label="搜索节点"
         />
       </label>
+      <div className="node-library-filters" aria-label="节点分类">
+        <button aria-pressed={activeCategory === 'all'} onClick={() => setActiveCategory('all')}>全部能力</button>
+        {categoryOrder.filter(category => nodeTypes.some(node => node.category === category)).map(category => <button key={category} aria-pressed={activeCategory === category} onClick={() => setActiveCategory(category)}>{CATEGORY_LABELS[category] || category}</button>)}
+      </div>
       <div className="node-library-groups">
         {categories.map(({ category, nodes }) => (
           <section className="node-library-group" key={category}>
@@ -150,13 +137,12 @@ const NodePanel = ({
               <span>{CATEGORY_LABELS[category] || category}</span>
               <small>{nodes.length}</small>
             </button>
-            {!collapsed[category] &&
+            {(!collapsed[category] || Boolean(searchTerm.trim())) &&
               nodes.map((node) => {
-                const Icon = icons[node.type] || FiBox;
+                const Icon = getNodeIcon(node.type, node.category);
                 const preview =
                   node.previewOnly ||
-                  node.executable === false ||
-                  previewTypes.has(node.type);
+                  node.executable === false;
                 return (
                   <button
                     key={node.type}
@@ -168,7 +154,7 @@ const NodePanel = ({
                     onClick={() => onAddNode?.(node)}
                     title={node.description}
                   >
-                    <span className="node-library-item-icon">
+                    <span className={`node-library-item-icon category-${node.category}`}>
                       <Icon />
                     </span>
                     <span className="node-library-item-content">

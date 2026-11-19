@@ -3,6 +3,9 @@ export const NODE_CATEGORIES = {
   AI: 'ai',
   INTEGRATION: 'integration',
   LOGIC: 'logic',
+  DATA: 'data',
+  MEDIA: 'media',
+  CONVERSATION: 'conversation',
   OUTPUT: 'output',
   OTHER: 'other',
 };
@@ -12,6 +15,9 @@ export const CATEGORY_LABELS: Record<string, string> = {
   [NODE_CATEGORIES.AI]: 'AI 能力',
   [NODE_CATEGORIES.INTEGRATION]: '外部集成',
   [NODE_CATEGORIES.LOGIC]: '流程控制',
+  [NODE_CATEGORIES.DATA]: '数据与变量',
+  [NODE_CATEGORIES.MEDIA]: '图像与视频',
+  [NODE_CATEGORIES.CONVERSATION]: '会话与消息',
   [NODE_CATEGORIES.OUTPUT]: '输出',
   [NODE_CATEGORIES.OTHER]: '其他',
 };
@@ -21,6 +27,9 @@ export const CATEGORY_COLORS: Record<string, string> = {
   [NODE_CATEGORIES.AI]: '#2563eb',
   [NODE_CATEGORIES.INTEGRATION]: '#0891b2',
   [NODE_CATEGORIES.LOGIC]: '#d97706',
+  [NODE_CATEGORIES.DATA]: '#0f766e',
+  [NODE_CATEGORIES.MEDIA]: '#b45309',
+  [NODE_CATEGORIES.CONVERSATION]: '#7c3aed',
   [NODE_CATEGORIES.OUTPUT]: '#7c3aed',
   [NODE_CATEGORIES.OTHER]: '#64748b',
 };
