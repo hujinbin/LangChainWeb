@@ -12,9 +12,20 @@
 .credit-account-detail strong { display: block; margin-top: 21px; font-size: 30px; font-weight: 500; overflow-wrap: anywhere; }
 .credit-account-detail small { display: block; font-size: 10px; color: #8e9a86; margin-top: 8px; }
 .credit-account-detail p { grid-column: 1 / -1; border-top: 1px solid #e8eee0; padding-top: 17px; margin: 0; font-size: 11px; color: #8a977e; line-height: 1.8; }
+.credit-account-detail .credit-recharge { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; border-top: 1px solid #e8eee0; padding-top: 17px; }
+.credit-account-detail .credit-recharge p { flex: 1; min-width: 200px; border: 0; padding: 0; margin: 0; }
 .credit-rules-section,
 .credit-plan-section { margin-top: 34px; }
 .credit-rule-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.credit-redeem-card { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-top: 20px; padding: 20px 25px; }
+.credit-redeem-copy { display: flex; align-items: center; gap: 14px; }
+.credit-redeem-copy h2 { margin: 0 0 5px; font-size: 15px; }
+.credit-redeem-copy p { margin: 0; font-size: 11px; color: #8a977e; }
+.credit-redeem-form { display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex: 1; min-width: 260px; }
+.credit-redeem-input { width: 190px; height: 38px; padding: 0 12px; font-family: Consolas, Monaco, monospace; font-size: 13px; letter-spacing: 1px; text-transform: uppercase; color: #23372e; background: #f7f9f3; border: 1px solid #dfe7d4; border-radius: 8px; }
+.credit-redeem-input:focus { outline: none; border-color: #7ba368; background: #fff; }
+.credit-redeem-input:disabled { opacity: .6; }
+.credit-redeem-notice { width: 100%; margin: 0; }
 .credit-rule-card { padding: 25px; }
 .credit-rule-icon { display: grid; place-items: center; width: 35px; height: 35px; border-radius: 9px; background: #edf4df; color: #647b47; font-size: 17px; }
 .credit-rule-card h3 { font-size: 13px; margin: 16px 0 14px; }
@@ -47,6 +58,13 @@
 .credit-ledger-table a { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; margin-top: 8px; }
 .credit-positive { color: #23775b; }
 .credit-loading { color: #87967c; font-size: 11px; }
+.credit-service-backdrop { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 24px; background: #122c2760; backdrop-filter: blur(4px); }
+.credit-service-dialog { position: relative; width: 330px; max-width: 100%; max-height: calc(100dvh - 48px); overflow: auto; padding: 24px 22px 20px; text-align: center; background: #fff; border: 1px solid #dde6d5; border-radius: 18px; box-shadow: 0 24px 100px #12352230; }
+.credit-service-dialog h2 { margin: 0 0 8px; font-size: 18px; }
+.credit-service-dialog p { margin: 0 0 14px; font-size: 11px; line-height: 1.8; color: #718079; }
+.credit-service-qr { display: block; width: 210px; max-width: 100%; height: auto; margin: 0 auto; border-radius: 12px; }
+.credit-service-dialog .credit-service-tip { margin: 12px 0 0; font-size: 10px; color: #9aa79f; }
+.credit-service-close { position: absolute; top: 10px; right: 10px; }
 @media (max-width: 800px) {
   .credit-account-grid { grid-template-columns: 1fr; }
   .credit-plan-card { padding: 20px; }
@@ -59,6 +77,9 @@
   .credit-account-detail { padding: 22px; }
   .credit-account-detail strong { font-size: 25px; }
   .credit-ledger { padding: 17px; }
+  .credit-redeem-card { padding: 18px; }
+  .credit-redeem-form { min-width: 0; width: 100%; justify-content: flex-start; flex-wrap: wrap; }
+  .credit-redeem-input { flex: 1; width: auto; min-width: 0; }
   .credit-ledger-table { min-width: 0; }
   .credit-ledger-table thead { display: none; }
   .credit-ledger-table tbody { display: grid; gap: 12px; }

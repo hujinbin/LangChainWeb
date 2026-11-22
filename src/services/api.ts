@@ -8,7 +8,9 @@ import {
 import { WORKFLOW_TIMEOUT } from '../constants';
 import { asRecord, normalizeError } from '../types/api';
 import type { ApiEnvelope, ApiError, ErrorData } from '../types/api';
-import type { WorkflowBilling, WorkflowCredits, WorkflowCreditLedger } from '../types/credits';
+import type { WorkflowBilling, WorkflowCredits, WorkflowCreditLedger, WorkflowCreditRedeemResult } from '../types/credits';
+import { normalizeUserProfile } from '../types/user';
+import type { UserProfile } from '../types/user';
 import type {
   Execution,
   GenerateWorkflowRequest,
@@ -291,6 +293,10 @@ export const aiWorkflowAPI = {
     apiClient
       .get<ApiEnvelope<WorkflowCreditLedger>>('/api/aiWorkflow/credits/ledger', { params, signal: options.signal })
       .then(unwrap),
+  redeemCredit: (code: string) =>
+    apiClient
+      .post<ApiEnvelope<WorkflowCreditRedeemResult>>('/api/aiWorkflow/credits/redeem', { code })
+      .then(unwrap),
   getFeatures: () =>
     apiClient
       .get<ApiEnvelope<Record<string, unknown>>>('/api/aiWorkflow/features')
@@ -426,6 +432,42 @@ export const aiWorkflowAPI = {
           data: normalizeExecution(payload.data),
         })
       ),
+};
+
+export const userAPI = {
+  info: () =>
+    apiClient
+      .get<ApiEnvelope<unknown>>('/api/user/getUserInfo')
+      .then(unwrap)
+      .then(
+        (payload): ApiEnvelope<UserProfile> => ({
+          ...payload,
+          data: normalizeUserProfile(payload.data),
+        })
+      ),
+  update: (data: { nickname?: string; headImg?: string }) =>
+    apiClient
+      .post<ApiEnvelope<unknown>>('/api/user/editUserInfo', data)
+      .then(unwrap)
+      .then(
+        (payload): ApiEnvelope<UserProfile> => ({
+          ...payload,
+          data: normalizeUserProfile(payload.data),
+        })
+      ),
+  changePassword: (data: { password?: string; newPassword: string }) =>
+    apiClient
+      .post<ApiEnvelope<null>>('/api/user/changePassword', data)
+      .then(unwrap),
+  uploadImage: (file: File) => {
+    const form = new FormData();
+    form.append('file', file);
+    return apiClient
+      .post<ApiEnvelope<string>>('/api/common/uploadFile', form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      .then(unwrap);
+  },
 };
 
 export const workflowAPI = {

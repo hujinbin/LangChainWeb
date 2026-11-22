@@ -8,6 +8,7 @@ export const SITE = {
     '织流 AI（ZhiFlow）是一款 AI 工作流可视化编排工具，支持节点拖拽、自然语言生成工作流、文本、图片与视频模型配置及执行结果查看。访客可保存本地草稿，登录后可同步并运行工作流。',
   themeColor: '#174d3c',
   image: 'https://langchain.leheavengame.com/social-preview.png',
+  qqGroup: '749076211',
 };
 
 export function getPageMetadata(pathname: string) {
@@ -25,6 +26,10 @@ export function getPageMetadata(pathname: string) {
   else if (/^\/workflows\/[^/]+\/edit$/.test(path)) label = '工作流编辑器';
   else if (path === '/executions') label = '执行记录';
   else if (path === '/credits') label = '工作流积分';
+  else if (path === '/profile') label = '个人主页';
+  else if (path === '/settings') label = '设置';
+  else if (path === '/achievements') label = '成就计划';
+  else if (path === '/help') label = '帮助中心';
   else if (/^\/executions\/[^/]+$/.test(path)) label = '执行详情';
   else if (path === '/knowledge') label = '知识库';
   else if (/^\/knowledge\/[^/]+$/.test(path)) label = '知识库详情';

@@ -86,12 +86,6 @@
   font-size: 12px;
   min-width: 0;
 }
-.nav-user-name {
-  max-width: 120px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 .nav-credit-link {
   display: inline-flex;
   align-items: center;
@@ -101,15 +95,6 @@
   font-size: 11px;
 }
 .execution-row .billing-inline { margin-top: 5px; }
-.nav-avatar {
-  display: grid;
-  place-items: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: #eff3e7;
-  color: #406344;
-}
 .nav-guest {
   color: #8b978e;
 }
@@ -809,9 +794,13 @@
     font-size: 11px;
   }
   .nav-link svg,
-  .nav-avatar,
-  .nav-user-name {
+  .user-menu-name {
     display: none;
+  }
+  .user-menu-trigger {
+    gap: 4px;
+    max-width: 66px;
+    padding-right: 6px;
   }
   .nav-user {
     gap: 4px;

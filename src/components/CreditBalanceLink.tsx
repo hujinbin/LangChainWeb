@@ -5,7 +5,13 @@ import { aiWorkflowAPI, WORKFLOW_CREDITS_CHANGED } from '../services/api';
 import useAuthStore from '../store/authStore';
 import { formatPoints } from './BillingUsage/BillingUsage';
 
-export default function CreditBalanceLink({ refreshKey }: { refreshKey?: string | boolean }) {
+export default function CreditBalanceLink({
+  refreshKey,
+  className = 'editor-credit-link',
+}: {
+  refreshKey?: string | boolean;
+  className?: string;
+}) {
   const { isLoggedIn, token } = useAuthStore();
   const [balance, setBalance] = useState<number | null>(null);
   const [failed, setFailed] = useState(false);
@@ -32,9 +38,15 @@ export default function CreditBalanceLink({ refreshKey }: { refreshKey?: string 
     return () => controller.abort();
   }, [isLoggedIn, token, refreshKey, revision]);
   return (
-    <Link to="/credits" className="editor-credit-link" title="查看工作流积分余额与计费规则">
+    <Link to="/credits" className={className} title="查看工作流积分余额与计费规则">
       <FiCreditCard />
-      {isLoggedIn ? balance !== null ? `${formatPoints(balance)} 积分` : failed ? '查看积分' : '积分读取中…' : '积分规则'}
+      {isLoggedIn
+        ? balance !== null
+          ? `${formatPoints(balance)} 积分`
+          : failed
+            ? '查看积分'
+            : '积分读取中…'
+        : '积分规则'}
     </Link>
   );
 }

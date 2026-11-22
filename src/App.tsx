@@ -28,10 +28,8 @@ import {
   FiActivity,
   FiArrowLeft,
   FiRefreshCw,
-  FiLogOut,
   FiDatabase,
   FiCpu,
-  FiCreditCard,
 } from 'react-icons/fi';
 import WorkflowList from './pages/WorkflowList/WorkflowList';
 import WorkflowEditor from './pages/WorkflowEditor/WorkflowEditor';
@@ -47,6 +45,12 @@ import localStorageService from './services/localStorage';
 import { WORKFLOW_TEMPLATES } from './constants/workflowTemplates';
 import { SITE } from './config/site';
 import PageMetadata from './components/PageMetadata';
+import CreditBalanceLink from './components/CreditBalanceLink';
+import UserMenu from './components/UserMenu/UserMenu';
+import Profile from './pages/UserCenter/Profile';
+import Settings from './pages/UserCenter/Settings';
+import Achievements from './pages/UserCenter/Achievements';
+import HelpCenter from './pages/HelpCenter/HelpCenter';
 import './App.css';
 
 export const STATUS_LABELS: Record<string, string> = {
@@ -543,8 +547,7 @@ function RecordDetail() {
 }
 
 function Navigation() {
-  const { user, isLoggedIn, logout } = useAuthStore();
-  const navigate = useNavigate();
+  const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
   return (
     <nav className="app-nav" aria-label="主导航">
       <Link to="/" className="nav-brand" aria-label={SITE.name}>
@@ -572,27 +575,9 @@ function Navigation() {
         </NavLink>
       </div>
       <div className="nav-user">
-        <Link to="/credits" className="nav-credit-link" aria-label="工作流积分"><FiCreditCard /><span>积分</span></Link>
+        <CreditBalanceLink className="nav-credit-link" />
         {isLoggedIn ? (
-          <>
-            <span className="nav-avatar">
-              {(user?.nickname || 'U').slice(0, 1)}
-            </span>
-            <span className="nav-user-name">
-              {user?.nickname || user?.mobile || '用户'}
-            </span>
-            <button
-              className="btn-icon"
-              aria-label="退出登录"
-              title="退出登录"
-              onClick={() => {
-                logout();
-                navigate('/login');
-              }}
-            >
-              <FiLogOut />
-            </button>
-          </>
+          <UserMenu />
         ) : (
           <>
             <span className="nav-guest">访客空间</span>
@@ -619,6 +604,10 @@ export default function App() {
             <Route path="/executions" element={<ExecutionList />} />
             <Route path="/executions/:id" element={<RecordDetail />} />
             <Route path="/credits" element={<WorkflowCreditsPage />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/achievements" element={<Achievements />} />
+            <Route path="/help" element={<HelpCenter />} />
             <Route path="/agents" element={<AgentsPage />} />
             <Route path="/agents/custom/new" element={<CustomAgentEditor />} />
             <Route path="/agents/custom/:id" element={<CustomAgentEditor />} />

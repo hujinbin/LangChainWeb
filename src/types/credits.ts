@@ -56,3 +56,10 @@ export interface WorkflowCreditLedger {
   page: number;
   pageSize: number;
 }
+
+export interface WorkflowCreditRedeemResult {
+  code: string;
+  points: number;
+  account: WorkflowCreditAccount;
+  alreadyProcessed: boolean;
+}

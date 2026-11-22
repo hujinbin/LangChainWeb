@@ -1,0 +1,462 @@
+/* 深色主题：通过 html[data-theme='dark'] 覆盖，浅色模式完全不受影响。 */
+html[data-theme='dark'] {
+  color-scheme: dark;
+  --color-primary: #8cc9a9;
+  --text-primary: #e7efe9;
+  --text-secondary: #a3b3a8;
+  --bg-primary: #0f1714;
+  --border-color: #2a3a32;
+  --lime: #d8ef8b;
+  --surface: #17231e;
+  --danger: #e58c81;
+}
+html[data-theme='dark'] body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+html[data-theme='dark'] ::selection {
+  background: #3c6b4f;
+  color: #f2f9ee;
+}
+html[data-theme='dark'] ::-webkit-scrollbar-thumb {
+  background: #33463b;
+}
+html[data-theme='dark'] input,
+html[data-theme='dark'] textarea,
+html[data-theme='dark'] select {
+  background-color: #101a15;
+  color: var(--text-primary);
+  border-color: #2c3d34;
+}
+html[data-theme='dark'] input::placeholder,
+html[data-theme='dark'] textarea::placeholder {
+  color: #7f9188;
+}
+html[data-theme='dark'] :focus-visible {
+  outline-color: #6fa985;
+}
+
+/* 顶部导航 */
+html[data-theme='dark'] .app-nav {
+  background: #121c18;
+  border-bottom-color: var(--border-color);
+}
+html[data-theme='dark'] .nav-brand {
+  color: var(--text-primary);
+}
+html[data-theme='dark'] .nav-brand small {
+  border-left-color: #2e4037;
+  color: var(--text-secondary);
+}
+html[data-theme='dark'] .brand-mark {
+  background: #1c4a3b;
+}
+html[data-theme='dark'] .nav-link {
+  color: var(--text-secondary);
+}
+html[data-theme='dark'] .nav-link.active {
+  color: #a6e0c1;
+}
+html[data-theme='dark'] .nav-link.active::after {
+  background: #58b58d;
+}
+html[data-theme='dark'] .nav-credit-link {
+  color: #a9cfb8;
+}
+html[data-theme='dark'] .nav-guest {
+  color: #8fa196;
+}
+
+/* 通用组件 */
+html[data-theme='dark'] .surface {
+  background: var(--surface);
+  border-color: var(--border-color);
+}
+html[data-theme='dark'] .btn-default {
+  background: #1b2922;
+  border-color: #2e4037;
+  color: #d7e5db;
+}
+html[data-theme='dark'] .btn-default:hover:not(:disabled) {
+  background: #23352b;
+  border-color: #3a4d42;
+}
+html[data-theme='dark'] .btn-primary,
+html[data-theme='dark'] .btn-success {
+  background: #2e8a69;
+  border-color: #2e8a69;
+  color: #f2f9f4;
+}
+html[data-theme='dark'] .btn-primary:hover:not(:disabled),
+html[data-theme='dark'] .btn-success:hover:not(:disabled) {
+  background: #25906c;
+  border-color: #25906c;
+}
+html[data-theme='dark'] .btn-icon {
+  color: #a3b3a8;
+}
+html[data-theme='dark'] .btn-icon:hover {
+  color: #cdebd9;
+  background: #22332a;
+}
+html[data-theme='dark'] .btn-icon.btn-danger:hover {
+  color: var(--danger);
+  background: #3a2320;
+}
+html[data-theme='dark'] .text-action {
+  color: #8cc9a9;
+}
+html[data-theme='dark'] .page-heading p,
+html[data-theme='dark'] .eyebrow,
+html[data-theme='dark'] .section-heading p,
+html[data-theme='dark'] .section-caption {
+  color: var(--text-secondary);
+}
+html[data-theme='dark'] .notice {
+  background: #1e3328;
+  border-color: #2c4636;
+  color: #b6d3bd;
+}
+html[data-theme='dark'] .notice.error {
+  background: #3a2320;
+  border-color: #553128;
+  color: #e8a99f;
+}
+html[data-theme='dark'] .badge {
+  background: #24332b;
+  color: #a9b9ae;
+}
+html[data-theme='dark'] .badge.success,
+html[data-theme='dark'] .badge.published {
+  background: #1f3a2c;
+  color: #9fd8b8;
+}
+html[data-theme='dark'] .badge.failed {
+  background: #3a2420;
+  color: #eba79d;
+}
+html[data-theme='dark'] .badge.running {
+  background: #3a3020;
+  color: #e0c283;
+}
+html[data-theme='dark'] .badge.simulated {
+  background: #33301f;
+  color: #d3c48f;
+}
+html[data-theme='dark'] .badge.draft {
+  background: #26302a;
+  color: #a7b5a9;
+}
+html[data-theme='dark'] .empty-state-icon {
+  background: #21332a;
+  border-color: #2c4436;
+  color: #9dc17f;
+}
+html[data-theme='dark'] .empty-state p,
+html[data-theme='dark'] .loading-state {
+  color: var(--text-secondary);
+}
+html[data-theme='dark'] .pagination,
+html[data-theme='dark'] .record-back {
+  color: var(--text-secondary);
+}
+
+/* 正向内容统一使用浅色文字，避免页面内硬编码的深色文字在暗色下不可读 */
+html[data-theme='dark'] .app-content h1,
+html[data-theme='dark'] .app-content h2,
+html[data-theme='dark'] .app-content h3,
+html[data-theme='dark'] .app-content h4,
+html[data-theme='dark'] .app-content h5,
+html[data-theme='dark'] .app-content strong,
+html[data-theme='dark'] .app-content legend,
+html[data-theme='dark'] .app-content dd {
+  color: var(--text-primary);
+}
+html[data-theme='dark'] .app-content p,
+html[data-theme='dark'] .app-content small,
+html[data-theme='dark'] .app-content label,
+html[data-theme='dark'] .app-content dt,
+html[data-theme='dark'] .app-content th {
+  color: var(--text-secondary);
+}
+
+/* 亮色面：卡片、面板、输入区 */
+html[data-theme='dark'] .app-content :is(
+  .btn-default:hover:not(:disabled),
+  .studio-stat svg,
+  .execution-row:hover,
+  .model-capability-icon,
+  .billing-usage,
+  .result-node > summary,
+  .result-node-index,
+  .result-images img,
+  .result-video-task,
+  .result-json pre,
+  .node-library-search,
+  .node-library-item,
+  .node-library-item:hover:not(:disabled),
+  .node-library-item-icon,
+  .node-library-item.preview-item .node-library-item-icon,
+  .node-library-footer,
+  .assistant-composer textarea,
+  .assistant-options select,
+  .workflow-resource-list > div.active,
+  .workflow-resource-result pre,
+  .agent-art-cloud:before,
+  .agent-tags span,
+  .agent-empty,
+  .agent-conversation p,
+  .agent-conversation p.user,
+  .agent-workspace,
+  .kb-mode,
+  .kb-status,
+  .kb-score,
+  .kb-segmented,
+  .kb-upload,
+  .kb-chunk,
+  .kb-chunk-highlight,
+  .uc-info-grid div,
+  .uc-achievement-icon,
+  .credit-size-rates > span,
+  .credit-ledger-table th,
+  .workflow-card-icon,
+  .workflow-card-nodes span,
+  .workflow-add-card:hover
+) {
+  background: #1e2b24;
+}
+html[data-theme='dark'] .cfg-panel,
+html[data-theme='dark'] .execution-result,
+html[data-theme='dark'] .assistant-header,
+html[data-theme='dark'] .assistant-composer,
+html[data-theme='dark'] .agent-workspace-bar,
+html[data-theme='dark'] .agent-comic-preview article,
+html[data-theme='dark'] .agent-export-bar,
+html[data-theme='dark'] .workflow-search,
+html[data-theme='dark'] .credit-service-dialog,
+html[data-theme='dark'] .node-panel,
+html[data-theme='dark'] .cfg-variable-picker,
+html[data-theme='dark'] .cfg-cancel {
+  background: var(--surface);
+  border-color: var(--border-color);
+}
+html[data-theme='dark'] .workflow-assistant,
+html[data-theme='dark'] .workflow-canvas .react-flow__minimap {
+  background: #16221d;
+}
+html[data-theme='dark'] .workflow-canvas,
+html[data-theme='dark'] .workflow-canvas .react-flow {
+  background: #101a15;
+}
+html[data-theme='dark'] .workflow-canvas .react-flow__controls {
+  background: var(--surface);
+  border-color: var(--border-color);
+}
+html[data-theme='dark'] .workflow-canvas .react-flow__controls-button {
+  background: var(--surface);
+  border-bottom-color: var(--border-color);
+  color: var(--text-secondary);
+}
+html[data-theme='dark'] .workflow-canvas .react-flow__controls-button:hover {
+  background: #22332a;
+}
+html[data-theme='dark'] .canvas-counter,
+html[data-theme='dark'] .canvas-help,
+html[data-theme='dark'] .canvas-empty p {
+  color: var(--text-secondary);
+}
+html[data-theme='dark'] .canvas-counter,
+html[data-theme='dark'] .canvas-help {
+  background: #17231e;
+  border-color: var(--border-color);
+}
+
+/* 用户菜单 */
+html[data-theme='dark'] .user-menu-trigger:hover,
+html[data-theme='dark'] .user-menu-trigger[aria-expanded='true'] {
+  background: #22332a;
+  border-color: #2e4037;
+}
+html[data-theme='dark'] .user-menu-panel,
+html[data-theme='dark'] .user-menu-help {
+  background: var(--surface);
+  border-color: var(--border-color);
+  box-shadow: 0 24px 48px -20px #00000099;
+}
+html[data-theme='dark'] .user-menu-group,
+html[data-theme='dark'] .user-menu-hint,
+html[data-theme='dark'] .user-menu-qr-caption,
+html[data-theme='dark'] .user-menu-help-title,
+html[data-theme='dark'] .user-menu-caret,
+html[data-theme='dark'] .user-menu-account svg:last-child {
+  color: #93a69a;
+}
+html[data-theme='dark'] .user-menu-account {
+  background: #22332a;
+}
+html[data-theme='dark'] .user-menu-item {
+  color: var(--text-primary);
+}
+html[data-theme='dark'] .user-menu-item:hover,
+html[data-theme='dark'] .user-menu-item:focus-visible {
+  background: #22332a;
+}
+html[data-theme='dark'] .user-menu-item > svg:first-child {
+  color: #9fb3a4;
+}
+html[data-theme='dark'] .user-menu-divider {
+  background: #26372d;
+}
+html[data-theme='dark'] .user-menu-item.danger,
+html[data-theme='dark'] .user-menu-item.danger > svg:first-child {
+  color: var(--danger);
+}
+html[data-theme='dark'] .user-menu-toast {
+  background: rgba(8, 16, 12, 0.96);
+}
+html[data-theme='dark'] .user-menu-theme {
+  background: var(--surface);
+  border-color: var(--border-color);
+  box-shadow: 0 24px 48px -20px #00000099;
+}
+
+/* 帮助中心 */
+html[data-theme='dark'] .help-search {
+  background: var(--surface);
+  border-color: var(--border-color);
+  color: #93a69a;
+}
+html[data-theme='dark'] .help-search input {
+  background: transparent;
+  border: 0;
+}
+html[data-theme='dark'] .help-step-icon {
+  background: #21332a;
+  color: #a7c48d;
+}
+html[data-theme='dark'] .help-faq-list,
+html[data-theme='dark'] .help-faq {
+  border-color: #26352d;
+}
+html[data-theme='dark'] .help-faq > p {
+  color: var(--text-secondary);
+}
+html[data-theme='dark'] .help-faq summary:hover {
+  color: var(--color-primary);
+}
+
+/* 积分页 */
+html[data-theme='dark'] .credit-account-detail p,
+html[data-theme='dark'] .credit-account-detail .credit-recharge {
+  border-color: #26352d;
+}
+html[data-theme='dark'] .credit-rule-icon {
+  background: #21332a;
+  color: #a7c48d;
+}
+html[data-theme='dark'] .credit-ledger-table td {
+  border-bottom-color: #26352d;
+}
+html[data-theme='dark'] .credit-service-backdrop {
+  background: #040907b3;
+}
+html[data-theme='dark'] .credit-service-dialog p {
+  color: var(--text-secondary);
+}
+html[data-theme='dark'] .credit-redeem-copy p {
+  color: var(--text-secondary);
+}
+html[data-theme='dark'] .credit-redeem-input {
+  color: var(--text-primary);
+  background: #1b2a23;
+  border-color: #2c3d34;
+}
+html[data-theme='dark'] .credit-redeem-input:focus {
+  background: #21332a;
+  border-color: var(--color-primary);
+}
+
+/* 个人中心 */
+html[data-theme='dark'] .uc-avatar-fallback {
+  border-color: #2c3d34;
+}
+html[data-theme='dark'] .uc-field input {
+  background: #101a15;
+  border-color: #2c3d34;
+  color: var(--text-primary);
+}
+html[data-theme='dark'] .uc-progress {
+  background: #22332a;
+}
+html[data-theme='dark'] .uc-theme-option {
+  background: #1b2922;
+  border-color: #2e4037;
+}
+html[data-theme='dark'] .uc-theme-option svg {
+  color: #9fb3a4;
+}
+html[data-theme='dark'] .uc-theme-option.active {
+  background: #22372c;
+  border-color: #4f8f6c;
+}
+html[data-theme='dark'] .uc-theme-option.active svg {
+  color: #9fe0bd;
+}
+html[data-theme='dark'] .uc-info-grid div {
+  background: #1e2b24;
+}
+
+/* 登录页 */
+html[data-theme='dark'] .login-form-area {
+  background: #121c18;
+}
+html[data-theme='dark'] .login-form-card {
+  background: var(--surface);
+  border-color: var(--border-color);
+}
+html[data-theme='dark'] .login-field input {
+  background: #101a15;
+  border-color: #2c3d34;
+  color: var(--text-primary);
+}
+html[data-theme='dark'] .login-password button,
+html[data-theme='dark'] .login-captcha button {
+  background: #1b2922;
+  border-color: #2e4037;
+  color: var(--text-secondary);
+}
+html[data-theme='dark'] .login-switch,
+html[data-theme='dark'] .login-form-subtitle,
+html[data-theme='dark'] .login-guest p {
+  color: var(--text-secondary);
+}
+
+/* 知识库、智能体等页面的浅色面板 */
+html[data-theme='dark'] .kb-doc-table-heading,
+html[data-theme='dark'] .kb-document-name > span,
+html[data-theme='dark'] .kb-mode-note {
+  background: #1e2b24;
+}
+html[data-theme='dark'] .kb-modal,
+html[data-theme='dark'] .kb-card,
+html[data-theme='dark'] .kb-intro {
+  background: var(--surface);
+  border-color: var(--border-color);
+}
+html[data-theme='dark'] .kb-modal-backdrop {
+  background: #040907b3;
+}
+html[data-theme='dark'] .agent-project-card,
+html[data-theme='dark'] .custom-agent-card,
+html[data-theme='dark'] .custom-agent-panel,
+html[data-theme='dark'] .agent-workspace,
+html[data-theme='dark'] .agent-conversation p {
+  border-color: var(--border-color);
+}
+html[data-theme='dark'] .custom-agent-panel input:not([type='checkbox']),
+html[data-theme='dark'] .custom-agent-panel select,
+html[data-theme='dark'] .custom-agent-panel textarea {
+  background: #101a15;
+  border-color: #2c3d34;
+  color: var(--text-primary);
+}
