@@ -51,6 +51,23 @@ npm run check:proxy
 
 构建产物位于 `build/`。静态托管需将前端路由回退到 `index.html`，并将 `/api` 转发到后端服务。`REACT_APP_API_URL` 在构建时读取。
 
+## 开源与许可证
+
+- 本仓库是唯一开源部分，采用 [MIT](./LICENSE) 许可证；后端与管理端不提供源码。
+- 部署说明见 [docs/DEPLOY_FRONTEND.md](./docs/DEPLOY_FRONTEND.md)，安全边界见 [SECURITY.md](./SECURITY.md)。
+- 运行时配置入口为 `public/config.js`（容器启动时根据环境变量重新生成），优先于构建期环境变量。
+- 开放 API 与自有后端兼容契约见 [docs/open-api/OPEN_API.md](./docs/open-api/OPEN_API.md)。
+
+### Docker 部署
+
+```bash
+cp .env.docker.example .env
+docker compose up -d --build
+```
+
+同一镜像只改 `API_UPSTREAM`、`PUBLIC_API_BASE_URL` 等环境变量即可切换后端与品牌，无需重新构建。
+
+
 ## TypeScript 项目结构
 
 | 位置 | 用途 |

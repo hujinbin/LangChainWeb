@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { SITE, getPageMetadata, getStructuredData } from '../config/site';
+import { useSiteStore } from '../store/siteStore';
 
 function setMeta(attribute: 'name' | 'property', key: string, content: string) {
   let element = document.head.querySelector<HTMLMetaElement>(`meta[${attribute}="${key}"]`);
@@ -14,6 +15,7 @@ function setMeta(attribute: 'name' | 'property', key: string, content: string) {
 
 export default function PageMetadata() {
   const { pathname } = useLocation();
+  const siteName = useSiteStore((state) => state.config?.name) || SITE.name;
   useEffect(() => {
     const metadata = getPageMetadata(pathname);
     document.title = metadata.title;
@@ -21,7 +23,7 @@ export default function PageMetadata() {
     setMeta('name', 'robots', metadata.indexable ? 'index, follow, max-image-preview:large' : 'noindex, follow');
     setMeta('property', 'og:title', metadata.title);
     setMeta('property', 'og:description', metadata.description);
-    setMeta('property', 'og:site_name', SITE.name);
+    setMeta('property', 'og:site_name', siteName);
     setMeta('name', 'twitter:title', metadata.title);
     setMeta('name', 'twitter:description', metadata.description);
 
@@ -40,6 +42,6 @@ export default function PageMetadata() {
       schema.textContent = JSON.stringify(getStructuredData());
       document.head.appendChild(schema);
     }
-  }, [pathname]);
+  }, [pathname, siteName]);
   return null;
 }

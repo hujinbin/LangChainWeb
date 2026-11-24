@@ -6,6 +6,7 @@ import {
   normalizeModelCatalog,
 } from '../constants/nodeTypes';
 import { WORKFLOW_TIMEOUT } from '../constants';
+import { API_BASE_URL, SITE_ID } from '../config/runtime';
 import { asRecord, normalizeError } from '../types/api';
 import type { ApiEnvelope, ApiError, ErrorData } from '../types/api';
 import type { WorkflowBilling, WorkflowCredits, WorkflowCreditLedger, WorkflowCreditRedeemResult } from '../types/credits';
@@ -28,8 +29,12 @@ import type {
 } from '../types/workflow';
 
 const apiClient = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || '',
-  headers: { 'Content-Type': 'application/json' },
+  // 运行时配置优先，切换后端只需要替换 config.js 并重启容器。
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+    ...(SITE_ID ? { 'X-Site-Id': SITE_ID } : {}),
+  },
 });
 export const WORKFLOW_CREDITS_CHANGED = 'workflow-credits-changed';
 const notifyCreditChange = () => window.dispatchEvent(new Event(WORKFLOW_CREDITS_CHANGED));

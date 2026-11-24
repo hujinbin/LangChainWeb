@@ -77,6 +77,8 @@ if (process.argv.includes('--build')) {
     <link rel="icon" sizes="32x32" href="%PUBLIC_URL%/favicon.ico" />
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    <!-- 运行时配置必须早于应用 bundle 加载。 -->
+    <script src="%PUBLIC_URL%/config.js"></script>
   </head>
   <body>
     <noscript>请启用 JavaScript 使用织流 AI 的工作流画布、模型配置与执行功能。</noscript>

@@ -1,0 +1,139 @@
+openapi: 3.0.3
+info:
+  title: 织流 AI 开放 API
+  version: 1.0.0
+  description: |
+    使用 clientId / clientSecret 换取 JWT 后调用工作流能力。
+    clientSecret 只应保存在调用方服务端。
+servers:
+  - url: https://langchain.example.com
+    description: 替换为实际站点域名
+tags:
+  - name: Auth
+  - name: Workflow
+  - name: Credits
+  - name: Model
+paths:
+  /api/open/v1/token:
+    post:
+      tags: [Auth]
+      summary: 换取访问令牌
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [clientId, clientSecret]
+              properties:
+                grantType:
+                  type: string
+                  enum: [client_credentials]
+                  default: client_credentials
+                clientId:
+                  type: string
+                clientSecret:
+                  type: string
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer, example: 200 }
+                  data:
+                    type: object
+                    properties:
+                      access_token: { type: string }
+                      token_type: { type: string, example: Bearer }
+                      expires_in: { type: integer, example: 7200 }
+                      scope: { type: string }
+                      client_id: { type: string }
+        '401':
+          description: 凭证不正确
+  /api/open/v1/models:
+    get:
+      tags: [Model]
+      summary: 获取模型目录
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: 成功 }
+  /api/open/v1/workflows:
+    get:
+      tags: [Workflow]
+      summary: 分页读取工作流
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: pageSize
+          schema: { type: integer, default: 20, maximum: 100 }
+      responses:
+        '200': { description: 成功 }
+  /api/open/v1/workflows/{id}:
+    get:
+      tags: [Workflow]
+      summary: 读取工作流详情
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: 成功 }
+        '404': { description: 工作流不存在 }
+  /api/open/v1/workflows/{id}/run:
+    post:
+      tags: [Workflow]
+      summary: 触发工作流运行
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - in: header
+          name: Idempotency-Key
+          schema: { type: string, maxLength: 128 }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                input: { type: object }
+                simulate: { type: boolean, default: false }
+      responses:
+        '200': { description: 运行完成 }
+        '402': { description: 积分不足 }
+        '404': { description: 工作流不存在 }
+  /api/open/v1/executions/{id}:
+    get:
+      tags: [Workflow]
+      summary: 查询执行记录
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: 成功 }
+  /api/open/v1/credits:
+    get:
+      tags: [Credits]
+      summary: 查询积分账户与计费规则
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: 成功 }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

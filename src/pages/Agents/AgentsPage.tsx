@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   FiArrowUpRight,
+  FiBookOpen,
   FiCloud,
   FiFilm,
   FiPlus,
@@ -163,6 +164,33 @@ export default function AgentsPage(): React.JSX.Element {
               onClick={() => void create('life-story')}
             >
               {creating === 'life-story' ? '正在创建…' : '开启一段人生'}
+              <FiArrowUpRight />
+            </button>
+          </div>
+        </article>
+        <article className="agent-preset novel">
+          <span className="agent-preset-novel-art" aria-hidden="true">
+            <FiBookOpen />
+          </span>
+          <div className="agent-preset-body">
+            <span className="agent-kicker">
+              <FiBookOpen /> 小说创作智能体
+            </span>
+            <h2>小说工坊</h2>
+            <p>
+              设定类型与篇幅，生成人物和章节大纲，再逐章续写。完成后可导出 TXT、Markdown、DOCX 或 EPUB。
+            </p>
+            <div className="agent-tags">
+              <span>章节大纲</span>
+              <span>逐章续写</span>
+              <span>四种导出格式</span>
+            </div>
+            <button
+              className="btn btn-primary"
+              type="button"
+              onClick={() => navigate('/novel')}
+            >
+              进入小说工坊
               <FiArrowUpRight />
             </button>
           </div>

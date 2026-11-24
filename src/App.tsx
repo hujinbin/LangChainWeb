@@ -3,6 +3,8 @@ import type { IconType } from 'react-icons';
 import type { Execution } from './types/workflow';
 import AgentsPage from './pages/Agents/AgentsPage';
 import AgentStudio from './pages/Agents/AgentStudio';
+import NovelList from './pages/Novel/NovelList';
+import NovelStudio from './pages/Novel/NovelStudio';
 import CustomAgentEditor from './pages/CustomAgents/CustomAgentEditor';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -40,6 +42,7 @@ import ExecutionResult from './components/ExecutionResult/ExecutionResult';
 import { BillingUsageInline } from './components/BillingUsage/BillingUsage';
 import WorkflowCreditsPage from './pages/WorkflowCredits/WorkflowCredits';
 import useAuthStore from './store/authStore';
+import { useSiteStore } from './store/siteStore';
 import { aiWorkflowAPI } from './services/api';
 import localStorageService from './services/localStorage';
 import { WORKFLOW_TEMPLATES } from './constants/workflowTemplates';
@@ -548,13 +551,19 @@ function RecordDetail() {
 
 function Navigation() {
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
+  const siteName = useSiteStore((state) => state.config?.name) || SITE.name;
+  const logoUrl = useSiteStore((state) => state.config?.logoUrl) || SITE.logoUrl;
   return (
     <nav className="app-nav" aria-label="主导航">
-      <Link to="/" className="nav-brand" aria-label={SITE.name}>
+      <Link to="/" className="nav-brand" aria-label={siteName}>
         <span className="brand-mark">
-          <img src={`${process.env.PUBLIC_URL}/brand-mark.svg`} alt="" width="35" height="35" />
+          {logoUrl ? (
+            <img src={logoUrl} alt="" width="35" height="35" />
+          ) : (
+            <img src={`${process.env.PUBLIC_URL}/brand-mark.svg`} alt="" width="35" height="35" />
+          )}
         </span>
-        <strong>{SITE.name}</strong>
+        <strong>{siteName}</strong>
         <small>AI 工作流</small>
       </Link>
       <div className="nav-links">
@@ -592,6 +601,19 @@ function Navigation() {
 }
 
 export default function App() {
+  const blocked = useSiteStore((state) => state.blocked);
+  const loadSite = useSiteStore((state) => state.load);
+  useEffect(() => {
+    loadSite();
+  }, [loadSite]);
+  if (blocked) {
+    return (
+      <main className="page-wrap empty-state">
+        <h1>站点暂不可用</h1>
+        <p>{blocked}</p>
+      </main>
+    );
+  }
   return (
     <Router>
       <PageMetadata />
@@ -611,6 +633,8 @@ export default function App() {
             <Route path="/agents" element={<AgentsPage />} />
             <Route path="/agents/custom/new" element={<CustomAgentEditor />} />
             <Route path="/agents/custom/:id" element={<CustomAgentEditor />} />
+            <Route path="/novel" element={<NovelList />} />
+            <Route path="/novel/:id" element={<NovelStudio />} />
             <Route path="/agents/:id" element={<AgentStudio />} />
             <Route path="/workflows" element={<WorkflowList />} />
             <Route path="/workflows/:id/edit" element={<WorkflowEditor />} />

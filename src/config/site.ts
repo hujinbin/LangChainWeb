@@ -1,5 +1,7 @@
+import { RUNTIME_CONFIG } from './runtime';
+
 // Shared by the app and the static SEO build; keep the public identity here.
-export const SITE = {
+const DEFAULT_SITE = {
   name: '织流 AI',
   englishName: 'ZhiFlow',
   url: 'https://langchain.leheavengame.com/',
@@ -9,6 +11,36 @@ export const SITE = {
   themeColor: '#174d3c',
   image: 'https://langchain.leheavengame.com/social-preview.png',
   qqGroup: '749076211',
+  logoUrl: '',
+  helpUrl: '',
+};
+
+const runtimeBrand = {
+  name:
+    typeof RUNTIME_CONFIG.brandName === 'string'
+      ? RUNTIME_CONFIG.brandName.trim()
+      : '',
+  logoUrl:
+    typeof RUNTIME_CONFIG.logoUrl === 'string'
+      ? RUNTIME_CONFIG.logoUrl.trim()
+      : '',
+  helpUrl:
+    typeof RUNTIME_CONFIG.helpUrl === 'string'
+      ? RUNTIME_CONFIG.helpUrl.trim()
+      : '',
+  qqGroup:
+    typeof RUNTIME_CONFIG.qqGroup === 'string'
+      ? RUNTIME_CONFIG.qqGroup.trim()
+      : '',
+};
+
+// 运行时配置只作为首屏兜底，后端站点配置接口返回后会覆盖这里的品牌信息。
+export const SITE = {
+  ...DEFAULT_SITE,
+  name: runtimeBrand.name || DEFAULT_SITE.name,
+  logoUrl: runtimeBrand.logoUrl,
+  helpUrl: runtimeBrand.helpUrl,
+  qqGroup: runtimeBrand.qqGroup || DEFAULT_SITE.qqGroup,
 };
 
 export function getPageMetadata(pathname: string) {
