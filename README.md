@@ -56,7 +56,7 @@ npm run check:proxy
 
 ## 开源与许可证
 
-- 用户工作台与[代理商后台前端](./public/partner/)均采用 [MIT](./LICENSE) 许可证。代理商页面的开发与接入见[代理商前端说明](./docs/PARTNER_CONSOLE.md)。业务 API、会话服务和平台总后台由运营方私有部署。
+- 用户工作台与[代理商后台前端](./src/partner/)均采用 [MIT](./LICENSE) 许可证。代理商页面的开发与接入见[代理商前端说明](./docs/PARTNER_CONSOLE.md)。业务 API、会话服务和平台总后台由运营方私有部署。
 - 部署说明见 [docs/DEPLOY_FRONTEND.md](./docs/DEPLOY_FRONTEND.md)，安全边界见 [SECURITY.md](./SECURITY.md)。
 - 运行时配置入口为 `public/config.js`（容器启动时根据环境变量重新生成），优先于构建期环境变量。
 - 开放 API 与自有后端兼容契约见 [docs/open-api/OPEN_API.md](./docs/open-api/OPEN_API.md)。

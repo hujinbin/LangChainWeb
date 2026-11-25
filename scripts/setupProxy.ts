@@ -1,5 +1,6 @@
 import express, { type Express } from 'express';
 import path from 'node:path';
+import { compilePartner } from './build-partner';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 
 export default function setupProxy(app: Express): void {
@@ -29,6 +30,12 @@ export default function setupProxy(app: Express): void {
     target: process.env.REACT_APP_PARTNER_PROXY_TARGET || 'http://127.0.0.1:4200',
     changeOrigin: false,
   }));
+  // Compile on request so a refresh picks up edits to the independent TSX entry.
+  app.get('/partner/app.js', (_req, res, next) => {
+    compilePartner(false).then(bundle => {
+      res.set('Cache-Control', 'no-store').type('js').send(bundle);
+    }).catch(next);
+  });
   app.use('/partner', express.static(path.resolve(__dirname, '../public/partner'), { fallthrough: false }));
   // 将生成资源目录一并转发，支持后端返回的同源资源路径。
   app.use('/outputs', createProxyMiddleware({ target, changeOrigin: true }));
