@@ -16,7 +16,7 @@ interface Section {
   title: string;
   html: string;
 }
-export default function ApiDocs() {
+export default function ApiDocs({ standalone = false }: { standalone?: boolean }) {
   const language = useLanguage((state) => state.language);
   const chooseLanguage = useLanguage((state) => state.choose);
   const t = useLabels();
@@ -61,9 +61,12 @@ export default function ApiDocs() {
           <h1>{t('API 文档', 'API documentation')}</h1>
         </div>
         <div className="dev-actions">
-          <button className="btn btn-default" onClick={() => chooseLanguage(language === 'zh' ? 'en' : 'zh')}>
+          <button type="button" className="btn btn-default" onClick={() => chooseLanguage(language === 'zh' ? 'en' : 'zh')}>
             {language === 'zh' ? 'English' : '简体中文'}
           </button>
+          {standalone && <a className="btn btn-default" href={PARTNER_PATH}>
+            <FiShield /> {t('代理商后台', 'Partner console')}
+          </a>}
           <a
             className="btn btn-default"
             href="/api-reference/openapi.yaml"
@@ -102,9 +105,9 @@ export default function ApiDocs() {
           {!!sections.length && !results.length && (
             <p>{t('没有匹配的章节', 'No matching sections')}</p>
           )}
-          <a className="doc-admin" href={PARTNER_PATH}>
+          {!standalone && <a className="doc-admin" href={PARTNER_PATH}>
             <FiShield /> {t('代理商后台', 'Partner console')}
-          </a>
+          </a>}
         </aside>
         <article className="doc-article">
           {error ? (

@@ -1,3 +1,4 @@
+import { useLabels } from '../store/languageStore';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FiCreditCard } from 'react-icons/fi';
@@ -12,6 +13,7 @@ export default function CreditBalanceLink({
   refreshKey?: string | boolean;
   className?: string;
 }) {
+  const t = useLabels();
   const { isLoggedIn, token } = useAuthStore();
   const [balance, setBalance] = useState<number | null>(null);
   const [failed, setFailed] = useState(false);
@@ -38,15 +40,15 @@ export default function CreditBalanceLink({
     return () => controller.abort();
   }, [isLoggedIn, token, refreshKey, revision]);
   return (
-    <Link to="/credits" className={className} title="查看工作流积分余额与计费规则">
+    <Link to="/credits" className={className} title={t('查看工作流积分余额与计费规则', 'View your credit balance and billing rules')}>
       <FiCreditCard />
       {isLoggedIn
         ? balance !== null
-          ? `${formatPoints(balance)} 积分`
+          ? `${formatPoints(balance)} ${t('积分', 'credits')}`
           : failed
-            ? '查看积分'
-            : '积分读取中…'
-        : '积分规则'}
+            ? t('查看积分', 'View credits')
+            : t('积分读取中…', 'Loading credits…')
+        : t('积分规则', 'Billing rules')}
     </Link>
   );
 }

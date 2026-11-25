@@ -5,15 +5,15 @@ import {
   normalizeModelCatalog,
 } from './nodeTypes';
 
-test('模型目录只保留本地 Flash 白名单交集', () => {
+test('模型目录保留本站启用的自定义模型和默认项', () => {
   const catalog = normalizeModelCatalog({
     text: ['agnes-3.0-pro', 'agnes-2.5-flash'],
     video: ['agnes-video-2.5'],
     defaults: { text: 'agnes-3.0-pro' },
   });
-  expect(catalog.text).toEqual(['agnes-2.5-flash']);
-  expect(catalog.defaults.text).toBe('agnes-2.5-flash');
-  expect(catalog.video).toEqual([]);
+  expect(catalog.text).toEqual(['agnes-3.0-pro', 'agnes-2.5-flash']);
+  expect(catalog.defaults.text).toBe('agnes-3.0-pro');
+  expect(catalog.video).toEqual(['agnes-video-2.5']);
 });
 
 test('远程节点元数据合并后保留完整本地类型和安全模型选项', () => {
@@ -44,8 +44,8 @@ test('远程节点元数据合并后保留完整本地类型和安全模型选�
     type: 'array',
     format: 'json',
   });
-  expect(llm.config_schema.properties.model.enum).toEqual(['agnes-2.5-flash']);
-  expect(llm.defaultModel).toBe('agnes-2.5-flash');
+  expect(llm.config_schema.properties.model.enum).toEqual(['agnes-3.0-pro', 'agnes-2.5-flash']);
+  expect(llm.defaultModel).toBe('agnes-3.0-pro');
   expect(nodes.find((node) => node.type === 'imageGeneration')).toBeDefined();
 });
 
@@ -94,4 +94,9 @@ test('扩展目录支持数据、循环、会话和媒体节点，并采用服�
   expect(selector.outputs?.map(port => port.name)).toEqual(['sales', 'default']);
   expect(selector.config_schema.properties.cases.maxItems).toBe(4);
   expect(selector.outputSchema?.properties?.branch.type).toBe('string');
+});
+
+test('停用全部文本模型后编辑器保留空目录', () => {
+  const catalog = normalizeModelCatalog({ text: [] });
+  expect(mergeNodeTypes([], catalog).find(node => node.type === 'llm')?.models).toEqual([]);
 });

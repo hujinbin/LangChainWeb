@@ -1,3 +1,4 @@
+import { useLabels } from '../../store/languageStore';
 import type { KnowledgeBase, KnowledgeConfig } from '../../types/knowledge';
 import React, { useEffect, useId, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -53,11 +54,12 @@ export function KnowledgeStatus({
   status?: string;
   enabled?: boolean;
 }) {
+  const t = useLabels();
   const value = enabled === false ? 'disabled' : status;
   return (
     <span className={`kb-status ${value || 'empty'}`}>
       <i />
-      {STATUS_LABELS[value || ''] || status || '等待文档'}
+      {STATUS_LABELS[value || ''] || status || t("等待文档", "Waiting for documents")}
     </span>
   );
 }
@@ -69,38 +71,41 @@ export function KnowledgeError({
   message?: string;
   retry?: () => void;
 }) {
+  const t = useLabels();
   if (!message) return null;
   return (
     <div className="notice error kb-notice" role="alert">
       <span>{message}</span>
       {retry && (
         <button className="text-action" onClick={retry}>
-          重试
+          {t("重试", "Retry")}
         </button>
       )}
     </div>
   );
 }
 
-export function KnowledgeLoading({ text = '正在读取知识库' }: { text?: string }) {
+export function KnowledgeLoading({ text }: { text?: string }) {
+  const t = useLabels();
   return (
     <div className="loading-state" role="status">
       <FiRefreshCw className="spinning" />
-      {text}
+      {text ?? t("正在读取知识库", "Loading knowledge bases")}
     </div>
   );
 }
 
 export function KnowledgeLogin() {
+  const t = useLabels();
   return (
     <section className="surface empty-state kb-empty">
       <span className="empty-state-icon">
         <FiDatabase />
       </span>
-      <h2>让知识，成为工作流的依据</h2>
-      <p>登录后导入文档、管理知识库，检索内容并查看命中引用。</p>
+      <h2>{t("让知识，成为工作流的依据", "Add knowledge to your workflows")}</h2>
+      <p>{t("登录后导入文档、管理知识库，检索内容并查看命中引用。", "Sign in to import documents, manage knowledge bases and inspect search results and citations.")}</p>
       <Link className="btn btn-primary" to="/login">
-        登录后使用 <FiArrowRight />
+        {t("登录后使用", "Sign in")} <FiArrowRight />
       </Link>
     </section>
   );
@@ -119,6 +124,7 @@ export function KnowledgePagination({
   loading: boolean;
   onChange: (page: number) => void;
 }) {
+  const t = useLabels();
   if (total === null || total <= pageSize) return null;
   return (
     <div className="pagination kb-pagination">
@@ -127,18 +133,18 @@ export function KnowledgePagination({
         disabled={page === 1 || loading}
         onClick={() => onChange(page - 1)}
       >
-        上一页
+        {t("上一页", "Previous")}
       </button>
       <span>
-        第 {page} / {Math.max(1, Math.ceil(total / pageSize))} 页 · 共 {total}{' '}
-        条
+        {t("第", "Page")} {page} / {Math.max(1, Math.ceil(total / pageSize))} {t("页 · 共", "· Total")} {total}{' '}
+        {t("条", "items")}
       </span>
       <button
         className="btn btn-default"
         disabled={page * pageSize >= total || loading}
         onClick={() => onChange(page + 1)}
       >
-        下一页
+        {t("下一页", "Next")}
       </button>
     </div>
   );
@@ -159,6 +165,7 @@ export function KnowledgeModal({
   busy?: boolean;
   wide?: boolean;
 }) {
+  const t = useLabels();
   const titleId = useId();
   const descriptionId = useId();
   const panel = useRef<HTMLElement>(null);
@@ -226,7 +233,7 @@ export function KnowledgeModal({
           <button
             type="button"
             className="btn-icon"
-            aria-label="关闭弹窗"
+            aria-label={t("关闭弹窗", "Close dialog")}
             disabled={busy}
             onClick={onClose}
           >
@@ -244,7 +251,7 @@ export function BaseForm({
   config,
   busy,
   onSave,
-  submitLabel = '保存知识库',
+  submitLabel,
 }: {
   value?: Partial<KnowledgeBase>;
   config: KnowledgeConfig | null;
@@ -252,11 +259,12 @@ export function BaseForm({
   onSave: (value: BaseFormValues) => void;
   submitLabel?: string;
 }) {
+  const t = useLabels();
   const formId = useId();
   const [draft, setDraft] = useState<BaseDraft>({
     name: '',
     description: '',
-    indexMode: 'bm25',
+    indexMode: config?.defaultMode || 'bm25',
     chunkSize: 800,
     chunkOverlap: 100,
     topK: 5,
@@ -271,7 +279,7 @@ export function BaseForm({
   const submit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (Number(draft.chunkOverlap) >= Number(draft.chunkSize)) {
-      setError('分段重叠字数需要小于分段长度。');
+      setError(t("分段重叠字数需要小于分段长度。", "Overlap must be smaller than chunk length."));
       return;
     }
     setError('');
@@ -289,34 +297,34 @@ export function BaseForm({
   return (
     <form className="kb-form" onSubmit={submit}>
       <label htmlFor={`${formId}-name`}>
-        知识库名称 <span className="kb-required">*</span>
+        {t("知识库名称", "Knowledge base name")} <span className="kb-required">*</span>
         <input
           id={`${formId}-name`}
           value={draft.name}
           onChange={(event) => field('name', event.target.value)}
           required
           maxLength={100}
-          placeholder="例如：产品使用手册"
+          placeholder={t("例如：产品使用手册", "For example, Product guide")}
           disabled={busy}
         />
       </label>
       <label htmlFor={`${formId}-description`}>
-        知识库描述
+        {t("知识库描述", "Description")}
         <textarea
           id={`${formId}-description`}
           value={draft.description}
           onChange={(event) => field('description', event.target.value)}
           maxLength={1000}
           rows={3}
-          placeholder="说明文档的用途与范围，方便在工作流中选择"
+          placeholder={t("说明文档的用途与范围，方便在工作流中选择", "Describe the purpose and scope of these documents")}
           disabled={busy}
         />
       </label>
       <label htmlFor={`${formId}-mode`}>
-        检索方式
+        {t("检索方式", "Retrieval method")}
         <select
           id={`${formId}-mode`}
-          aria-label="检索方式"
+          aria-label={t("检索方式", "Retrieval method")}
           value={draft.indexMode}
           onChange={(event) =>
             setDraft((current) => ({
@@ -327,23 +335,23 @@ export function BaseForm({
           }
           disabled={busy || Boolean(value.id)}
         >
-          <option value="bm25">关键词检索 · BM25</option>
+          <option value="bm25">{t("关键词检索 · BM25", "Keyword search · BM25")}</option>
           {(config?.modes?.includes('dense') ||
             draft.indexMode === 'dense') && (
             <option value="dense" disabled={!config?.modes?.includes('dense')}>
-              语义向量检索
+              {t("语义向量检索", "Semantic vector search")}
             </option>
           )}
         </select>
         <small>
           {draft.indexMode === 'bm25'
-            ? '按关键词检索，得分用于排序；建库后检索方式固定。'
-            : '按文本语义检索，使用已配置的向量模型。'}
+            ? t("按关键词检索，得分用于排序；建库后检索方式固定。", "Ranks results by keyword match. The method is fixed when the base is created.")
+            : t("按文本语义检索，使用已配置的向量模型。", "Finds related passages with the configured embedding model.")}
         </small>
       </label>
       <div className="kb-form-grid">
         <label htmlFor={`${formId}-size`}>
-          默认分段长度
+          {t("默认分段长度", "Default chunk length")}
           <input
             id={`${formId}-size`}
             type="number"
@@ -355,10 +363,10 @@ export function BaseForm({
             onChange={(event) => field('chunkSize', event.target.value)}
             disabled={busy}
           />
-          <small>100–4000 字符</small>
+          <small>{t("100–4000 字符", "100–4000 characters")}</small>
         </label>
         <label htmlFor={`${formId}-overlap`}>
-          分段重叠字数
+          {t("分段重叠字数", "Chunk overlap")}
           <input
             id={`${formId}-overlap`}
             type="number"
@@ -370,12 +378,12 @@ export function BaseForm({
             onChange={(event) => field('chunkOverlap', event.target.value)}
             disabled={busy}
           />
-          <small>保留相邻分段的上下文</small>
+          <small>{t("保留相邻分段的上下文", "Keep context between adjacent chunks")}</small>
         </label>
       </div>
       <div className="kb-form-grid">
         <label htmlFor={`${formId}-topk`}>
-          默认命中数量
+          {t("默认命中数量", "Default result count")}
           <input
             id={`${formId}-topk`}
             type="number"
@@ -389,7 +397,7 @@ export function BaseForm({
           />
         </label>
         <label htmlFor={`${formId}-score`}>
-          最低检索得分
+          {t("最低检索得分", "Minimum score")}
           <input
             id={`${formId}-score`}
             type="number"
@@ -411,7 +419,7 @@ export function BaseForm({
           disabled={busy}
         />
         <span>
-          启用知识库<small>停用后，工作流无法检索此库。</small>
+          {t("启用知识库", "Enable knowledge base")}<small>{t("停用后，工作流无法检索此库。", "Disabled knowledge bases cannot be searched by workflows.")}</small>
         </span>
       </label>
       <KnowledgeError message={error} />
@@ -421,7 +429,7 @@ export function BaseForm({
           disabled={busy || !draft.name.trim()}
         >
           {busy && <FiRefreshCw className="spinning" />}
-          {busy ? '正在保存' : submitLabel}
+          {busy ? t("正在保存", "Saving") : submitLabel ?? t("保存知识库", "Save knowledge base")}
         </button>
       </div>
     </form>

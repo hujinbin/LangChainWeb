@@ -1,3 +1,4 @@
+import { useLabels } from '../../store/languageStore';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FiUser } from 'react-icons/fi';
@@ -71,15 +72,16 @@ export function UserAvatar({
 }
 
 export function UserCenterGuest({ message }: { message?: string }) {
+  const t = useLabels();
   return (
     <section className="surface empty-state">
       <span className="empty-state-icon">
         <FiUser />
       </span>
-      <h3>登录后查看</h3>
-      <p>{message || '账号信息与当前登录用户关联。'}</p>
+      <h3>{t("登录后查看", "Sign in to view")}</h3>
+      <p>{message || t("账号信息与当前登录用户关联。", "This information belongs to your account.")}</p>
       <Link to="/login" className="btn btn-primary">
-        去登录
+        {t("去登录", "Sign in")}
       </Link>
     </section>
   );

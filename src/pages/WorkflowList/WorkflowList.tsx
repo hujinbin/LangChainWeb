@@ -1,3 +1,4 @@
+import { useLabels } from '../../store/languageStore';
 import { normalizeError } from '../../types/api';
 import type { IconType } from 'react-icons';
 import type { Workflow } from '../../types/workflow';
@@ -37,6 +38,7 @@ const editPath = (workflow: Workflow) =>
   `/workflows/${workflow.id}/edit${workflow.isLocal ? '?local=true' : ''}`;
 
 export default function WorkflowList() {
+  const t = useLabels();
   const navigate = useNavigate();
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
@@ -78,11 +80,11 @@ export default function WorkflowList() {
       if (version !== requestVersion.current) return;
       setWorkflows(drafts);
       setServerCount(0);
-      setError(`${err.message || '服务端读取失败'}，当前仅显示本地草稿。`);
+      setError(`${err.message || t("服务端读取失败", "Could not load workflows")}，当前仅显示本地草稿。`);
     } finally {
       if (version === requestVersion.current) setLoading(false);
     }
-  }, [isLoggedIn, page, keyword, filterStatus]);
+  }, [isLoggedIn, page, keyword, filterStatus, t]);
 
   useEffect(() => {
     const pendingRequests = requestVersion;
@@ -95,7 +97,7 @@ export default function WorkflowList() {
 
   const handleDelete = async (workflow: Workflow) => {
     if (!workflow.id) {
-      setError('工作流缺少 ID，请刷新后重试');
+      setError(t("工作流缺少 ID，请刷新后重试", "Workflow ID missing. Refresh and try again."));
       return;
     }
     if (!window.confirm(`删除工作流“${workflow.name}”？此操作无法撤销。`))
@@ -115,7 +117,7 @@ export default function WorkflowList() {
       else await fetchWorkflows();
     } catch (caughtError) {
       const err = normalizeError(caughtError);
-      setError(err.message || '删除失败，请重试');
+      setError(err.message || t("删除失败，请重试", "Could not delete. Try again."));
     } finally {
       setPending('');
     }
@@ -123,7 +125,7 @@ export default function WorkflowList() {
 
   const handlePublish = async (workflow: Workflow) => {
     if (!workflow.id) {
-      setError('工作流缺少 ID，请刷新后重试');
+      setError(t("工作流缺少 ID，请刷新后重试", "Workflow ID missing. Refresh and try again."));
       return;
     }
     setPending(`publish-${workflow.id}`);
@@ -134,7 +136,7 @@ export default function WorkflowList() {
       await fetchWorkflows();
     } catch (caughtError) {
       const err = normalizeError(caughtError);
-      setError(err.message || '状态更新失败');
+      setError(err.message || t("状态更新失败", "Could not update status"));
     } finally {
       setPending('');
     }
@@ -154,22 +156,22 @@ export default function WorkflowList() {
       <header className="page-heading">
         <div>
           <span className="eyebrow">BUILD. CONNECT. CREATE.</span>
-          <h1>我的工作流</h1>
-          <p>连接模型与灵感，管理每一条创作流程。</p>
+          <h1>{t("我的工作流", "My workflows")}</h1>
+          <p>{t("连接模型与灵感，管理每一条创作流程。", "Build, connect and manage your workflows.")}</p>
         </div>
         <button
           className="btn btn-primary"
           onClick={() => navigate('/workflows/new/edit')}
         >
-          <FiPlus /> 新建工作流
+          <FiPlus /> {t("新建工作流", "New workflow")}
         </button>
       </header>
       {!isLoggedIn && (
         <div className="notice">
           <FiGitBranch />
           <span>
-            当前为访客空间，工作流保存在此浏览器。
-            <Link to="/login">登录后可同步并运行模型。</Link>
+            {t("当前为访客空间，工作流保存在此浏览器。", "Guest workflows are saved in this browser.")}
+            <Link to="/login">{t("登录后可同步并运行模型。", "Sign in to sync workflows and run models.")}</Link>
           </span>
         </div>
       )}
@@ -177,7 +179,7 @@ export default function WorkflowList() {
         <div className="notice error" role="alert">
           {error}
           <button className="text-action" onClick={fetchWorkflows}>
-            重试
+            {t("重试", "Retry")}
           </button>
         </div>
       )}
@@ -193,16 +195,16 @@ export default function WorkflowList() {
                 setPage(1);
               }}
             >
-              {status === 'all' ? '全部工作流' : STATUS_LABELS[status]}
+              {status === 'all' ? t("全部工作流", "All workflows") : t(STATUS_LABELS[status], status)}
             </button>
           ))}
         </div>
         <label className="workflow-search">
           <FiSearch />
           <input
-            aria-label="搜索工作流"
+            aria-label={t("搜索工作流", "Search workflows")}
             value={keyword}
-            placeholder="搜索工作流名称"
+            placeholder={t("搜索工作流名称", "Search workflow names")}
             disabled={Boolean(pending)}
             onChange={(event) => {
               setKeyword(event.target.value);
@@ -212,7 +214,7 @@ export default function WorkflowList() {
         </label>
         <button
           className="btn-icon"
-          aria-label="刷新工作流"
+          aria-label={t("刷新工作流", "Refresh workflows")}
           onClick={fetchWorkflows}
           disabled={loading || Boolean(pending)}
         >
@@ -221,7 +223,7 @@ export default function WorkflowList() {
       </section>
       {loading ? (
         <div className="loading-state">
-          <FiRefreshCw className="spinning" /> 正在读取工作流
+          <FiRefreshCw className="spinning" /> {t("正在读取工作流", "Loading workflows")}
         </div>
       ) : visibleWorkflows.length === 0 ? (
         <section className="surface empty-state">
@@ -230,29 +232,29 @@ export default function WorkflowList() {
           </span>
           <h3>
             {keyword || filterStatus !== 'all'
-              ? '没有找到匹配的工作流'
-              : '你的下一个灵感，从这里开始'}
+              ? t("没有找到匹配的工作流", "No matching workflows")
+              : t("你的下一个灵感，从这里开始", "Start your first workflow")}
           </h3>
           <p>
             {keyword || filterStatus !== 'all'
-              ? '试试其他关键词，或切换到全部工作流。'
-              : '创建一个空白画布，或从文本、图片、视频起点快速开始。'}
+              ? t("试试其他关键词，或切换到全部工作流。", "Try another keyword or switch to all workflows.")
+              : t("创建一个空白画布，或从文本、图片、视频起点快速开始。", "Start from a blank canvas or use a text, image or video template.")}
           </p>
           <button
             className="btn btn-primary"
             onClick={() => navigate('/workflows/new/edit')}
           >
-            <FiPlus /> 创建工作流
+            <FiPlus /> {t("创建工作流", "Create workflow")}
           </button>
           <div className="workflow-empty-starters">
             <Link to="/workflows/new/edit?starter=text">
-              文本创作 <FiArrowRight />
+              {t("文本创作", "Text creation")} <FiArrowRight />
             </Link>
             <Link to="/workflows/new/edit?starter=image">
-              图片生成 <FiArrowRight />
+              {t("图片生成", "Image generation")} <FiArrowRight />
             </Link>
             <Link to="/workflows/new/edit?starter=video">
-              视频短片 <FiArrowRight />
+              {t("视频短片", "Short video")} <FiArrowRight />
             </Link>
           </div>
         </section>
@@ -273,19 +275,19 @@ export default function WorkflowList() {
                   </span>
                   <div className="workflow-card-badges">
                     {workflow.isLocal && (
-                      <span className="badge">本地草稿</span>
+                      <span className="badge">{t("本地草稿", "Local draft")}</span>
                     )}
                     <span className={`badge ${workflow.status || 'draft'}`}>
-                      {STATUS_LABELS[workflow.status || 'draft'] || '草稿'}
+                      {t(STATUS_LABELS[workflow.status || 'draft'] || '草稿', workflow.status || 'Draft')}
                     </span>
                   </div>
                 </div>
                 <Link className="workflow-card-title" to={editPath(workflow)}>
-                  {workflow.name || '未命名工作流'}
+                  {workflow.name || t("未命名工作流", "Untitled workflow")}
                   <FiArrowUpRight />
                 </Link>
                 <p className="workflow-card-description">
-                  {workflow.description || '每一条连接，都通向一个新的可能。'}
+                  {workflow.description || t("每一条连接，都通向一个新的可能。", "Connect nodes to build your workflow.")}
                 </p>
                 <div className="workflow-card-nodes">
                   {modelNodes.slice(0, 4).map((node) => {
@@ -299,16 +301,16 @@ export default function WorkflowList() {
                   })}
                   {modelNodes.length === 0 && (
                     <span>
-                      <FiZap /> 待添加模型节点
+                      <FiZap /> {t("待添加模型节点", "No model nodes yet")}
                     </span>
                   )}
                 </div>
                 <div className="workflow-card-metrics">
                   <span>
-                    <b>{workflow.nodes?.length || 0}</b> 节点
+                    <b>{workflow.nodes?.length || 0}</b> {t("节点", "nodes")}
                   </span>
                   <span>
-                    <b>{workflow.runStats?.totalRuns || 0}</b> 次运行
+                    <b>{workflow.runStats?.totalRuns || 0}</b> {t("次运行", "runs")}
                   </span>
                   <span
                     className={
@@ -316,20 +318,20 @@ export default function WorkflowList() {
                     }
                   >
                     {workflow.latestValidation?.valid
-                      ? '✓ 结构已校验'
-                      : '待校验'}
+                      ? t("✓ 结构已校验", "✓ Validated")
+                      : t("待校验", "Pending validation")}
                   </span>
                 </div>
                 <div className="workflow-card-footer">
                   <span>
                     {workflow.updated_at
                       ? dayjs(workflow.updated_at).format('MM-DD HH:mm')
-                      : '尚未保存'}
+                      : t("尚未保存", "Unsaved")}
                   </span>
                   <div>
                     <button
                       className="btn-icon"
-                      title="编辑并配置运行"
+                      title={t("编辑并配置运行", "Edit and configure")}
                       aria-label={`编辑 ${workflow.name}`}
                       onClick={() => navigate(editPath(workflow))}
                     >
@@ -342,15 +344,15 @@ export default function WorkflowList() {
                         onClick={() => handlePublish(workflow)}
                       >
                         {pending === `publish-${workflow.id}`
-                          ? '处理中'
+                          ? t("处理中", "Working")
                           : workflow.status === 'published'
-                            ? '撤回'
-                            : '发布'}
+                            ? t("撤回", "Unpublish")
+                            : t("发布", "Publish")}
                       </button>
                     )}
                     <button
                       className="btn-icon btn-danger"
-                      title="删除工作流"
+                      title={t("删除工作流", "Delete workflow")}
                       aria-label={`删除 ${workflow.name}`}
                       disabled={Boolean(pending)}
                       onClick={() => handleDelete(workflow)}
@@ -369,8 +371,8 @@ export default function WorkflowList() {
             <span>
               <FiPlus />
             </span>
-            <strong>创建新的工作流</strong>
-            <small>给下一个想法，一张空白画布</small>
+            <strong>{t("创建新的工作流", "Create a workflow")}</strong>
+            <small>{t("给下一个想法，一张空白画布", "Start with a blank canvas")}</small>
           </button>
         </section>
       )}
@@ -381,15 +383,15 @@ export default function WorkflowList() {
             disabled={page === 1 || loading || Boolean(pending)}
             onClick={() => setPage(page - 1)}
           >
-            上一页
+            {t("上一页", "Previous")}
           </button>
-          <span>第 {page} 页</span>
+          <span>{t("第", "Page")} {page} {t("页", "")}</span>
           <button
             className="btn btn-default"
             disabled={serverCount < 20 || loading || Boolean(pending)}
             onClick={() => setPage(page + 1)}
           >
-            下一页
+            {t("下一页", "Next")}
           </button>
         </div>
       )}

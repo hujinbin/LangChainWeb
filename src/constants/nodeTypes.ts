@@ -374,7 +374,7 @@ export const normalizeModelCatalog = (value: unknown = {}): ModelCatalog => {
   const defaults = asRecord(catalog.defaults);
   const result: ModelCatalog = {
     provider: typeof catalog.provider === 'string' ? catalog.provider : 'agnes',
-    flashOnly: true,
+    flashOnly: catalog.flashOnly === true,
     text: [],
     image: [],
     video: [],
@@ -383,7 +383,7 @@ export const normalizeModelCatalog = (value: unknown = {}): ModelCatalog => {
   (Object.keys(FLASH_MODEL_CATALOG) as ModelKind[]).forEach((kind) => {
     const remote = catalog[kind];
     result[kind] = Array.isArray(remote)
-      ? FLASH_MODEL_CATALOG[kind].filter((model) => remote.includes(model))
+      ? Array.from(new Set(remote.filter((model): model is string => typeof model === 'string' && Boolean(model.trim()))))
       : [...FLASH_MODEL_CATALOG[kind]];
     const preferred = defaults[kind];
     result.defaults[kind] =
@@ -538,7 +538,7 @@ export const mergeNodeTypes = (
       properties: {
         ...localSchema.properties,
         ...server?.config_schema?.properties,
-        // 模型输入保留前端的类型约束与 Flash 白名单。
+        // 模型输入保留前端类型约束，可选模型从站点目录读取。
         ...(MODEL_NODE_KINDS[type] ? localSchema.properties : {}),
       },
     };
@@ -563,11 +563,9 @@ export const mergeNodeTypes = (
     };
     const kind = MODEL_NODE_KINDS[type];
     if (kind) {
-      let choices = [...FLASH_MODEL_CATALOG[kind]];
-      const models = server?.models;
-      if (models) choices = choices.filter((model) => models.includes(model));
-      if (catalog)
-        choices = choices.filter((model) => catalog[kind].includes(model));
+      const advertised = server?.models;
+      const choices = (catalog?.[kind] ?? advertised ?? FLASH_MODEL_CATALOG[kind])
+        .filter(model => !advertised || advertised.includes(model));
       const preferred = catalog?.defaults[kind] || server?.defaultModel;
       merged.models = choices;
       merged.defaultModel =

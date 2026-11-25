@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { SITE } from '../config/site';
 import { siteAPI } from '../services/siteApi';
+import { applySiteTheme } from './themeStore';
 import type { SiteConfig } from '../services/siteApi';
 
 interface SiteState {
@@ -15,8 +16,10 @@ const SITE_BLOCK_CODES = ['SITE_NOT_REGISTERED', 'SITE_DISABLED', 'SITE_NOT_FOUN
 
 function blockMessage(error: unknown): string {
   const detail = error as { errorCode?: string; status?: number; message?: string };
-  if (detail?.errorCode && SITE_BLOCK_CODES.includes(detail.errorCode)) {
-    return detail.errorCode === 'SITE_DISABLED'
+  const http = (error as {response?: {status?: number; data?: {errorCode?: string}}})?.response;
+  const code = detail?.errorCode || http?.data?.errorCode;
+  if (code && SITE_BLOCK_CODES.includes(code)) {
+    return code === 'SITE_DISABLED'
       ? '该站点已暂停服务，请联系站点管理员。'
       : '当前域名尚未登记到任何站点，请确认部署域名或联系站点管理员。';
   }
@@ -32,6 +35,7 @@ export const useSiteStore = create<SiteState>((set, get) => ({
     if (get().loaded) return;
     try {
       const config = await siteAPI.config();
+      applySiteTheme(config.theme);
       if (config.name) SITE.name = config.name;
       if (config.logoUrl) SITE.logoUrl = config.logoUrl;
       if (config.contact?.qq) SITE.qqGroup = config.contact.qq;

@@ -1,3 +1,5 @@
+import { novelLabels } from './novelLabels';
+import { useLabels } from '../../store/languageStore';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FiBookOpen, FiPlus, FiRefreshCw, FiTrash2 } from 'react-icons/fi';
@@ -8,9 +10,15 @@ import { errorMessage, isActive, statusLabel } from '../Agents/AgentShared';
 import '../Agents/Agents.css';
 import './Novel.css';
 
-const EMPTY_FORM = { name: '', genre: '', chapterCount: 20, targetWords: 2000, textModel: '' };
+const EMPTY_FORM = { name: '', synopsis: '', style: '简洁', genre: '', audience: '通用', perspective: '第三人称', length: '短篇', chapterCount: 10, targetWords: 2000, textModel: '' };
+const preferences = [
+  { key: 'audience', label: '读者', choices: ['通用', '男频', '女频'] },
+  { key: 'perspective', label: '叙述视角', choices: ['第三人称', '第一人称'] },
+  { key: 'length', label: '篇幅', choices: ['短篇', '中篇', '长篇'] },
+] as const;
 
 export default function NovelList(): React.JSX.Element {
+  const t = useLabels();
   const navigate = useNavigate();
   const loggedIn = useAuthStore((state) => state.isLoggedIn);
   const [catalog, setCatalog] = useState<NovelCatalog | null>(null);
@@ -66,7 +74,7 @@ export default function NovelList(): React.JSX.Element {
       return;
     }
     if (!form.name.trim()) {
-      setError('请先填写作品名称');
+      setError(t("请先填写作品名称", "Enter a title first"));
       return;
     }
     setCreating(true);
@@ -74,11 +82,14 @@ export default function NovelList(): React.JSX.Element {
     try {
       const project = await novelAPI.create({
         name: form.name.trim(),
+        synopsis: form.synopsis.trim(),
+        style: form.style.trim(),
         genre: form.genre || undefined,
         settings: {
           genre: form.genre || undefined,
           chapterCount: form.chapterCount,
           targetWords: form.targetWords,
+          audience: form.audience, perspective: form.perspective, length: form.length,
           textModel: form.textModel || undefined,
         },
       });
@@ -108,8 +119,8 @@ export default function NovelList(): React.JSX.Element {
       <header className="agent-page-heading">
         <div>
           <div className="agent-eyebrow">NOVEL STUDIO</div>
-          <h1>把故事，一章一章写下去。</h1>
-          <p>设定类型与篇幅，先生成章节大纲，再逐章续写、润色并导出成书。</p>
+          <h1>{t("把故事，一章一章写下去。", "Write your story, one chapter at a time.")}</h1>
+          <p>{t("设定类型与篇幅，先生成章节大纲，再逐章续写、润色并导出成书。", "Choose a genre and length, generate an outline and write, revise and export your chapters.")}</p>
         </div>
         <span className="agent-heading-note">
           <i /> TXT · Markdown · DOCX · EPUB
@@ -119,54 +130,67 @@ export default function NovelList(): React.JSX.Element {
         <div className="agent-error" role="alert">
           {error}
           <button type="button" onClick={() => void load()}>
-            重试
+            {t("重试", "Retry")}
           </button>
         </div>
       )}
       {!loggedIn ? (
         <div className="agent-empty">
           <FiBookOpen />
-          <h3>登录后开始你的第一本小说</h3>
-          <p>大纲、章节与生成进度都会保存在你的账号空间。</p>
+          <h3>{t("登录后开始你的第一本小说", "Sign in to start your first novel")}</h3>
+          <p>{t("大纲、章节与生成进度都会保存在你的账号空间。", "Your account stores outlines, chapters and generation progress.")}</p>
           <Link className="btn btn-primary" to="/login">
-            前往登录
+            {t("前往登录", "Sign in")}
           </Link>
         </div>
       ) : (
         <section className="novel-create surface">
           <div className="novel-create-heading">
-            <h2>新建作品</h2>
-            <p>创建后先生成大纲，确认章节结构再开始写正文。</p>
+            <h2>{t("新建作品", "New novel")}</h2>
+            <p>{t("创建后先生成大纲，确认章节结构再开始写正文。", "Generate an outline and review its chapters before writing.")}</p>
           </div>
           <form className="novel-create-form" onSubmit={create}>
             <label>
-              <span>作品名称</span>
+              <span>{t("作品名称", "Title")}</span>
               <input
                 value={form.name}
                 maxLength={60}
-                placeholder="例如：雾港来信"
+                placeholder={t("例如：雾港来信", "For example, Letters from Mist Harbor")}
                 onChange={(event) => setForm({ ...form, name: event.target.value })}
               />
             </label>
+            <label className="novel-inspiration">
+              <span>{t("一句话灵感", "Story idea")}</span>
+              <input value={form.synopsis} maxLength={2000} placeholder={t("一封迟到二十年的信，让雾港的邮递员重新出发。", "A letter delayed by twenty years sends a harbor postman on a new journey.")}
+                onChange={event => setForm({ ...form, synopsis: event.target.value })} />
+            </label>
+            {preferences.map(({ key, label, choices }) => <label key={key}>
+              <span>{t(label, novelLabels[label] || label)}</span><select value={form[key]} onChange={event => setForm({ ...form, [key]: event.target.value })}>
+                {(catalog?.options?.[key] || choices).map(choice => <option key={choice} value={choice}>{t(choice, novelLabels[choice] || choice)}</option>)}
+              </select>
+            </label>)}
             <label>
-              <span>小说类型</span>
+              <span>{t("文风", "Style")}</span><input value={form.style} maxLength={2000} onChange={event => setForm({ ...form, style: event.target.value })} />
+            </label>
+            <label>
+              <span>{t("小说类型", "Genre")}</span>
               <select
                 value={form.genre}
                 onChange={(event) => setForm({ ...form, genre: event.target.value })}
               >
                 {(catalog?.genres || ['都市']).map((genre) => (
                   <option key={genre} value={genre}>
-                    {genre}
+                    {t(genre, novelLabels[genre] || genre)}
                   </option>
                 ))}
               </select>
             </label>
             <label>
-              <span>章节数量</span>
+              <span>{t("章节数量", "Chapters")}</span>
               <input
                 type="number"
-                min={catalog?.agent.limits.minChapters || 3}
-                max={catalog?.agent.limits.maxChapters || 200}
+                min={catalog?.agent.limits.minChapters || 1}
+                max={catalog?.agent.limits.maxChapters || 100}
                 value={form.chapterCount}
                 onChange={(event) =>
                   setForm({ ...form, chapterCount: Number(event.target.value) })
@@ -174,12 +198,11 @@ export default function NovelList(): React.JSX.Element {
               />
             </label>
             <label>
-              <span>单章目标字数</span>
+              <span>{t("单章目标字数", "Target words per chapter")}</span>
               <input
                 type="number"
-                min={catalog?.agent.limits.minWords || 300}
-                max={catalog?.agent.limits.maxWords || 6000}
-                step={100}
+                min={catalog?.agent.limits.minWords || 800}
+                max={catalog?.agent.limits.maxWords || 5000}
                 value={form.targetWords}
                 onChange={(event) =>
                   setForm({ ...form, targetWords: Number(event.target.value) })
@@ -187,7 +210,7 @@ export default function NovelList(): React.JSX.Element {
               />
             </label>
             <label>
-              <span>文本模型</span>
+              <span>{t("文本模型", "Text model")}</span>
               <select
                 value={form.textModel}
                 onChange={(event) => setForm({ ...form, textModel: event.target.value })}
@@ -199,26 +222,27 @@ export default function NovelList(): React.JSX.Element {
                 ))}
               </select>
             </label>
-            <button className="btn btn-primary" type="submit" disabled={creating}>
-              <FiPlus /> {creating ? '正在创建…' : '创建作品'}
+            <button className="btn btn-primary" type="submit" disabled={creating || !catalog?.models.text.length}>
+              <FiPlus /> {creating ? t("正在创建…", "Creating…") : t("创建作品", "Create novel")}
             </button>
           </form>
+          {catalog && !catalog.models.text.length && <p role="status">{t("本站暂无可用文本模型。", "No text models are available for this site.")}</p>}
         </section>
       )}
       {loggedIn && (
-        <section className="agent-project-section" aria-label="我的小说作品">
+        <section className="agent-project-section" aria-label={t("我的小说作品", "My novels")}>
           <div className="agent-section-heading">
             <div>
-              <h2>我的作品</h2>
-              <p>{projects.length ? `${projects.length} 本作品，继续上次的章节。` : '还没有作品，先创建一个故事。'}</p>
+              <h2>{t("我的作品", "My projects")}</h2>
+              <p>{projects.length ? `${projects.length} 本作品，继续上次的章节。` : t("还没有作品，先创建一个故事。", "Create your first story.")}</p>
             </div>
             <button className="btn btn-default" disabled={loading} onClick={() => void load()}>
-              <FiRefreshCw /> 刷新
+              <FiRefreshCw /> {t("刷新", "Refresh")}
             </button>
           </div>
           {loading && !projects.length ? (
             <div className="agent-empty" role="status">
-              正在读取作品…
+              {t("正在读取作品…", "Loading novels…")}
             </div>
           ) : (
             <div className="agent-project-grid">
@@ -229,13 +253,13 @@ export default function NovelList(): React.JSX.Element {
                       <FiBookOpen />
                     </span>
                     <span className="agent-kicker">
-                      {project.genre} · {project.settings.chapterCount} 章
+                      {t(project.genre, novelLabels[project.genre] || project.genre)} · {project.settings.chapterCount} {t("章", "chapters")}
                     </span>
                     <h3>{project.name}</h3>
                     <p>
                       {project.outline?.synopsis ||
                         project.synopsis ||
-                        '还没有大纲，进入作品生成章节结构。'}
+                        t("还没有大纲，进入作品生成章节结构。", "Generate an outline to start planning chapters.")}
                     </p>
                     <footer>
                       <span className={isActive(project.job?.status) ? 'agent-live' : ''}>
@@ -243,7 +267,7 @@ export default function NovelList(): React.JSX.Element {
                           ? statusLabel(project.job.status)
                           : `${project.doneChapters}/${project.settings.chapterCount} 章`}
                       </span>
-                      <time>{project.totalWords} 字</time>
+                      <time>{project.totalWords} {t("字", "words")}</time>
                     </footer>
                   </Link>
                   <button
@@ -257,9 +281,9 @@ export default function NovelList(): React.JSX.Element {
                   </button>
                   {deleting === project.id && (
                     <div className="novel-delete-confirm">
-                      <span>确认删除《{project.name}》？</span>
+                      <span>{t("确认删除《", "Delete “")}{project.name}》？</span>
                       <button type="button" className="btn btn-default" onClick={() => setDeleting('')}>
-                        取消
+                        {t("取消", "Cancel")}
                       </button>
                       <button
                         type="button"
@@ -267,7 +291,7 @@ export default function NovelList(): React.JSX.Element {
                         disabled={loading}
                         onClick={() => void remove(project.id)}
                       >
-                        删除
+                        {t("删除", "Delete")}
                       </button>
                     </div>
                   )}

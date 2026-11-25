@@ -1,10 +1,13 @@
 import { create } from 'zustand';
+import { DEFAULT_THEME } from '../config/runtime';
 import { SITE } from '../config/site';
 
-export type ThemeMode = 'auto' | 'light' | 'dark';
+export type SiteTheme = 'auto' | 'light' | 'dark';
+export type ThemeMode = SiteTheme | 'site';
 export type ResolvedTheme = 'light' | 'dark';
 
 const STORAGE_KEY = 'zhiFlow-theme';
+let siteTheme: SiteTheme = DEFAULT_THEME;
 
 const prefersDark = () =>
   typeof window !== 'undefined' &&
@@ -18,11 +21,13 @@ const readMode = (): ThemeMode => {
   } catch {
     /* localStorage 不可用时按系统主题 */
   }
-  return 'auto';
+  return 'site';
 };
 
-const resolveTheme = (mode: ThemeMode): ResolvedTheme =>
-  mode === 'auto' ? (prefersDark() ? 'dark' : 'light') : mode;
+const resolveTheme = (mode: ThemeMode): ResolvedTheme => {
+  const effective = mode === 'site' ? siteTheme : mode;
+  return effective === 'auto' ? (prefersDark() ? 'dark' : 'light') : effective;
+};
 
 export function applyTheme(mode: ThemeMode) {
   if (typeof document === 'undefined') return;
@@ -56,6 +61,15 @@ const useThemeStore = create<ThemeStore>((set) => ({
 
 applyTheme(useThemeStore.getState().mode);
 
+export function applySiteTheme(value: unknown) {
+  if (value !== 'light' && value !== 'dark' && value !== 'auto') return;
+  siteTheme = value;
+  if (useThemeStore.getState().mode === 'site') {
+    applyTheme('site');
+    useThemeStore.setState({ resolved: resolveTheme('site') });
+  }
+}
+
 if (
   typeof window !== 'undefined' &&
   typeof window.matchMedia === 'function'
@@ -63,9 +77,10 @@ if (
   const media = window.matchMedia('(prefers-color-scheme: dark)');
   if (typeof media.addEventListener === 'function') {
     media.addEventListener('change', () => {
-      if (useThemeStore.getState().mode === 'auto') {
-        applyTheme('auto');
-        useThemeStore.setState({ resolved: resolveTheme('auto') });
+      const { mode } = useThemeStore.getState();
+      if (mode === 'auto' || (mode === 'site' && siteTheme === 'auto')) {
+        applyTheme(mode);
+        useThemeStore.setState({ resolved: resolveTheme(mode) });
       }
     });
   }

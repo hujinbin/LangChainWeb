@@ -1,3 +1,4 @@
+import { useLabels } from '../../store/languageStore';
 import type { IconType } from 'react-icons';
 import type { DocumentDetail, KnowledgeBase, KnowledgeConfig, KnowledgeDocument, RetrievalResult } from '../../types/knowledge';
 import type { BaseFormValues } from './KnowledgeBaseShared';
@@ -52,6 +53,7 @@ function DocumentChunks({
   selection: DocumentSelection;
   onClose: () => void;
 }) {
+  const t = useLabels();
   const [page, setPage] = useState(selection.page || 1);
   const [data, setData] = useState<DocumentDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -74,29 +76,29 @@ function DocumentChunks({
       .catch((caughtError: unknown) => {
         const err = normalizeError(caughtError);
         if (!controller.signal.aborted)
-          setError(err.message || '读取文档分段失败');
+          setError(err.message || t("读取文档分段失败", "Could not load document chunks"));
       })
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);
       });
     return () => controller.abort();
-  }, [baseId, selection.id, page, revision]);
+  }, [baseId, selection.id, page, revision, t]);
   return (
     <KnowledgeModal
-      title={selection.name || '文档分段'}
-      description="查看实际保存的文档分段与引用内容。"
+      title={selection.name || t("文档分段", "Document chunks")}
+      description={t("查看实际保存的文档分段与引用内容。", "Inspect saved chunks and their source text.")}
       wide
       onClose={onClose}
     >
       <KnowledgeError message={error} retry={() => setRevision(revision + 1)} />
       {loading ? (
-        <KnowledgeLoading text="正在读取文档分段" />
+        <KnowledgeLoading text={t("正在读取文档分段", "Loading chunks")} />
       ) : (
         data && (
           <>
             <div className="kb-chunks-summary">
               <KnowledgeStatus status={data.status} enabled={data.enabled} />
-              <span>{data.totalChunks ?? data.chunkCount} 个分段</span>
+              <span>{data.totalChunks ?? data.chunkCount} {t("个分段", "chunks")}</span>
             </div>
             {data.chunks?.length ? (
               <div className="kb-document-chunks">
@@ -106,9 +108,9 @@ function DocumentChunks({
                     key={chunk.id || chunk.index}
                   >
                     <div>
-                      <b>分段 {chunk.index + 1}</b>
+                      <b>{t("分段", "Chunk")} {chunk.index + 1}</b>
                       <small>
-                        {chunk.characters ?? chunk.content.length} 字符
+                        {chunk.characters ?? chunk.content.length} {t("字符", "characters")}
                       </small>
                     </div>
                     <p>{chunk.content}</p>
@@ -116,7 +118,7 @@ function DocumentChunks({
                 ))}
               </div>
             ) : (
-              <p className="kb-muted">文档暂无可查看的分段，请检查索引状态。</p>
+              <p className="kb-muted">{t("文档暂无可查看的分段，请检查索引状态。", "No chunks available. Check indexing status.")}</p>
             )}
             <KnowledgePagination
               page={page}
@@ -140,6 +142,7 @@ function RetrievalTest({
   configured?: boolean;
   onCitation: (selection: DocumentSelection) => void;
 }) {
+  const t = useLabels();
   const [query, setQuery] = useState('');
   const [topK, setTopK] = useState<string | number>(base.topK || 5);
   const [scoreThreshold, setScoreThreshold] = useState<string | number>(
@@ -173,7 +176,7 @@ function RetrievalTest({
     } catch (caughtError) {
       const err = normalizeError(caughtError);
       if (!controller.signal.aborted)
-        setError(err.message || '检索失败，请重试');
+        setError(err.message || t("检索失败，请重试", "Search failed. Try again."));
     } finally {
       if (!controller.signal.aborted) setLoading(false);
     }
@@ -181,11 +184,11 @@ function RetrievalTest({
   return (
     <section className="kb-retrieval-layout">
       <form className="surface kb-retrieval-form kb-form" onSubmit={retrieve}>
-        <span className="kb-section-label">检索测试</span>
-        <h2>这份知识，能回答什么？</h2>
-        <p className="kb-muted">使用真实文档检索，检查命中内容与引用。</p>
+        <span className="kb-section-label">{t("检索测试", "Test retrieval")}</span>
+        <h2>{t("这份知识，能回答什么？", "Ask a question about your documents")}</h2>
+        <p className="kb-muted">{t("使用真实文档检索，检查命中内容与引用。", "Search the documents and inspect the matching passages.")}</p>
         <label htmlFor="kb-retrieve-query">
-          检索问题
+          {t("检索问题", "Question")}
           <textarea
             id="kb-retrieve-query"
             rows={6}
@@ -193,13 +196,13 @@ function RetrievalTest({
             maxLength={6000}
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="例如：产品支持哪些文件格式？"
+            placeholder={t("例如：产品支持哪些文件格式？", "For example, which file formats are supported?")}
             disabled={loading}
           />
         </label>
         <div className="kb-form-grid">
           <label htmlFor="kb-retrieve-topk">
-            命中数量
+            {t("命中数量", "Result count")}
             <input
               id="kb-retrieve-topk"
               type="number"
@@ -213,7 +216,7 @@ function RetrievalTest({
             />
           </label>
           <label htmlFor="kb-retrieve-score">
-            最低检索得分
+            {t("最低检索得分", "Minimum score")}
             <input
               id="kb-retrieve-score"
               type="number"
@@ -230,11 +233,11 @@ function RetrievalTest({
         <div className="kb-mode-note">
           <FiDatabase />
           <span>
-            {base.indexMode === 'dense' ? '语义向量检索' : '关键词检索 · BM25'}
+            {base.indexMode === 'dense' ? t("语义向量检索", "Semantic vector search") : t("关键词检索 · BM25", "Keyword search · BM25")}
             <small>
               {base.indexMode === 'dense'
-                ? '按文本语义查找相关内容。'
-                : '检索得分用于排序，不代表语义相似率。'}
+                ? t("按文本语义查找相关内容。", "Find passages with related meaning.")
+                : t("检索得分用于排序，不代表语义相似率。", "Scores rank results. They do not represent a percentage match.")}
             </small>
           </span>
         </div>
@@ -245,23 +248,23 @@ function RetrievalTest({
           }
         >
           {loading ? <FiRefreshCw className="spinning" /> : <FiSearch />}
-          {loading ? '正在检索' : '开始检索'}
+          {loading ? t("正在检索", "Searching") : t("开始检索", "Search")}
         </button>
         {base.enabled === false && (
-          <p className="kb-muted">知识库已停用，请在设置中启用后测试。</p>
+          <p className="kb-muted">{t("知识库已停用，请在设置中启用后测试。", "Enable this knowledge base in Settings to test retrieval.")}</p>
         )}
         <KnowledgeError message={error} />
       </form>
       <div className="kb-retrieval-results" aria-live="polite">
         {loading ? (
-          <KnowledgeLoading text="正在检索相关文档" />
+          <KnowledgeLoading text={t("正在检索相关文档", "Searching documents")} />
         ) : result ? (
           <>
             <header className="kb-results-heading">
               <h2>
-                检索结果 <span>{result.documents?.length || 0}</span>
+                {t("检索结果", "Search results")} <span>{result.documents?.length || 0}</span>
               </h2>
-              <p>问题：{result.query}</p>
+              <p>{t("问题：", "Question:")}{result.query}</p>
             </header>
             {result.documents?.length ? (
               result.documents.map((hit, index) => (
@@ -275,19 +278,19 @@ function RetrievalTest({
                     </span>
                     <div>
                       <strong>
-                        {hit.title || hit.sourceName || '文档引用'}
+                        {hit.title || hit.sourceName || t("文档引用", "Source")}
                       </strong>
-                      <small>分段 {Number(hit.chunkIndex || 0) + 1}</small>
+                      <small>{t("分段", "Chunk")} {Number(hit.chunkIndex || 0) + 1}</small>
                     </div>
                     <span className="kb-score">
-                      得分{' '}
+                      {t("得分", "Score")}{' '}
                       {Number.isFinite(hit.score) ? hit.score.toFixed(4) : '—'}
                     </span>
                   </header>
                   <p>{hit.content}</p>
                   <footer>
                     <FiFileText />
-                    <span>{hit.sourceName || hit.title || '文档'}</span>
+                    <span>{hit.sourceName || hit.title || t("文档", "Document")}</span>
                     {hit.documentId && (
                       <button
                         className="text-action"
@@ -301,7 +304,7 @@ function RetrievalTest({
                           })
                         }
                       >
-                        查看引用 <FiArrowUpRight />
+                        {t("查看引用", "View source")} <FiArrowUpRight />
                       </button>
                     )}
                   </footer>
@@ -312,9 +315,9 @@ function RetrievalTest({
                 <span className="empty-state-icon">
                   <FiSearch />
                 </span>
-                <h3>未找到命中内容</h3>
+                <h3>{t("未找到命中内容", "No matches")}</h3>
                 <p>
-                  尝试更具体的关键词、降低最低得分，或确认文档已启用并完成索引。
+                  {t("尝试更具体的关键词、降低最低得分，或确认文档已启用并完成索引。", "Try a more specific term or lower score. Check that the documents are enabled and indexed.")}
                 </p>
               </section>
             )}
@@ -324,8 +327,8 @@ function RetrievalTest({
             <span>
               <FiSearch />
             </span>
-            <h3>先问一个问题</h3>
-            <p>命中的文档分段与原文引用，会显示在这里。</p>
+            <h3>{t("先问一个问题", "Enter a question")}</h3>
+            <p>{t("命中的文档分段与原文引用，会显示在这里。", "Matching passages and source references will appear here.")}</p>
           </section>
         )}
       </div>
@@ -334,6 +337,7 @@ function RetrievalTest({
 }
 
 export default function KnowledgeBaseDetail() {
+  const t = useLabels();
   const { id = '' } = useParams();
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
   const [base, setBase] = useState<KnowledgeBase | null>(null);
@@ -390,12 +394,12 @@ export default function KnowledgeBaseDetail() {
       } catch (caughtError) {
       const err = normalizeError(caughtError);
         if (version === requestVersion.current)
-          setError(err.message || '读取知识库详情失败');
+          setError(err.message || t("读取知识库详情失败", "Could not load knowledge base"));
       } finally {
         if (version === requestVersion.current) setLoading(false);
       }
     },
-    [id, isLoggedIn, page, query],
+    [id, isLoggedIn, page, query, t],
   );
   useEffect(() => {
     const ref = requestVersion;
@@ -419,7 +423,7 @@ export default function KnowledgeBaseDetail() {
       if (action === 'rebuild') {
         const response = await knowledgeAPI.rebuildDocument(id, document.id);
         if (response.data?.status === 'failed')
-          throw new Error('文档索引失败，请稍后重试');
+          throw new Error(t("文档索引失败，请稍后重试", "Indexing failed. Try again later."));
       } else
         await knowledgeAPI.updateDocument(id, document.id, {
           enabled: !document.enabled,
@@ -427,15 +431,15 @@ export default function KnowledgeBaseDetail() {
       await load();
       setSuccess(
         action === 'rebuild'
-          ? '文档索引已更新。'
+          ? t("文档索引已更新。", "Document index updated.")
           : document.enabled
-            ? '文档已停用。'
-            : '文档已启用。',
+            ? t("文档已停用。", "Document disabled.")
+            : t("文档已启用。", "Document enabled."),
       );
     } catch (caughtError) {
       const err = normalizeError(caughtError);
       await load();
-      setError(err.message || '更新文档失败，请重试');
+      setError(err.message || t("更新文档失败，请重试", "Could not update document."));
     } finally {
       setPending('');
     }
@@ -450,10 +454,10 @@ export default function KnowledgeBaseDetail() {
       setDeleting(null);
       if (documents.length === 1 && page > 1) setPage(page - 1);
       else await load();
-      setSuccess('文档已删除。');
+      setSuccess(t("文档已删除。", "Document deleted."));
     } catch (caughtError) {
       const err = normalizeError(caughtError);
-      setDialogError(err.message || '删除文档失败');
+      setDialogError(err.message || t("删除文档失败", "Could not delete document"));
     } finally {
       setPending('');
     }
@@ -465,10 +469,10 @@ export default function KnowledgeBaseDetail() {
     try {
       await knowledgeAPI.update(id, values);
       await load();
-      setSuccess('知识库设置已保存。');
+      setSuccess(t("知识库设置已保存。", "Knowledge base settings saved."));
     } catch (caughtError) {
       const err = normalizeError(caughtError);
-      setError(err.message || '保存设置失败，请重试');
+      setError(err.message || t("保存设置失败，请重试", "Could not save settings."));
     } finally {
       setPending('');
     }
@@ -487,11 +491,11 @@ export default function KnowledgeBaseDetail() {
         return;
       }
       setRebuilding(false);
-      setSuccess('知识库索引已更新。');
+      setSuccess(t("知识库索引已更新。", "Knowledge base index updated."));
     } catch (caughtError) {
       const err = normalizeError(caughtError);
       await load();
-      setDialogError(err.message || '重新索引失败，请重试');
+      setDialogError(err.message || t("重新索引失败，请重试", "Could not rebuild the index."));
     } finally {
       setPending('');
     }
@@ -499,13 +503,13 @@ export default function KnowledgeBaseDetail() {
   return (
     <main className="page-wrap kb-page kb-detail-page">
       <Link className="record-back" to="/knowledge">
-        <FiArrowLeft /> 返回知识库
+        <FiArrowLeft /> {t("返回知识库", "Back to knowledge bases")}
       </Link>
       <header className="page-heading">
         <div>
           <span className="eyebrow">KNOWLEDGE COLLECTION</span>
-          <h1>{base?.name || '知识库详情'}</h1>
-          <p>{base?.description || '管理文档、检查索引并测试检索效果。'}</p>
+          <h1>{base?.name || t("知识库详情", "Knowledge base details")}</h1>
+          <p>{base?.description || t("管理文档、检查索引并测试检索效果。", "Manage documents, inspect indexing and test retrieval.")}</p>
         </div>
         <button
           className="btn btn-primary"
@@ -514,7 +518,7 @@ export default function KnowledgeBaseDetail() {
           }
           onClick={() => setImporting(true)}
         >
-          <FiPlus /> 导入文档
+          <FiPlus /> {t("导入文档", "Import documents")}
         </button>
       </header>
       {!isLoggedIn ? (
@@ -523,7 +527,7 @@ export default function KnowledgeBaseDetail() {
         <>
           {config?.configured === false && (
             <div className="notice kb-notice" role="status">
-              知识库服务尚未配置。请联系管理员开通后导入文档与检索。
+              {t("知识库服务尚未配置。请联系管理员开通后导入文档与检索。", "Knowledge services are not configured. Contact your administrator.")}
             </div>
           )}
           <KnowledgeError message={error} retry={load} />
@@ -552,26 +556,26 @@ export default function KnowledgeBaseDetail() {
                     />
                     <span>
                       {base.indexMode === 'dense'
-                        ? '语义向量检索'
-                        : '关键词检索 · BM25'}
+                        ? t("语义向量检索", "Semantic vector search")
+                        : t("关键词检索 · BM25", "Keyword search · BM25")}
                     </span>
                   </div>
                   <div className="kb-summary-metric">
                     <FiFileText />
                     <strong>{base.documentCount ?? '—'}</strong>
-                    <span>份文档</span>
+                    <span>{t("份文档", "documents")}</span>
                   </div>
                   <div className="kb-summary-metric">
                     <FiLayers />
                     <strong>{base.chunkCount ?? '—'}</strong>
-                    <span>个分段</span>
+                    <span>{t("个分段", "chunks")}</span>
                   </div>
-                  <small>更新于 {formatDate(base.updatedAt)}</small>
+                  <small>{t("更新于", "Updated")} {formatDate(base.updatedAt)}</small>
                 </section>
                 <div
                   className="kb-tabs"
                   role="tablist"
-                  aria-label="知识库管理"
+                  aria-label={t("知识库管理", "Manage knowledge base")}
                   onKeyDown={(event) => {
                     if (
                       !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(
@@ -596,9 +600,9 @@ export default function KnowledgeBaseDetail() {
                   }}
                 >
                   {([
-                    ['documents', FiFileText, '文档'],
-                    ['retrieval', FiSearch, '检索测试'],
-                    ['settings', FiSettings, '设置'],
+                    ['documents', FiFileText, t("文档", "Document")],
+                    ['retrieval', FiSearch, t("检索测试", "Test retrieval")],
+                    ['settings', FiSettings, t("设置", "Settings")],
                   ] as [string, IconType, string][]).map(([value, Icon, label]) => (
                     <button
                       key={value}
@@ -627,14 +631,14 @@ export default function KnowledgeBaseDetail() {
                     <>
                       <div className="kb-toolbar">
                         <span className="kb-section-label">
-                          文档管理 <small>{total}</small>
+                          {t("文档管理", "Documents")} <small>{total}</small>
                         </span>
                         <label className="kb-search">
                           <FiSearch />
                           <input
-                            aria-label="搜索文档"
+                            aria-label={t("搜索文档", "Search documents")}
                             value={query}
-                            placeholder="搜索文档名称"
+                            placeholder={t("搜索文档名称", "Search document names")}
                             disabled={Boolean(pending)}
                             onChange={(event) => {
                               setQuery(event.target.value);
@@ -644,7 +648,7 @@ export default function KnowledgeBaseDetail() {
                         </label>
                         <button
                           className="btn-icon"
-                          aria-label="刷新文档"
+                          aria-label={t("刷新文档", "Refresh documents")}
                           disabled={loading || Boolean(pending)}
                           onClick={() => load()}
                         >
@@ -652,18 +656,18 @@ export default function KnowledgeBaseDetail() {
                         </button>
                       </div>
                       {loading ? (
-                        <KnowledgeLoading text="正在读取文档" />
+                        <KnowledgeLoading text={t("正在读取文档", "Loading documents")} />
                       ) : documents.length ? (
                         <section
                           className="surface kb-document-list"
-                          aria-label="知识库文档"
+                          aria-label={t("知识库文档", "Knowledge base documents")}
                         >
                           <div className="kb-doc-table-heading">
-                            <span>文档名称</span>
-                            <span>索引状态</span>
-                            <span>分段</span>
-                            <span>更新时间</span>
-                            <span>操作</span>
+                            <span>{t("文档名称", "Document name")}</span>
+                            <span>{t("索引状态", "Index status")}</span>
+                            <span>{t("分段", "Chunk")}</span>
+                            <span>{t("更新时间", "Updated")}</span>
+                            <span>{t("操作", "Actions")}</span>
                           </div>
                           {documents.map((doc) => (
                             <article className="kb-document-row" key={doc.id}>
@@ -685,12 +689,12 @@ export default function KnowledgeBaseDetail() {
                                   <small>
                                     {doc.sourceName ||
                                       (doc.sourceType === 'text'
-                                        ? '文本导入'
-                                        : '文件导入')}
+                                        ? t("文本导入", "Pasted text")
+                                        : t("文件导入", "Uploaded file"))}
                                   </small>
                                   {doc.status === 'failed' && (
                                     <p className="kb-document-error">
-                                      {doc.error || '索引失败，请重新索引。'}
+                                      {doc.error || t("索引失败，请重新索引。", "Indexing failed. Rebuild the index.")}
                                     </p>
                                   )}
                                 </div>
@@ -701,7 +705,7 @@ export default function KnowledgeBaseDetail() {
                               />
                               <span className="kb-doc-count">
                                 {doc.chunkCount ?? '—'}
-                                <small> 个分段</small>
+                                <small> {t("个分段", "chunks")}</small>
                               </span>
                               <time className="kb-doc-time">
                                 {formatDate(doc.updatedAt)}
@@ -709,7 +713,7 @@ export default function KnowledgeBaseDetail() {
                               <div className="kb-document-actions">
                                 <button
                                   className="btn-icon"
-                                  title="查看分段"
+                                  title={t("查看分段", "View chunks")}
                                   aria-label={`查看 ${doc.name} 分段`}
                                   onClick={() =>
                                     setSelection({ id: doc.id, name: doc.name })
@@ -719,8 +723,8 @@ export default function KnowledgeBaseDetail() {
                                 </button>
                                 <button
                                   className="btn-icon"
-                                  title={doc.enabled ? '停用文档' : '启用文档'}
-                                  aria-label={`${doc.enabled ? '停用' : '启用'} ${doc.name}`}
+                                  title={doc.enabled ? t("停用文档", "Disable document") : t("启用文档", "Enable document")}
+                                  aria-label={`${doc.enabled ? t("停用", "Disable") : t("启用", "Enable")} ${doc.name}`}
                                   disabled={
                                     Boolean(pending) || !config?.configured
                                   }
@@ -730,7 +734,7 @@ export default function KnowledgeBaseDetail() {
                                 </button>
                                 <button
                                   className="btn-icon"
-                                  title="重新索引"
+                                  title={t("重新索引", "Reindex")}
                                   aria-label={`重新索引 ${doc.name}`}
                                   disabled={
                                     Boolean(pending) ||
@@ -747,7 +751,7 @@ export default function KnowledgeBaseDetail() {
                                 </button>
                                 <button
                                   className="btn-icon btn-danger"
-                                  title="删除文档"
+                                  title={t("删除文档", "Delete document")}
                                   aria-label={`删除 ${doc.name}`}
                                   disabled={Boolean(pending)}
                                   onClick={() => {
@@ -767,19 +771,19 @@ export default function KnowledgeBaseDetail() {
                             <FiFileText />
                           </span>
                           <h2>
-                            {query ? '没有找到匹配的文档' : '给知识库添加内容'}
+                            {query ? t("没有找到匹配的文档", "No matching documents") : t("给知识库添加内容", "Add content to this knowledge base")}
                           </h2>
                           <p>
                             {query
-                              ? '试试其他名称，或清空搜索条件。'
-                              : '上传文件或粘贴文本，预览分段后建立索引。'}
+                              ? t("试试其他名称，或清空搜索条件。", "Try another name or clear the search.")
+                              : t("上传文件或粘贴文本，预览分段后建立索引。", "Upload a file or paste text, preview the chunks and build the index.")}
                           </p>
                           <button
                             className="btn btn-primary"
                             disabled={!config?.configured}
                             onClick={() => setImporting(true)}
                           >
-                            <FiPlus /> 导入文档
+                            <FiPlus /> {t("导入文档", "Import documents")}
                           </button>
                         </section>
                       )}
@@ -802,9 +806,9 @@ export default function KnowledgeBaseDetail() {
                   {tab === 'settings' && (
                     <div className="kb-settings-layout">
                       <section className="surface kb-settings-form">
-                        <h2>知识库设置</h2>
+                        <h2>{t("知识库设置", "Knowledge base settings")}</h2>
                         <p className="kb-muted">
-                          默认分段参数用于新导入的文档；已有文档重新索引后应用新参数。
+                          {t("默认分段参数用于新导入的文档；已有文档重新索引后应用新参数。", "New imports use these chunk settings. Reindex existing documents to apply them.")}
                         </p>
                         <BaseForm
                           key={`${base.id}-${base.updatedAt}`}
@@ -816,9 +820,9 @@ export default function KnowledgeBaseDetail() {
                       </section>
                       <aside className="surface kb-maintenance">
                         <FiRefreshCw />
-                        <h3>重新索引文档</h3>
+                        <h3>{t("重新索引文档", "Reindex documents")}</h3>
                         <p>
-                          文档检索异常时，可重新建立全部文档的索引。处理期间可能暂时无法检索。
+                          {t("文档检索异常时，可重新建立全部文档的索引。处理期间可能暂时无法检索。", "Rebuild all document indexes. Search may be temporarily unavailable during indexing.")}
                         </p>
                         <button
                           className="btn btn-default"
@@ -832,7 +836,7 @@ export default function KnowledgeBaseDetail() {
                             setRebuilding(true);
                           }}
                         >
-                          重新索引全部文档
+                          {t("重新索引全部文档", "Reindex all documents")}
                         </button>
                       </aside>
                     </div>
@@ -852,7 +856,7 @@ export default function KnowledgeBaseDetail() {
           onImported={async () => {
             setImporting(false);
             await load();
-            setSuccess('文档已导入并完成索引。');
+            setSuccess(t("文档已导入并完成索引。", "Document imported and indexed."));
           }}
         />
       )}
@@ -866,13 +870,13 @@ export default function KnowledgeBaseDetail() {
       )}
       {deleting && (
         <KnowledgeModal
-          title="删除文档"
+          title={t("删除文档", "Delete document")}
           onClose={() => setDeleting(null)}
           busy={Boolean(pending)}
         >
           <p className="kb-confirm-text">
-            确定删除“{deleting.name}
-            ”？文档和对应的分段索引将被移除，此操作无法撤销。
+            {t("确定删除“", "Delete “")}{deleting.name}
+            {t("”？文档和对应的分段索引将被移除，此操作无法撤销。", "” and its chunk index? This cannot be undone.")}
           </p>
           <KnowledgeError message={dialogError} />
           <div className="kb-modal-actions">
@@ -881,27 +885,27 @@ export default function KnowledgeBaseDetail() {
               disabled={Boolean(pending)}
               onClick={() => setDeleting(null)}
             >
-              取消
+              {t("取消", "Cancel")}
             </button>
             <button
               className="btn kb-danger-button"
               disabled={Boolean(pending)}
               onClick={deleteDocument}
             >
-              {pending ? '正在删除' : '确认删除'}
+              {pending ? t("正在删除", "Deleting") : t("确认删除", "Delete")}
             </button>
           </div>
         </KnowledgeModal>
       )}
       {rebuilding && base && (
         <KnowledgeModal
-          title="重新索引全部文档"
+          title={t("重新索引全部文档", "Reindex all documents")}
           onClose={() => setRebuilding(false)}
           busy={Boolean(pending)}
         >
           <p className="kb-confirm-text">
-            将为“{base.name}
-            ”中的全部文档重新建立索引，完成后可在列表中检查状态。
+            {t("将为“", "Rebuild all document indexes for “")}{base.name}
+            {t("”中的全部文档重新建立索引，完成后可在列表中检查状态。", "”? Check indexing status in the list when finished.")}
           </p>
           <KnowledgeError message={dialogError} />
           <div className="kb-modal-actions">
@@ -910,14 +914,14 @@ export default function KnowledgeBaseDetail() {
               disabled={Boolean(pending)}
               onClick={() => setRebuilding(false)}
             >
-              取消
+              {t("取消", "Cancel")}
             </button>
             <button
               className="btn btn-primary"
               disabled={Boolean(pending)}
               onClick={rebuildBase}
             >
-              {pending ? '正在重新索引' : '确认重新索引'}
+              {pending ? t("正在重新索引", "Reindexing") : t("确认重新索引", "Reindex")}
             </button>
           </div>
         </KnowledgeModal>

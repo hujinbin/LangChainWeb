@@ -1,3 +1,4 @@
+import { useLabels } from '../../store/languageStore';
 import { useEffect, useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -5,8 +6,6 @@ import {
   FiCheckCircle,
   FiImage,
   FiLogOut,
-  FiMonitor,
-  FiMoon,
   FiRefreshCw,
   FiSave,
   FiShield,
@@ -16,7 +15,7 @@ import {
 import { userAPI } from '../../services/api';
 import useAuthStore from '../../store/authStore';
 import useThemeStore from '../../store/themeStore';
-import type { ThemeMode } from '../../store/themeStore';
+import { LanguageSelect, useThemeOptions } from '../../components/AppearancePreferences';
 import { normalizeError } from '../../types/api';
 import { formatUserDate, maskMobile } from '../../types/user';
 import {
@@ -26,18 +25,9 @@ import {
 } from './UserCenterShared';
 import './UserCenter.css';
 
-const THEME_OPTIONS: {
-  mode: ThemeMode;
-  label: string;
-  description: string;
-  icon: typeof FiSun;
-}[] = [
-  { mode: 'auto', label: '跟随系统', description: '随系统深浅色自动切换', icon: FiMonitor },
-  { mode: 'light', label: '浅色', description: '始终使用浅色界面', icon: FiSun },
-  { mode: 'dark', label: '深色', description: '始终使用深色界面', icon: FiMoon },
-];
-
 export default function Settings() {
+  const t = useLabels();
+  const themeOptions = useThemeOptions();
   const navigate = useNavigate();
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
   const token = useAuthStore((state) => state.token);
@@ -79,11 +69,11 @@ export default function Settings() {
     event.target.value = '';
     if (!file) return;
     if (!file.type.startsWith('image/')) {
-      setProfileError('请选择图片文件');
+      setProfileError(t("请选择图片文件", "Choose an image file"));
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      setProfileError('图片大小不能超过 5MB');
+      setProfileError(t("图片大小不能超过 5MB", "Image size must be 5 MB or less"));
       return;
     }
     setUploading(true);
@@ -91,11 +81,11 @@ export default function Settings() {
     setProfileNotice('');
     try {
       const response = await userAPI.uploadImage(file);
-      if (!response.data) throw new Error('上传结果缺少图片地址');
+      if (!response.data) throw new Error(t("上传结果缺少图片地址", "The upload did not return an image URL"));
       setHeadImg(response.data);
-      setProfileNotice('头像已上传，点击「保存资料」后生效');
+      setProfileNotice(t("头像已上传，点击「保存资料」后生效", "Avatar uploaded. Save your profile to apply it."));
     } catch (caughtError) {
-      setProfileError(normalizeError(caughtError).message || '头像上传失败');
+      setProfileError(normalizeError(caughtError).message || t("头像上传失败", "Avatar upload failed"));
     } finally {
       setUploading(false);
     }
@@ -107,7 +97,7 @@ export default function Settings() {
     setProfileError('');
     setProfileNotice('');
     if (!value) {
-      setProfileError('昵称不能为空');
+      setProfileError(t("昵称不能为空", "Enter a display name"));
       return;
     }
     setSaving(true);
@@ -124,10 +114,10 @@ export default function Settings() {
         },
         token
       );
-      setProfileNotice('资料已更新');
+      setProfileNotice(t("资料已更新", "Profile updated"));
       reload();
     } catch (caughtError) {
-      setProfileError(normalizeError(caughtError).message || '保存失败');
+      setProfileError(normalizeError(caughtError).message || t("保存失败", "Could not save"));
     } finally {
       setSaving(false);
     }
@@ -139,15 +129,15 @@ export default function Settings() {
     setPasswordNotice('');
     const { password, newPassword, confirm } = passwordForm;
     if (needsOldPassword && !password) {
-      setPasswordError('请输入当前密码');
+      setPasswordError(t("请输入当前密码", "Enter your current password"));
       return;
     }
     if (newPassword.length < 6) {
-      setPasswordError('新密码至少需要 6 位');
+      setPasswordError(t("新密码至少需要 6 位", "Use at least 6 characters"));
       return;
     }
     if (newPassword !== confirm) {
-      setPasswordError('两次输入的新密码不一致');
+      setPasswordError(t("两次输入的新密码不一致", "The new passwords do not match"));
       return;
     }
     setPasswordSaving(true);
@@ -157,9 +147,9 @@ export default function Settings() {
         newPassword,
       });
       setPasswordForm({ password: '', newPassword: '', confirm: '' });
-      setPasswordNotice('密码已更新');
+      setPasswordNotice(t("密码已更新", "Password updated"));
     } catch (caughtError) {
-      setPasswordError(normalizeError(caughtError).message || '修改密码失败');
+      setPasswordError(normalizeError(caughtError).message || t("修改密码失败", "Could not change password"));
     } finally {
       setPasswordSaving(false);
     }
@@ -170,33 +160,62 @@ export default function Settings() {
       <header className="page-heading">
         <div>
           <span className="eyebrow">SETTINGS</span>
-          <h1>设置</h1>
-          <p>管理个人资料、登录密码与账号信息。</p>
+          <h1>{t("设置", "Settings")}</h1>
+          <p>{t("管理个人资料、登录密码与账号信息。", "Manage your profile, password and preferences.")}</p>
         </div>
         <button className="btn btn-default" disabled={loading} onClick={reload}>
-          <FiRefreshCw className={loading ? 'spinning' : ''} /> 刷新
+          <FiRefreshCw className={loading ? 'spinning' : ''} /> {t("刷新", "Refresh")}
         </button>
       </header>
+      <section className="surface uc-section" aria-label={t("主题", "Theme")}>
+        <div className="section-heading">
+          <div>
+            <h2>
+              <FiSun /> {t("主题", "Theme")}
+            </h2>
+            <p>{t("选择界面配色，偏好会保存在当前浏览器。", "Your color preference is saved in this browser.")}</p>
+          </div>
+        </div>
+        <label className="uc-language">{t("界面语言", "Language")} <LanguageSelect /></label>
+        <div className="uc-theme-options">
+          {themeOptions.map((option) => {
+            const Icon = option.icon;
+            return (
+              <button
+                key={option.mode}
+                type="button"
+                className={`uc-theme-option ${themeMode === option.mode ? 'active' : ''}`}
+                aria-pressed={themeMode === option.mode}
+                onClick={() => setThemeMode(option.mode)}
+              >
+                <Icon />
+                <strong>{option.label}</strong>
+                <small>{option.description}</small>
+              </button>
+            );
+          })}
+        </div>
+      </section>
       {error && (
         <div className="notice error" role="alert">
           {error}
         </div>
       )}
       {!isLoggedIn ? (
-        <UserCenterGuest message="设置需要登录后使用。" />
+        <UserCenterGuest message={t("设置需要登录后使用。", "Sign in to manage account settings.")} />
       ) : loading && !profile ? (
         <div className="loading-state">
-          <FiRefreshCw className="spinning" /> 正在读取账号信息
+          <FiRefreshCw className="spinning" /> {t("正在读取账号信息", "Loading account information")}
         </div>
       ) : (
         <div className="uc-settings">
-          <section className="surface uc-section" aria-label="基本资料">
+          <section className="surface uc-section" aria-label={t("基本资料", "Profile")}>
             <div className="section-heading">
               <div>
                 <h2>
-                  <FiUser /> 基本资料
+                  <FiUser /> {t("基本资料", "Profile")}
                 </h2>
-                <p>昵称与头像会展示在导航栏和个人主页。</p>
+                <p>{t("昵称与头像会展示在导航栏和个人主页。", "Your display name and avatar appear in navigation and on your profile.")}</p>
               </div>
             </div>
             <form className="uc-form" onSubmit={handleSaveProfile}>
@@ -204,7 +223,7 @@ export default function Settings() {
                 <UserAvatar profile={profile ? { ...profile, headImg } : { headImg }} />
                 <div>
                   <label className="btn btn-default uc-upload" htmlFor="uc-avatar">
-                    <FiImage /> {uploading ? '上传中…' : '更换头像'}
+                    <FiImage /> {uploading ? t("上传中…", "Uploading…") : t("更换头像", "Change avatar")}
                   </label>
                   <input
                     id="uc-avatar"
@@ -214,26 +233,26 @@ export default function Settings() {
                     disabled={uploading}
                     onChange={handleAvatarChange}
                   />
-                  <small>支持 JPG / PNG，大小不超过 5MB。</small>
+                  <small>{t("支持 JPG / PNG，大小不超过 5MB。", "JPG or PNG, up to 5 MB.")}</small>
                 </div>
               </div>
               <label className="uc-field" htmlFor="uc-nickname">
-                <span>昵称</span>
+                <span>{t("昵称", "Display name")}</span>
                 <input
                   id="uc-nickname"
                   value={nickname}
                   maxLength={32}
-                  placeholder="怎么称呼你"
+                  placeholder={t("怎么称呼你", "Your display name")}
                   onChange={(event) => setNickname(event.target.value)}
                 />
               </label>
               <label className="uc-field" htmlFor="uc-headimg">
-                <span>头像地址</span>
+                <span>{t("头像地址", "Avatar URL")}</span>
                 <input
                   id="uc-headimg"
                   value={headImg}
                   maxLength={1000}
-                  placeholder="上传后自动填入，也可粘贴图片链接"
+                  placeholder={t("上传后自动填入，也可粘贴图片链接", "Upload an image or paste a URL")}
                   onChange={(event) => setHeadImg(event.target.value)}
                 />
               </label>
@@ -249,29 +268,29 @@ export default function Settings() {
               )}
               <div className="uc-form-actions">
                 <button className="btn btn-primary" disabled={saving || uploading}>
-                  <FiSave /> {saving ? '保存中…' : '保存资料'}
+                  <FiSave /> {saving ? t("保存中…", "Saving…") : t("保存资料", "Save profile")}
                 </button>
               </div>
             </form>
           </section>
 
-          <section className="surface uc-section" aria-label="登录密码">
+          <section className="surface uc-section" aria-label={t("登录密码", "Password")}>
             <div className="section-heading">
               <div>
                 <h2>
-                  <FiShield /> 登录密码
+                  <FiShield /> {t("登录密码", "Password")}
                 </h2>
                 <p>
                   {needsOldPassword
-                    ? '修改密码需要验证当前密码。'
-                    : '当前为微信登录，可直接设置新的登录密码。'}
+                    ? t("修改密码需要验证当前密码。", "Enter your current password to change it.")
+                    : t("当前为微信登录，可直接设置新的登录密码。", "You signed in with WeChat and can set a new password.")}
                 </p>
               </div>
             </div>
             <form className="uc-form" onSubmit={handleChangePassword}>
               {needsOldPassword && (
                 <label className="uc-field" htmlFor="uc-old-password">
-                  <span>当前密码</span>
+                  <span>{t("当前密码", "Current password")}</span>
                   <input
                     id="uc-old-password"
                     type="password"
@@ -280,12 +299,12 @@ export default function Settings() {
                     onChange={(event) =>
                       setPasswordForm({ ...passwordForm, password: event.target.value })
                     }
-                    placeholder="请输入当前密码"
+                    placeholder={t("请输入当前密码", "Enter your current password")}
                   />
                 </label>
               )}
               <label className="uc-field" htmlFor="uc-new-password">
-                <span>新密码</span>
+                <span>{t("新密码", "New password")}</span>
                 <input
                   id="uc-new-password"
                   type="password"
@@ -294,11 +313,11 @@ export default function Settings() {
                   onChange={(event) =>
                     setPasswordForm({ ...passwordForm, newPassword: event.target.value })
                   }
-                  placeholder="至少 6 位"
+                  placeholder={t("至少 6 位", "At least 6 characters")}
                 />
               </label>
               <label className="uc-field" htmlFor="uc-confirm-password">
-                <span>确认新密码</span>
+                <span>{t("确认新密码", "Confirm new password")}</span>
                 <input
                   id="uc-confirm-password"
                   type="password"
@@ -307,7 +326,7 @@ export default function Settings() {
                   onChange={(event) =>
                     setPasswordForm({ ...passwordForm, confirm: event.target.value })
                   }
-                  placeholder="再次输入新密码"
+                  placeholder={t("再次输入新密码", "Re-enter your new password")}
                 />
               </label>
               {passwordError && (
@@ -322,63 +341,35 @@ export default function Settings() {
               )}
               <div className="uc-form-actions">
                 <button className="btn btn-primary" disabled={passwordSaving}>
-                  <FiShield /> {passwordSaving ? '提交中…' : '更新密码'}
+                  <FiShield /> {passwordSaving ? t("提交中…", "Submitting…") : t("更新密码", "Update password")}
                 </button>
               </div>
             </form>
           </section>
 
-          <section className="surface uc-section" aria-label="主题">
-            <div className="section-heading">
-              <div>
-                <h2>
-                  <FiSun /> 主题
-                </h2>
-                <p>选择界面配色，偏好会保存在当前浏览器。</p>
-              </div>
-            </div>
-            <div className="uc-theme-options">
-              {THEME_OPTIONS.map((option) => {
-                const Icon = option.icon;
-                return (
-                  <button
-                    key={option.mode}
-                    type="button"
-                    className={`uc-theme-option ${themeMode === option.mode ? 'active' : ''}`}
-                    aria-pressed={themeMode === option.mode}
-                    onClick={() => setThemeMode(option.mode)}
-                  >
-                    <Icon />
-                    <strong>{option.label}</strong>
-                    <small>{option.description}</small>
-                  </button>
-                );
-              })}
-            </div>
-          </section>
 
-          <section className="surface uc-section" aria-label="账号信息">
+          <section className="surface uc-section" aria-label={t("账号信息", "Account information")}>
             <div className="section-heading">
               <div>
-                <h2>账号信息</h2>
-                <p>账号标识与登录方式由后端账号体系维护。</p>
+                <h2>{t("账号信息", "Account information")}</h2>
+                <p>{t("账号标识与登录方式由后端账号体系维护。", "These details come from your account.")}</p>
               </div>
             </div>
             <dl className="uc-info-grid">
               <div>
-                <dt>手机号</dt>
+                <dt>{t("手机号", "Phone number")}</dt>
                 <dd>{maskMobile(profile?.mobile)}</dd>
               </div>
               <div>
-                <dt>登录方式</dt>
-                <dd>{profile?.loginType === 'wechat' ? '微信登录' : '手机号密码'}</dd>
+                <dt>{t("登录方式", "Sign-in method")}</dt>
+                <dd>{profile?.loginType === 'wechat' ? t("微信登录", "WeChat") : t("手机号密码", "Phone and password")}</dd>
               </div>
               <div>
-                <dt>注册时间</dt>
+                <dt>{t("注册时间", "Registered")}</dt>
                 <dd>{formatUserDate(profile?.meta?.registTime)}</dd>
               </div>
               <div>
-                <dt>最近登录</dt>
+                <dt>{t("最近登录", "Last sign-in")}</dt>
                 <dd>{formatUserDate(profile?.meta?.loginTime)}</dd>
               </div>
             </dl>
@@ -390,7 +381,7 @@ export default function Settings() {
                   navigate('/login');
                 }}
               >
-                <FiLogOut /> 退出登录
+                <FiLogOut /> {t("退出登录", "Sign out")}
               </button>
             </div>
           </section>

@@ -1,7 +1,6 @@
 import axios from 'axios';
 import type { AxiosResponse } from 'axios';
 import {
-  FLASH_MODEL_CATALOG,
   mergeNodeTypes,
   normalizeModelCatalog,
 } from '../constants/nodeTypes';
@@ -377,9 +376,9 @@ export const aiWorkflowAPI = {
       throw new Error('请先描述工作流需求');
     if (
       data.model !== undefined &&
-      !FLASH_MODEL_CATALOG.text.includes(data.model)
+      (typeof data.model !== 'string' || !/^[\w.\-:/]{1,120}$/.test(data.model))
     )
-      throw new Error('请选择 Flash 文本模型');
+      throw new Error('请选择有效的文本模型');
     if (data.search !== undefined && typeof data.search !== 'boolean')
       throw new Error('联网开关需要为布尔值');
     return apiClient
@@ -519,20 +518,9 @@ export const mediaAPI = {
     const payload = await apiClient
       .get<
         ApiEnvelope<unknown>
-      >('/api/ai/videos', { params: { video_id: videoId }, signal: options.signal })
+      >('/api/aiWorkflow/videos', { params: { video_id: videoId }, signal: options.signal })
       .then(unwrap);
     return payload.data;
   },
-};
-export const templateAPI = {
-  getTemplates: async () => ({ data: [] as Workflow[] }),
-  useTemplate: async () => {
-    throw new Error('模板市场尚未接入后端');
-  },
-};
-export const configAPI = {
-  getConfig: async () => ({ data: {} }),
-  updateConfig: async () => ({ data: {} }),
-  getKeysStatus: async () => ({ data: {} }),
 };
 export default apiClient;

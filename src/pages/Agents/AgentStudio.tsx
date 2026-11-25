@@ -1,3 +1,4 @@
+import { useLabels } from '../../store/languageStore';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
@@ -131,25 +132,26 @@ function SceneEditor({
   onChange: (value: Partial<AgentScene>) => void;
   onRegenerate: () => void;
 }): React.JSX.Element {
+  const t = useLabels();
   return (
     <article className={`agent-scene-card ${comic ? 'comic' : 'life'}`}>
       <div className="agent-scene-top">
-        <span>{scene.stage || scene.title || '连续分镜'}</span>
+        <span>{scene.stage || scene.title || t("连续分镜", "Storyboard")}</span>
         <span
           className={
             result?.status === 'completed' && !result.stale ? 'done' : ''
           }
         >
           {result?.stale
-            ? '画面已变更，待重做'
+            ? t("画面已变更，待重做", "Image changed. Regenerate to apply.")
             : result
               ? statusLabel(result.status)
-              : '等待生成'}
+              : t("等待生成", "Waiting")}
         </span>
       </div>
       {comic && (
         <p className="agent-comic-caption">
-          {scene.caption || '写一句和画面呼应的短文案'}
+          {scene.caption || t("写一句和画面呼应的短文案", "Write a caption for this panel")}
         </p>
       )}
       <div className="agent-scene-media">
@@ -161,7 +163,7 @@ function SceneEditor({
       </div>
       <div className="agent-scene-fields">
         <label>
-          分镜标题
+          {t("分镜标题", "Panel title")}
           <input
             aria-label={`${scene.id} 分镜标题`}
             value={scene.title}
@@ -172,7 +174,7 @@ function SceneEditor({
         </label>
         {comic ? (
           <label>
-            画面文案 <small>4–24 字</small>
+            {t("画面文案", "Caption")} <small>{t("4–24 字", "4–24 characters")}</small>
             <input
               aria-label={`${scene.id} 画面文案`}
               value={scene.caption}
@@ -184,7 +186,7 @@ function SceneEditor({
         ) : (
           <>
             <label>
-              人生阶段
+              {t("人生阶段", "Life stage")}
               <input
                 aria-label={`${scene.id} 人生阶段`}
                 value={scene.stage}
@@ -193,7 +195,7 @@ function SceneEditor({
               />
             </label>
             <label>
-              旁白与字幕
+              {t("旁白与字幕", "Narration and subtitles")}
               <textarea
                 aria-label={`${scene.id} 旁白`}
                 rows={3}
@@ -206,7 +208,7 @@ function SceneEditor({
               />
             </label>
             <label>
-              时长
+              {t("时长", "Duration")}
               <select
                 aria-label={`${scene.id} 时长`}
                 value={scene.durationSeconds}
@@ -218,7 +220,7 @@ function SceneEditor({
                 {Array.from({ length: 9 }, (_, index) => index + 4).map(
                   (seconds) => (
                     <option key={seconds} value={seconds}>
-                      {seconds} 秒
+                      {seconds} {t("秒", "seconds")}
                     </option>
                   ),
                 )}
@@ -227,10 +229,10 @@ function SceneEditor({
           </>
         )}
         <details>
-          <summary>调整画面提示词</summary>
+          <summary>{t("调整画面提示词", "Edit image prompt")}</summary>
           {(comic || scene.imagePrompt) && (
             <label>
-              图片描述
+              {t("图片描述", "Image description")}
               <textarea
                 aria-label={`${scene.id} 图片提示词`}
                 rows={4}
@@ -245,7 +247,7 @@ function SceneEditor({
           )}
           {!comic && (
             <label>
-              视频动作与镜头
+              {t("视频动作与镜头", "Video motion and framing")}
               <textarea
                 aria-label={`${scene.id} 视频提示词`}
                 rows={4}
@@ -265,7 +267,7 @@ function SceneEditor({
           </p>
         )}
         {result?.videoId && (
-          <small className="agent-task-note">分镜任务已保存，可继续查询</small>
+          <small className="agent-task-note">{t("分镜任务已保存，可继续查询", "Storyboard job saved. You can check its progress.")}</small>
         )}
         <button
           type="button"
@@ -274,7 +276,7 @@ function SceneEditor({
           onClick={onRegenerate}
         >
           <FiRefreshCw />
-          {comic ? '重新绘制这一格' : '重新生成这一镜'}
+          {comic ? t("重新绘制这一格", "Redraw panel") : t("重新生成这一镜", "Regenerate shot")}
         </button>
       </div>
     </article>
@@ -282,6 +284,7 @@ function SceneEditor({
 }
 
 export default function AgentStudio(): React.JSX.Element {
+  const t = useLabels();
   const { id = '' } = useParams<{ id: string }>();
   const loggedIn = useAuthStore((state) => state.isLoggedIn);
   const [project, setProject] = useState<AgentProject | null>(null);
@@ -400,7 +403,7 @@ export default function AgentStudio(): React.JSX.Element {
     };
   }, [active, id, apply]);
   const persist = async (signal: AbortSignal): Promise<AgentProject> => {
-    if (!project || !settings) throw new Error('请先等待作品加载完成');
+    if (!project || !settings) throw new Error(t("请先等待作品加载完成", "Wait for the project to load"));
     if (!dirty) return project;
     const updated = await agentAPI.update(id, {
       name,
@@ -409,7 +412,7 @@ export default function AgentStudio(): React.JSX.Element {
       draft,
       revision: project.revision,
     });
-    if (signal.aborted) throw new DOMException('请求已停止', 'AbortError');
+    if (signal.aborted) throw new DOMException(t("请求已停止", "Request stopped"), 'AbortError');
     apply(updated);
     return updated;
   };
@@ -421,7 +424,7 @@ export default function AgentStudio(): React.JSX.Element {
     setNotice('');
     try {
       await persist(session.signal);
-      if (!session.signal.aborted) setNotice('修改已保存');
+      if (!session.signal.aborted) setNotice(t("修改已保存", "Changes saved"));
     } catch (failure) {
       if (!session.signal.aborted) setError(errorMessage(failure));
     } finally {
@@ -433,7 +436,7 @@ export default function AgentStudio(): React.JSX.Element {
     if (!session || session.signal.aborted) return;
     const message = command.trim() || brief.trim();
     if (!message) {
-      setError('先写一个想创作的主题或调整要求');
+      setError(t("先写一个想创作的主题或调整要求", "Enter a story idea or revision request"));
       return;
     }
     setBusy(true);
@@ -449,7 +452,7 @@ export default function AgentStudio(): React.JSX.Element {
       apply(designed);
       setDirectorOpen(false);
       setCommand('');
-      setNotice('分镜已更新，可以逐格调整后再开始生成');
+      setNotice(t("分镜已更新，可以逐格调整后再开始生成", "Storyboard updated. Review the panels before generating."));
       setTab('storyboard');
     } catch (failure) {
       if (!controller.signal.aborted) setError(errorMessage(failure));
@@ -458,7 +461,7 @@ export default function AgentStudio(): React.JSX.Element {
         designController.current = null;
         if (!session.signal.aborted) {
           if (controller.signal.aborted)
-            setNotice('已停止本次构思，当前分镜已保留');
+            setNotice(t("已停止本次构思，当前分镜已保留", "Planning stopped. Your current storyboard is saved."));
           setBusy(false);
         }
       }
@@ -493,7 +496,7 @@ export default function AgentStudio(): React.JSX.Element {
       const cancelled = await agentAPI.cancel(id);
       if (session.signal.aborted) return;
       apply(cancelled);
-      setNotice('停止请求已提交，已完成素材会保留');
+      setNotice(t("停止请求已提交，已完成素材会保留", "Stop requested. Completed assets will be kept."));
     } catch (failure) {
       if (!session.signal.aborted) setError(errorMessage(failure));
     } finally {
@@ -510,7 +513,7 @@ export default function AgentStudio(): React.JSX.Element {
       if (session.signal.aborted) return;
       if (format === 'comic') await exportComic(latest, session.signal);
       else if (format === 'video') {
-        if (!latest.output.videoUrl) throw new Error('请先完成视频合成');
+        if (!latest.output.videoUrl) throw new Error(t("请先完成视频合成", "Finish assembling the video first"));
         const blob = await agentAPI.asset(
           latest.output.videoUrl,
           session.signal,
@@ -553,12 +556,12 @@ export default function AgentStudio(): React.JSX.Element {
     return (
       <main className="agent-page">
         <Link to="/agents">
-          <FiArrowLeft /> 返回智能体
+          <FiArrowLeft /> {t("返回智能体", "Back to agents")}
         </Link>
         <div className="agent-empty">
-          <h1>登录后进入创作工作室</h1>
+          <h1>{t("登录后进入创作工作室", "Sign in to open the studio")}</h1>
           <Link className="btn btn-primary" to="/login">
-            前往登录
+            {t("前往登录", "Sign in")}
           </Link>
         </div>
       </main>
@@ -566,19 +569,19 @@ export default function AgentStudio(): React.JSX.Element {
   if (loading)
     return (
       <main className="agent-page agent-empty" role="status">
-        正在打开创作工作室…
+        {t("正在打开创作工作室…", "Opening studio…")}
       </main>
     );
   if (!project || !settings)
     return (
       <main className="agent-page">
         <p className="agent-error" role="alert">
-          {error || '作品暂时无法读取'}
+          {error || t("作品暂时无法读取", "Could not load this project")}
         </p>
         <button className="btn btn-primary" onClick={() => void load()}>
-          重新读取
+          {t("重新读取", "Reload")}
         </button>
-        <Link to="/agents">返回作品列表</Link>
+        <Link to="/agents">{t("返回作品列表", "Back to projects")}</Link>
       </main>
     );
   const completed = project.results.filter(
@@ -590,12 +593,12 @@ export default function AgentStudio(): React.JSX.Element {
       <header className="agent-studio-header">
         <div>
           <Link className="agent-back" to="/agents">
-            <FiArrowLeft /> 我的智能体
+            <FiArrowLeft /> {t("我的智能体", "My agents")}
           </Link>
           <div className="agent-studio-title">
             {comic ? <FiCloud /> : <FiFilm />}
             <input
-              aria-label="作品名称"
+              aria-label={t("作品名称", "Project name")}
               value={name}
               maxLength={120}
               disabled={disabled}
@@ -603,8 +606,8 @@ export default function AgentStudio(): React.JSX.Element {
             />
           </div>
           <small>
-            {comic ? '云朵漫画工作室' : '人生副本工作室'} <span>·</span>{' '}
-            {dirty ? '有未保存的修改' : '修改已保存'}
+            {comic ? t("云朵漫画工作室", "Cloud Comic studio") : t("人生副本工作室", "Life Story studio")} <span>·</span>{' '}
+            {dirty ? t("有未保存的修改", "Unsaved changes") : t("修改已保存", "Changes saved")}
           </small>
         </div>
         <div className="agent-studio-actions">
@@ -613,7 +616,7 @@ export default function AgentStudio(): React.JSX.Element {
             disabled={disabled || !dirty}
             onClick={() => void save()}
           >
-            <FiSave /> 保存
+            <FiSave /> {t("保存", "Save")}
           </button>
           {active ? (
             <button
@@ -621,7 +624,7 @@ export default function AgentStudio(): React.JSX.Element {
               disabled={busy || project.job?.status === 'cancelling'}
               onClick={() => void cancel()}
             >
-              <FiSquare /> 停止生成
+              <FiSquare /> {t("停止生成", "Stop generation")}
             </button>
           ) : (
             <button
@@ -631,10 +634,10 @@ export default function AgentStudio(): React.JSX.Element {
             >
               <FiPlay />
               {project.results.length
-                ? '继续生成 / 合成'
+                ? t("继续生成 / 合成", "Resume generation / assembly")
                 : comic
-                  ? '生成漫画画面'
-                  : '生成分镜视频'}
+                  ? t("生成漫画画面", "Generate comic panels")
+                  : t("生成分镜视频", "Generate video shots")}
             </button>
           )}
         </div>
@@ -642,7 +645,7 @@ export default function AgentStudio(): React.JSX.Element {
       {error && (
         <div className="agent-error" role="alert">
           {error}
-          <button onClick={() => setError('')} aria-label="关闭错误提示">
+          <button onClick={() => setError('')} aria-label={t("关闭错误提示", "Dismiss error")}>
             ×
           </button>
         </div>
@@ -661,39 +664,39 @@ export default function AgentStudio(): React.JSX.Element {
           aria-controls="agent-director"
           onClick={() => setDirectorOpen((value) => !value)}
         >
-          <FiZap /> 创作设置与对话
+          <FiZap /> {t("创作设置与对话", "Creative settings and chat")}
           <FiChevronDown className={directorOpen ? 'is-open' : ''} />
         </button>
         <aside
           id="agent-director"
-          aria-label="创作设置与对话"
+          aria-label={t("创作设置与对话", "Creative settings and chat")}
           className={`agent-director ${directorOpen ? 'is-open' : ''}`}
         >
           <div className="agent-panel-title">
             <FiZap />
-            <h2>创作导演</h2>
+            <h2>{t("创作导演", "Story director")}</h2>
           </div>
           <label>
-            这次想讲什么故事？
+            {t("这次想讲什么故事？", "What story would you like to tell?")}
             <textarea
-              aria-label="创作主题"
+              aria-label={t("创作主题", "Story idea")}
               rows={4}
               value={brief}
               disabled={disabled}
               maxLength={8000}
               placeholder={
                 comic
-                  ? '例如：周一上班，想认真工作的小云朵被各种小事打断，最后学会给自己喘口气。'
-                  : '例如：程序员的一生，从写出第一行代码，到中年转身，再到重新找到生活。'
+                  ? t("例如：周一上班，想认真工作的小云朵被各种小事打断，最后学会给自己喘口气。", "For example, on Monday a little cloud tries to work, gets interrupted and learns to pause.")
+                  : t("例如：程序员的一生，从写出第一行代码，到中年转身，再到重新找到生活。", "For example, follow a programmer from their first line of code to a midlife change of career.")
               }
               onChange={(event) => setBrief(event.target.value)}
             />
           </label>
           <div className="agent-settings-row">
             <label>
-              分镜数量
+              {t("分镜数量", "Number of panels")}
               <select
-                aria-label="分镜数量"
+                aria-label={t("分镜数量", "Number of panels")}
                 disabled={disabled || Boolean(draft)}
                 value={settings.sceneCount}
                 onChange={(event) =>
@@ -705,15 +708,15 @@ export default function AgentStudio(): React.JSX.Element {
                   (_, index) => index + (comic ? 3 : 1),
                 ).map((count) => (
                   <option key={count} value={count}>
-                    {count} {comic ? '格' : '镜'}
+                    {count} {comic ? t("格", "panels") : t("镜", "shots")}
                   </option>
                 ))}
               </select>
             </label>
             <label>
-              画面比例
+              {t("画面比例", "Aspect ratio")}
               <select
-                aria-label="画面比例"
+                aria-label={t("画面比例", "Aspect ratio")}
                 disabled={disabled}
                 value={settings.aspectRatio}
                 onChange={(event) =>
@@ -731,15 +734,15 @@ export default function AgentStudio(): React.JSX.Element {
           </div>
           {draft && (
             <small className="agent-help">
-              分镜数量已随草稿确定。可以逐镜修改，或新建作品尝试其他长度。
+              {t("分镜数量已随草稿确定。可以逐镜修改，或新建作品尝试其他长度。", "The draft sets the panel count. Edit individual shots or start another project for a different length.")}
             </small>
           )}
           {!comic && (
             <div className="agent-settings-row">
               <label>
-                每镜时长
+                {t("每镜时长", "Shot duration")}
                 <select
-                  aria-label="默认分镜时长"
+                  aria-label={t("默认分镜时长", "Default shot duration")}
                   disabled={disabled}
                   value={settings.durationSeconds}
                   onChange={(event) =>
@@ -749,7 +752,7 @@ export default function AgentStudio(): React.JSX.Element {
                   {Array.from({ length: 9 }, (_, index) => index + 4).map(
                     (value) => (
                       <option key={value} value={value}>
-                        {value} 秒
+                        {value} {t("秒", "seconds")}
                       </option>
                     ),
                   )}
@@ -764,14 +767,14 @@ export default function AgentStudio(): React.JSX.Element {
                       )
                     : settings.durationSeconds * settings.sceneCount}
                 </b>
-                <span>预计成片秒数</span>
+                <span>{t("预计成片秒数", "Estimated video length in seconds")}</span>
               </div>
             </div>
           )}
           <label>
-            文本模型
+            {t("文本模型", "Text model")}
             <select
-              aria-label="文本模型"
+              aria-label={t("文本模型", "Text model")}
               value={settings.textModel}
               disabled={disabled}
               onChange={(event) => editSetting('textModel', event.target.value)}
@@ -784,9 +787,9 @@ export default function AgentStudio(): React.JSX.Element {
           {(comic || settings.generateSceneImages) && (
             <>
               <label>
-                图片模型
+                {t("图片模型", "Image model")}
                 <select
-                  aria-label="图片模型"
+                  aria-label={t("图片模型", "Image model")}
                   value={settings.imageModel}
                   disabled={disabled}
                   onChange={(event) =>
@@ -801,9 +804,9 @@ export default function AgentStudio(): React.JSX.Element {
                 </select>
               </label>
               <label>
-                图片规格
+                {t("图片规格", "Image size")}
                 <select
-                  aria-label="图片规格"
+                  aria-label={t("图片规格", "Image size")}
                   disabled={disabled}
                   value={settings.imageSize}
                   onChange={(event) =>
@@ -820,9 +823,9 @@ export default function AgentStudio(): React.JSX.Element {
           {!comic && (
             <>
               <label>
-                视频模型
+                {t("视频模型", "Video model")}
                 <select
-                  aria-label="视频模型"
+                  aria-label={t("视频模型", "Video model")}
                   disabled={disabled}
                   value={settings.videoModel}
                   onChange={(event) =>
@@ -845,30 +848,30 @@ export default function AgentStudio(): React.JSX.Element {
                     editSetting('generateSceneImages', event.target.checked)
                   }
                 />{' '}
-                先生成每镜参考图
+                {t("先生成每镜参考图", "Generate reference images first")}
               </label>
             </>
           )}
-          <div className="agent-conversation" aria-label="分镜设计对话">
+          <div className="agent-conversation" aria-label={t("分镜设计对话", "Storyboard chat")}>
             {project.messages.slice(-6).map((message, index) => (
               <p key={index} className={message.role}>
-                <small>{message.role === 'user' ? '我的要求' : '智能体'}</small>
+                <small>{message.role === 'user' ? t("我的要求", "My brief") : t("智能体", "Agent")}</small>
                 {message.content}
               </p>
             ))}
           </div>
           <label>
-            对话调整
+            {t("对话调整", "Revision request")}
             <textarea
-              aria-label="对话调整"
+              aria-label={t("对话调整", "Revision request")}
               rows={3}
               disabled={disabled}
               value={command}
               onChange={(event) => setCommand(event.target.value)}
               placeholder={
                 draft
-                  ? '例如：第三格更有反差，结尾温暖一点。'
-                  : '补充风格、人物或情绪要求，也可以直接使用上方主题。'
+                  ? t("例如：第三格更有反差，结尾温暖一点。", "For example, make panel three more surprising and the ending warmer.")
+                  : t("补充风格、人物或情绪要求，也可以直接使用上方主题。", "Describe a style, character or mood, or start with the story idea above.")
               }
             />
           </label>
@@ -878,14 +881,14 @@ export default function AgentStudio(): React.JSX.Element {
             onClick={() => void design()}
           >
             <FiSend />
-            {busy ? '正在处理…' : draft ? '按要求调整分镜' : '开始设计分镜'}
+            {busy ? t("正在处理…", "Working…") : draft ? t("按要求调整分镜", "Revise storyboard") : t("开始设计分镜", "Plan storyboard")}
           </button>
           {busy && designController.current && (
             <button
               className="btn btn-default"
               onClick={() => designController.current?.abort()}
             >
-              停止本次构思
+              {t("停止本次构思", "Stop planning")}
             </button>
           )}
         </aside>
@@ -893,7 +896,7 @@ export default function AgentStudio(): React.JSX.Element {
           <div className="agent-workspace-bar">
             <div
               role="tablist"
-              aria-label="工作室视图"
+              aria-label={t("工作室视图", "Studio view")}
               onKeyDown={(event) => {
                 if (
                   !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(
@@ -922,7 +925,7 @@ export default function AgentStudio(): React.JSX.Element {
                 tabIndex={tab === 'storyboard' ? 0 : -1}
                 onClick={() => setTab('storyboard')}
               >
-                <FiLayers /> 分镜编辑
+                <FiLayers /> {t("分镜编辑", "Edit storyboard")}
               </button>
               <button
                 role="tab"
@@ -932,13 +935,13 @@ export default function AgentStudio(): React.JSX.Element {
                 tabIndex={tab === 'preview' ? 0 : -1}
                 onClick={() => setTab('preview')}
               >
-                <FiImage /> 作品预览
+                <FiImage /> {t("作品预览", "Preview")}
               </button>
             </div>
             <span>
               {designed
                 ? `${draft?.scenes.length ?? settings.sceneCount} 个分镜`
-                : `${completed} / ${draft?.scenes.length ?? settings.sceneCount} ${comic ? '格' : '镜'}完成`}
+                : `${completed} / ${draft?.scenes.length ?? settings.sceneCount} ${comic ? t("格", "panels") : t("镜", "shots")}完成`}
             </span>
           </div>
           {project.job && (
@@ -949,12 +952,12 @@ export default function AgentStudio(): React.JSX.Element {
               <div>
                 <span className={active ? 'agent-live' : ''}>
                   {designed
-                    ? '分镜设计已完成'
+                    ? t("分镜设计已完成", "Storyboard ready")
                     : statusLabel(project.job.status)}
                 </span>
                 <span>
                   {designed
-                    ? '可逐镜调整后生成'
+                    ? t("可逐镜调整后生成", "Review individual shots before generating")
                     : project.job.currentSceneId
                       ? `当前：${project.job.currentSceneId}`
                       : statusLabel(project.job.stage)}
@@ -964,7 +967,7 @@ export default function AgentStudio(): React.JSX.Element {
               <progress
                 max="100"
                 value={project.job.progress || 0}
-                aria-label="生成进度"
+                aria-label={t("生成进度", "Generation progress")}
               />
               {project.job.error && (
                 <p role="alert">{errorMessage(new Error(project.job.error))}</p>
@@ -979,27 +982,27 @@ export default function AgentStudio(): React.JSX.Element {
             {!draft ? (
               <div className="agent-canvas-empty">
                 <span>{comic ? <FiCloud /> : <FiFilm />}</span>
-                <h2>每个故事，都从一句话开始。</h2>
+                <h2>{t("每个故事，都从一句话开始。", "Start with one sentence.")}</h2>
                 <p>
-                  在左侧写下主题，让智能体为你设计连续分镜。
+                  {t("在左侧写下主题，让智能体为你设计连续分镜。", "Enter a topic on the left to plan a sequence of shots.")}
                   <br />
-                  确认每一格，再开始生成画面。
+                  {t("确认每一格，再开始生成画面。", "Review each panel before generating the images.")}
                 </p>
                 <div>
-                  <span>01 描述想法</span>
+                  <span>{t("01 描述想法", "01 Describe an idea")}</span>
                   <i />
-                  <span>02 调整分镜</span>
+                  <span>{t("02 调整分镜", "02 Edit storyboard")}</span>
                   <i />
-                  <span>03 生成作品</span>
+                  <span>{t("03 生成作品", "03 Generate project")}</span>
                 </div>
               </div>
             ) : tab === 'storyboard' ? (
               <>
                 <div className="agent-draft-overview">
                   <label>
-                    作品标题
+                    {t("作品标题", "Project title")}
                     <input
-                      aria-label="分镜作品标题"
+                      aria-label={t("分镜作品标题", "Storyboard title")}
                       disabled={disabled}
                       value={draft.title}
                       onChange={(event) =>
@@ -1009,9 +1012,9 @@ export default function AgentStudio(): React.JSX.Element {
                   </label>
                   <div>
                     <label>
-                      固定人物设定
+                      {t("固定人物设定", "Character continuity")}
                       <textarea
-                        aria-label="人物设定"
+                        aria-label={t("人物设定", "Character notes")}
                         rows={2}
                         disabled={disabled}
                         value={draft.character}
@@ -1021,9 +1024,9 @@ export default function AgentStudio(): React.JSX.Element {
                       />
                     </label>
                     <label>
-                      画面风格
+                      {t("画面风格", "Visual style")}
                       <textarea
-                        aria-label="画面风格"
+                        aria-label={t("画面风格", "Visual style")}
                         rows={2}
                         disabled={disabled}
                         value={draft.style}
@@ -1085,21 +1088,21 @@ export default function AgentStudio(): React.JSX.Element {
                       alt={draft.title}
                     />
                     <p>
-                      成片约{' '}
+                      {t("成片约", "Final length about")}{' '}
                       {project.output.durationSeconds ??
                         draft.scenes.reduce(
                           (sum, scene) => sum + scene.durationSeconds,
                           0,
                         )}{' '}
-                      秒 · 已合成字幕与分镜音轨
+                      {t("秒 · 已合成字幕与分镜音轨", "s · Subtitles and shot audio included")}
                     </p>
                   </>
                 ) : (
                   <div className="agent-empty">
                     <FiFilm />
-                    <h3>完整视频将在这里出现</h3>
+                    <h3>{t("完整视频将在这里出现", "Your assembled video will appear here")}</h3>
                     <p>
-                      先完成全部分镜。合成失败时，已生成的分镜与任务仍会保留，可以继续合成。
+                      {t("先完成全部分镜。合成失败时，已生成的分镜与任务仍会保留，可以继续合成。", "Complete all shots first. If assembly fails, generated shots and jobs are kept for another attempt.")}
                     </p>
                   </div>
                 )}
@@ -1111,7 +1114,7 @@ export default function AgentStudio(): React.JSX.Element {
               <div>
                 <FiDownload />
                 <span>
-                  导出作品 <small>随时保存草稿与素材</small>
+                  {t("导出作品", "Export")} <small>{t("随时保存草稿与素材", "Save drafts and assets")}</small>
                 </span>
               </div>
               <div>
@@ -1121,7 +1124,7 @@ export default function AgentStudio(): React.JSX.Element {
                     disabled={active || busy || exporting}
                     onClick={() => void exportFile('comic')}
                   >
-                    漫画长图 PNG
+                    {t("漫画长图 PNG", "Comic strip PNG")}
                   </button>
                 )}
                 {!comic && project.output.videoUrl && (
@@ -1130,7 +1133,7 @@ export default function AgentStudio(): React.JSX.Element {
                     disabled={disabled}
                     onClick={() => void exportFile('video')}
                   >
-                    下载完整视频
+                    {t("下载完整视频", "Download video")}
                   </button>
                 )}
                 {(
@@ -1142,7 +1145,7 @@ export default function AgentStudio(): React.JSX.Element {
                     disabled={active || busy || exporting}
                     onClick={() => void exportFile(format)}
                   >
-                    {format === 'zip' ? '素材包 ZIP' : format.toUpperCase()}
+                    {format === 'zip' ? t("素材包 ZIP", "Asset bundle ZIP") : format.toUpperCase()}
                   </button>
                 ))}
               </div>

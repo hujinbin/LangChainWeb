@@ -1,3 +1,4 @@
+import { useLabels } from '../../store/languageStore';
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FiArrowUpRight, FiPlus, FiRefreshCw, FiSearch, FiTrash2 } from 'react-icons/fi';
@@ -9,6 +10,7 @@ import { AgentAvatar } from './CustomAgentShared';
 import './CustomAgents.css';
 
 export default function CustomAgentList() {
+  const t = useLabels();
   const { isLoggedIn, token } = useAuthStore();
   const [items, setItems] = useState<CustomAgent[]>([]);
   const [total, setTotal] = useState(0);
@@ -38,13 +40,13 @@ export default function CustomAgentList() {
     catch (cause) { setError(errorMessage(cause)); }
     finally { setDeleting(''); }
   };
-  return <section className="custom-agent-list" aria-label="我的智能体">
-    <div className="agent-section-heading"><div><h2>我的智能体</h2><p>定义人设，连接知识与工作流，创建属于你的助手。</p></div><Link className="btn btn-primary" to={isLoggedIn ? '/agents/custom/new' : '/login'}><FiPlus /> 创建智能体</Link></div>
+  return <section className="custom-agent-list" aria-label={t("我的智能体", "My agents")}>
+    <div className="agent-section-heading"><div><h2>{t("我的智能体", "My agents")}</h2><p>{t("定义人设，连接知识与工作流，创建属于你的助手。", "Define a persona and connect your workflows and knowledge bases.")}</p></div><Link className="btn btn-primary" to={isLoggedIn ? '/agents/custom/new' : '/login'}><FiPlus /> {t("创建智能体", "Create agent")}</Link></div>
     {isLoggedIn ? <>
-      <div className="custom-agent-list-toolbar"><label><FiSearch /><input aria-label="搜索我的智能体" placeholder="搜索智能体" value={keyword} onChange={event => { setKeyword(event.target.value); setPage(1); }} /></label><button className="btn-icon" aria-label="刷新我的智能体" disabled={loading} onClick={reload}><FiRefreshCw /></button></div>
-      {error && <div className="agent-error" role="alert">{error}<button onClick={reload}>重试</button></div>}
-      {loading ? <p className="custom-agent-empty" role="status">正在读取智能体…</p> : items.length ? <div className="custom-agent-card-grid">{items.map(agent => <article className="custom-agent-card" key={agent.id}><Link to={`/agents/custom/${agent.id}`}><AgentAvatar value={agent.avatar} name={agent.name} /><span className={`badge ${agent.status === 'published' ? 'success' : 'draft'}`}>{agent.hasUnpublishedChanges ? '草稿有更新，待发布' : agent.status === 'published' ? '已发布' : '草稿'}</span><h3>{agent.name}</h3><p>{agent.description || '从人设开始，赋予助手自己的能力。'}</p><footer><span>{agent.workflowIds?.length || 0} 个工作流 · {agent.knowledgeBaseIds?.length || 0} 个知识库</span><FiArrowUpRight /></footer></Link><button className="custom-agent-delete" aria-label={`删除智能体${agent.name}`} disabled={Boolean(deleting)} onClick={() => void remove(agent)}><FiTrash2 /></button></article>)}</div> : !error && <p className="custom-agent-empty">还没有自己的智能体。点击“创建智能体”，开始配置你的第一个助手。</p>}
-      {total > 12 && <div className="pagination"><button className="btn btn-default" disabled={loading || page === 1} onClick={() => setPage(value => value - 1)}>上一页</button><span>第 {page} 页</span><button className="btn btn-default" disabled={loading || page * 12 >= total} onClick={() => setPage(value => value + 1)}>下一页</button></div>}
-    </> : <div className="custom-agent-empty"><p>登录后可以创建、保存和调试自己的智能体。</p><Link to="/login">前往登录 <FiArrowUpRight /></Link></div>}
+      <div className="custom-agent-list-toolbar"><label><FiSearch /><input aria-label={t("搜索我的智能体", "Search my agents")} placeholder={t("搜索智能体", "Search agents")} value={keyword} onChange={event => { setKeyword(event.target.value); setPage(1); }} /></label><button className="btn-icon" aria-label={t("刷新我的智能体", "Refresh my agents")} disabled={loading} onClick={reload}><FiRefreshCw /></button></div>
+      {error && <div className="agent-error" role="alert">{error}<button onClick={reload}>{t("重试", "Retry")}</button></div>}
+      {loading ? <p className="custom-agent-empty" role="status">{t("正在读取智能体…", "Loading agents…")}</p> : items.length ? <div className="custom-agent-card-grid">{items.map(agent => <article className="custom-agent-card" key={agent.id}><Link to={`/agents/custom/${agent.id}`}><AgentAvatar value={agent.avatar} name={agent.name} /><span className={`badge ${agent.status === 'published' ? 'success' : 'draft'}`}>{agent.hasUnpublishedChanges ? t("草稿有更新，待发布", "Unpublished changes") : agent.status === 'published' ? t("已发布", "Published") : t("草稿", "Draft")}</span><h3>{agent.name}</h3><p>{agent.description || t("从人设开始，赋予助手自己的能力。", "Define a persona and give your assistant tools.")}</p><footer><span>{agent.workflowIds?.length || 0} {t("个工作流 ·", "workflows ·")} {agent.knowledgeBaseIds?.length || 0} {t("个知识库", "knowledge bases")}</span><FiArrowUpRight /></footer></Link><button className="custom-agent-delete" aria-label={`删除智能体${agent.name}`} disabled={Boolean(deleting)} onClick={() => void remove(agent)}><FiTrash2 /></button></article>)}</div> : !error && <p className="custom-agent-empty">{t("还没有自己的智能体。点击“创建智能体”，开始配置你的第一个助手。", "Create an agent to configure your first assistant.")}</p>}
+      {total > 12 && <div className="pagination"><button className="btn btn-default" disabled={loading || page === 1} onClick={() => setPage(value => value - 1)}>{t("上一页", "Previous")}</button><span>{t("第", "Page")} {page} {t("页", "")}</span><button className="btn btn-default" disabled={loading || page * 12 >= total} onClick={() => setPage(value => value + 1)}>{t("下一页", "Next")}</button></div>}
+    </> : <div className="custom-agent-empty"><p>{t("登录后可以创建、保存和调试自己的智能体。", "Sign in to create, save and test your own agents.")}</p><Link to="/login">{t("前往登录", "Sign in")} <FiArrowUpRight /></Link></div>}
   </section>;
 }

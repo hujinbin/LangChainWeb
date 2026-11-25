@@ -53,6 +53,18 @@
   color: var(--agent-muted);
   font-weight: 650;
 }
+.novel-inspiration { grid-column: span 2; }
+.novel-notice { margin: 0 0 18px; font-size: 13px; color: var(--agent-muted); }
+.novel-card, .novel-history { margin: 10px 0; padding: 8px 0; font-size: 13px; overflow: auto; }
+.novel-card summary, .novel-history summary { cursor: pointer; font-weight: 650; }
+.novel-card fieldset, .novel-chapter-options { border: 0; padding: 8px 0; margin: 0; display: grid; gap: 8px; }
+.novel-card label, .novel-chapter-options label { display: grid; gap: 4px; color: var(--agent-muted); font-size: 12px; }
+.novel-chapter-options { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+.novel-card input, .novel-card textarea, .novel-chapter-options input, .novel-chapter-options select { width: 100%; min-width: 0; box-sizing: border-box; padding: 6px 8px; font: inherit; color: var(--agent-ink); border: 1px solid var(--agent-line); border-radius: 6px; background: var(--bg-primary, #fff); }
+.novel-character { display: grid; gap: 5px; border-top: 1px solid var(--agent-line); padding-top: 8px; }
+.novel-order { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.novel-order .btn { font-size: 12px; padding: 5px 8px; }
+@media (max-width: 560px) { .novel-inspiration { grid-column: auto; } }
 .novel-create-form input,
 .novel-create-form select {
   height: 40px;

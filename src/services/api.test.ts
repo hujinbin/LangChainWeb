@@ -106,7 +106,7 @@ test('执行详情使用单条接口，视频查询保留上游数据结构', as
     requests.push(config);
     return mockResponse(config, {
       code: 200,
-      data: config.url?.includes('ai/videos')
+      data: config.url?.endsWith('/videos')
         ? { status: 'completed', url: 'https://example.com/video.mp4' }
         : { _id: 'execution-2' },
     });
@@ -119,6 +119,7 @@ test('执行详情使用单条接口，视频查询保留上游数据结构', as
     url: 'https://example.com/video.mp4',
   });
   expect(requests[1].params).toEqual({ video_id: 'video-1' });
+  expect(requests[1].url).toBe('/api/aiWorkflow/videos');
 });
 
 test('节点表单使用模型目录交集，并保留服务器来源', async () => {
@@ -162,8 +163,8 @@ test('对话生成传递历史、当前画布与信号，并在调用前拒绝�
   expect(requests[0].signal).toBe(controller.signal);
   expect(JSON.parse(requests[0].data)).toEqual(payload);
   await expect(
-    aiWorkflowAPI.generateWorkflow({ ...payload, model: 'agnes-3.0-pro' })
-  ).rejects.toThrow('Flash');
+    aiWorkflowAPI.generateWorkflow({ ...payload, model: 'bad model' })
+  ).rejects.toThrow('有效的文本模型');
   await expect(
     aiWorkflowAPI.generateWorkflow({
       ...payload,

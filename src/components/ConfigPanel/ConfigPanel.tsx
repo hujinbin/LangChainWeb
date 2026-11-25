@@ -194,13 +194,7 @@ function validateConfig(
         !field.enum.includes(value))
     )
       errors[key] =
-        key === 'model' ? '请选择目录中的 Flash 模型。' : '请选择有效选项。';
-    if (
-      key === 'model' &&
-      MODEL_TYPES.has(type) &&
-      (typeof value !== 'string' || !value.endsWith('-flash'))
-    )
-      errors[key] = '请选择目录中的 Flash 模型。';
+        key === 'model' ? '请选择本站已启用的模型。' : '请选择有效选项。';
     if (
       typeof value === 'string' &&
       field.maxLength &&
@@ -334,25 +328,34 @@ const ConfigPanel = ({ inputText, variablesText, onInputChange, resourceRevision
     setFallback(false);
     setLoading(true);
     // 节点切换后丢弃旧响应，防止慢请求覆盖当前节点草稿。
-    nodeAPI
-      .getNodeSchema(nodeType)
-      .then((response) => {
-        if (!active) return;
-        const nextSchema = response.data?.properties
-          ? response.data
-          : localSchema;
-        setSchema(nextSchema);
-        setNodeConfig(applyDefaults(nextSchema, initial, nodeType));
-        setFallback(!response.data?.properties);
-      })
-      .catch(() => {
-        if (active) setFallback(true);
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
+    let request = 0;
+    let initialized = false;
+    const refresh = () => {
+      const currentRequest = ++request;
+      nodeAPI
+        .getNodeSchema(nodeType)
+        .then((response) => {
+          if (!active || request !== currentRequest) return;
+          const nextSchema = response.data?.properties
+            ? response.data
+            : localSchema;
+          setSchema(nextSchema);
+          if (!initialized) setNodeConfig(applyDefaults(nextSchema, initial, nodeType));
+          initialized = true;
+          setFallback(!response.data?.properties);
+        })
+        .catch(() => {
+          if (active && request === currentRequest) setFallback(true);
+        })
+        .finally(() => {
+          if (active && request === currentRequest) setLoading(false);
+        });
+    };
+    refresh();
+    if (MODEL_TYPES.has(nodeType)) window.addEventListener('focus', refresh);
     return () => {
       active = false;
+      window.removeEventListener('focus', refresh);
     };
   }, [nodeId, nodeData, isConfigPanelOpen]);
 
@@ -551,8 +554,7 @@ const ConfigPanel = ({ inputText, variablesText, onInputChange, resourceRevision
     } else if (field.enum || (key === 'model' && MODEL_TYPES.has(type))) {
       const choices = (field.enum || []).filter(
         (option): option is string | number =>
-          (typeof option === 'string' || typeof option === 'number') &&
-          (key !== 'model' || String(option).endsWith('-flash'))
+          typeof option === 'string' || typeof option === 'number'
       );
       control = (
         <div className="cfg-select-wrap">

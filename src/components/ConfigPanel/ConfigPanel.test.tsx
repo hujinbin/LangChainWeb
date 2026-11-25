@@ -223,3 +223,19 @@ test('开始节点声明输入变量的数据类型和必填项', async () => {
   fireEvent.click(screen.getByRole('button', { name: '保存配置' }));
   expect(mockState.updateNode.mock.calls[0][1].data.config.inputSchema).toMatchObject({ type: 'object', properties: { input1: { type: 'number' } }, required: ['input1'] });
 });
+
+test('切回编辑器会刷新模型选项，保留未保存的节点设置', async () => {
+  const schema = DEFAULT_NODE_TYPES.find(node => node.type === 'llm')!.config_schema;
+  const customSchema = { ...schema, properties: { ...schema.properties,
+    model: { ...schema.properties.model, enum: ['site-model'], default: 'site-model' } } };
+  nodeAPI.getNodeSchema.mockResolvedValueOnce({ code: 200, data: schema });
+  nodeAPI.getNodeSchema.mockResolvedValueOnce({ code: 200, data: customSchema });
+  render(<ConfigPanel />);
+  await screen.findByRole('option', { name: 'agnes-3.0-flash' });
+  fireEvent.focus(window);
+  await screen.findByRole('option', { name: 'site-model' });
+  expect(screen.queryByRole('option', { name: 'agnes-2.5-flash' })).not.toBeInTheDocument();
+  fireEvent.change(screen.getByRole('combobox', { name: /模型/ }), { target: { value: 'site-model' } });
+  fireEvent.click(screen.getByRole('button', { name: '保存配置' }));
+  expect(mockState.updateNode.mock.calls[0][1].data.config).toMatchObject({ model: 'site-model', prompt: '你好', temperature: 0 });
+});

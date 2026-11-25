@@ -9,6 +9,7 @@ import type {
   NovelCreateInput,
   NovelExportFormat,
   NovelPage,
+  NovelMode,
   NovelProject,
 } from '../types/novel';
 
@@ -97,21 +98,21 @@ export const novelAPI = {
     apiClient.post<Envelope<NovelProject>>(`${base}/projects`, input).then(unwrap),
   get: (id: string, signal?: AbortSignal): Promise<NovelProject> =>
     apiClient.get<Envelope<NovelProject>>(path(id), { signal }).then(unwrap),
-  update: (id: string, data: Partial<NovelProject> & { revision?: number }): Promise<NovelProject> =>
+  update: (id: string, data: Partial<NovelProject> & { chapterEdit?: { action: 'add' | 'remove' | 'up' | 'down'; chapterId: string } }): Promise<NovelProject> =>
     apiClient.patch<Envelope<NovelProject>>(path(id), data).then(unwrap),
   remove: (id: string): Promise<void> =>
     apiClient
       .delete<Envelope<unknown>>(path(id))
       .then(unwrap)
       .then(() => undefined),
-  outline: (id: string, instruction?: string): Promise<NovelProject> =>
+  outline: (id: string, instruction?: string, stage: 'outline' | 'setting' = 'outline', revision?: number): Promise<NovelProject> =>
     apiClient
-      .post<Envelope<NovelProject>>(`${path(id)}/outline`, { instruction })
+      .post<Envelope<NovelProject>>(`${path(id)}/outline`, { instruction, stage, revision })
       .then(unwrap),
   generateChapter: (
     id: string,
     chapterId: string,
-    options: { instruction?: string; force?: boolean } = {}
+    options: { instruction?: string; force?: boolean; mode?: NovelMode; revision?: number } = {}
   ): Promise<NovelProject> =>
     apiClient
       .post<Envelope<NovelProject>>(
@@ -122,7 +123,7 @@ export const novelAPI = {
   updateChapter: (
     id: string,
     chapterId: string,
-    data: { title?: string; summary?: string; content?: string }
+    data: { title?: string; summary?: string; volume?: string; content?: string; revision?: number }
   ): Promise<NovelProject> =>
     apiClient
       .patch<Envelope<NovelProject>>(

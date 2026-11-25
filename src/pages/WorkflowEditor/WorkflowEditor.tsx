@@ -1,3 +1,4 @@
+import { useLabels } from '../../store/languageStore';
 import type {
   Execution,
   GenerateWorkflowResult,
@@ -147,6 +148,7 @@ const parseObject = (value: string, label: string): WorkflowInput => {
 };
 
 const WorkflowEditor = () => {
+  const t = useLabels();
   const { id = 'new' } = useParams();
   const location = useLocation();
   const { search } = location;
@@ -749,8 +751,8 @@ const WorkflowEditor = () => {
           <button
             onClick={handleBack}
             className="editor-icon-button"
-            title="返回工作流"
-            aria-label="返回工作流"
+            title={t("返回工作流", "Back to workflows")}
+            aria-label={t("返回工作流", "Back to workflows")}
             disabled={busy}
           >
             <FiArrowLeft />
@@ -758,7 +760,7 @@ const WorkflowEditor = () => {
           <div className="editor-document">
             <div className="editor-document-top">
               <input
-                aria-label="工作流名称"
+                aria-label={t("工作流名称", "Workflow name")}
                 value={workflowName}
                 onChange={(event) => setWorkflowName(event.target.value)}
                 disabled={busy}
@@ -766,34 +768,34 @@ const WorkflowEditor = () => {
               <span className={`editor-source source-${workflowSource}`}>
                 {workflowSource === 'local' ? <FiHardDrive /> : <FiCloud />}
                 {workflowSource === 'local'
-                  ? '本地草稿'
+                  ? t("本地草稿", "Local draft")
                   : workflowSource === 'server'
-                    ? '服务器'
-                    : '新建'}
+                    ? t("服务器", "Server")
+                    : t("新建", "New")}
               </span>
             </div>
             <span className="editor-document-state">
               <i className={dirty ? 'is-dirty' : ''} />
               {dirty
-                ? '有未保存的修改'
+                ? t("有未保存的修改", "Unsaved changes")
                 : workflowSource === 'new'
-                  ? '准备开始编排'
-                  : '当前版本已保存'}
+                  ? t("准备开始编排", "Ready to edit")
+                  : t("当前版本已保存", "Version saved")}
               <span>·</span>
-              {currentWorkflow?.status === 'published' ? '已发布' : '草稿'}
+              {currentWorkflow?.status === 'published' ? t("已发布", "Published") : t("草稿", "Draft")}
             </span>
           </div>
         </div>
         <div className="editor-toolbar-actions">
           <button
             className="btn btn-default editor-secondary-action"
-            aria-label="存为本地草稿"
-            title="存为本地草稿"
+            aria-label={t("存为本地草稿", "Save local draft")}
+            title={t("存为本地草稿", "Save local draft")}
             disabled={busy}
             onClick={handleLocalSave}
           >
             <FiHardDrive />
-            <span>存为本地草稿</span>
+            <span>{t("存为本地草稿", "Save local draft")}</span>
           </button>
           <button
             className="btn btn-default"
@@ -801,7 +803,7 @@ const WorkflowEditor = () => {
             onClick={handleValidate}
           >
             <FiCheckCircle />
-            {validating ? '校验中' : '校验'}
+            {validating ? t("校验中", "Validating") : t("校验", "Validate")}
           </button>
           <button
             className="btn btn-default"
@@ -810,17 +812,17 @@ const WorkflowEditor = () => {
           >
             <FiSave />
             {saving
-              ? '保存中'
+              ? t("保存中", "Saving")
               : workflowSource === 'local'
-                ? '保存到服务器'
-                : '保存'}
+                ? t("保存到服务器", "Save to server")
+                : t("保存", "Save")}
           </button>
           <button
             className="btn btn-default editor-publish-action"
             disabled={busy || !nodes.length}
             onClick={handlePublish}
           >
-            发布
+            {t("发布", "Publish")}
           </button>
           {executing ? (
             <button
@@ -828,7 +830,7 @@ const WorkflowEditor = () => {
               onClick={() => requestRef.current?.abort()}
             >
               <FiSquare />
-              停止请求
+              {t("停止请求", "Stop request")}
             </button>
           ) : (
             <button
@@ -837,7 +839,7 @@ const WorkflowEditor = () => {
               onClick={handleExecute}
             >
               <FiPlay />
-              运行工作流
+              {t("运行工作流", "Run workflow")}
             </button>
           )}
         </div>
@@ -847,8 +849,8 @@ const WorkflowEditor = () => {
           <button
             className={`editor-tool ${isNodePanelOpen ? 'is-active' : ''}`}
             onClick={handleToggleNodePanel}
-            aria-label="切换节点库"
-            title="节点库"
+            aria-label={t("切换节点库", "Toggle node library")}
+            title={t("节点库", "Node library")}
           >
             <FiSidebar />
           </button>
@@ -857,8 +859,8 @@ const WorkflowEditor = () => {
             className="editor-tool"
             disabled={busy || !canUndo}
             onClick={handleUndo}
-            aria-label="撤销"
-            title="撤销 Ctrl+Z"
+            aria-label={t("撤销", "Undo")}
+            title={t("撤销 Ctrl+Z", "Undo Ctrl+Z")}
           >
             <FiRotateCcw />
           </button>
@@ -866,8 +868,8 @@ const WorkflowEditor = () => {
             className="editor-tool"
             disabled={busy || !canRedo}
             onClick={handleRedo}
-            aria-label="重做"
-            title="重做 Ctrl+Shift+Z"
+            aria-label={t("重做", "Redo")}
+            title={t("重做 Ctrl+Shift+Z", "Redo Ctrl+Shift+Z")}
           >
             <FiRotateCw />
           </button>
@@ -878,22 +880,22 @@ const WorkflowEditor = () => {
             disabled={loading}
           >
             <FiMessageSquare />
-            对话生成
+            {t("对话生成", "Generate from chat")}
           </button>
         </div>
         <div className="editor-run-settings">
-          <button className="editor-parameter-toggle" disabled={busy} onClick={() => setResourcesOpen(true)}><FiDatabase />资源管理</button>
+          <button className="editor-parameter-toggle" disabled={busy} onClick={() => setResourcesOpen(true)}><FiDatabase />{t("资源管理", "Resources")}</button>
           <CreditBalanceLink refreshKey={executing} />
           <select
-            aria-label="执行模式"
+            aria-label={t("执行模式", "Run mode")}
             value={simulate ? 'simulated' : 'real'}
             onChange={(event) =>
               setSimulate(event.target.value === 'simulated')
             }
             disabled={busy}
           >
-            <option value="real">真实执行</option>
-            <option value="simulated">模拟预览</option>
+            <option value="real">{t("真实执行", "Live run")}</option>
+            <option value="simulated">{t("模拟预览", "Preview")}</option>
           </select>
           <button
             className={`editor-parameter-toggle ${parametersOpen ? 'is-active' : ''}`}
@@ -901,27 +903,27 @@ const WorkflowEditor = () => {
             onClick={handleToggleParameters}
           >
             <FiSliders />
-            运行参数
+            {t("运行参数", "Run settings")}
             <FiChevronDown />
           </button>
         </div>
       </div>
       {parametersOpen && (
-        <section className="editor-parameters" aria-label="运行参数">
+        <section className="editor-parameters" aria-label={t("运行参数", "Run settings")}>
           <label className="editor-description-field">
-            工作流说明
+            {t("工作流说明", "Description")}
             <input
               value={description}
               onChange={(event) => setDescription(event.target.value)}
               disabled={busy}
-              placeholder="描述这条工作流解决的问题"
+              placeholder={t("描述这条工作流解决的问题", "Describe the task this workflow solves")}
             />
           </label>
           <div className="editor-json-fields">
             <label>
-              运行输入 <span>input</span>
+              {t("运行输入", "Run input")} <span>input</span>
               <textarea
-                aria-label="运行输入 JSON"
+                aria-label={t("运行输入 JSON", "Input JSON")}
                 value={inputText}
                 onChange={(event) => setInputText(event.target.value)}
                 disabled={busy}
@@ -929,9 +931,9 @@ const WorkflowEditor = () => {
               />
             </label>
             <label>
-              工作流变量 <span>variables</span>
+              {t("工作流变量", "Variables")} <span>variables</span>
               <textarea
-                aria-label="工作流变量 JSON"
+                aria-label={t("工作流变量 JSON", "Variables JSON")}
                 value={variablesText}
                 onChange={(event) => setVariablesText(event.target.value)}
                 disabled={busy}
@@ -940,19 +942,19 @@ const WorkflowEditor = () => {
             </label>
             <div className="editor-timeout-field">
               <label>
-                运行超时 <span>毫秒</span>
+                {t("运行超时", "Timeout")} <span>{t("毫秒", "ms")}</span>
                 <input
                   type="number"
                   min="1000"
                   max="600000"
                   step="1000"
-                  aria-label="运行超时毫秒"
+                  aria-label={t("运行超时毫秒", "Timeout in milliseconds")}
                   value={timeoutValue}
                   onChange={(event) => setTimeoutValue(event.target.value)}
                   disabled={busy}
                 />
               </label>
-              <p>真实执行支持触发器、Flash 文本 / 图片 / 视频及输出节点。</p>
+              <p>{t("真实执行支持触发器、Flash 文本 / 图片 / 视频及输出节点。", "Live runs execute supported triggers, model calls and output nodes.")}</p>
             </div>
           </div>
         </section>
@@ -963,7 +965,7 @@ const WorkflowEditor = () => {
           role={notice.type === 'error' ? 'alert' : 'status'}
         >
           {notice.text}
-          <button aria-label="关闭提示" onClick={() => setNotice(null)}>
+          <button aria-label={t("关闭提示", "Dismiss notice")} onClick={() => setNotice(null)}>
             ×
           </button>
         </div>
@@ -981,7 +983,7 @@ const WorkflowEditor = () => {
         )}
         <div className="editor-canvas">
           <WorkflowCanvas ref={canvasRef} disabled={busy} />
-          {loading && <div className="editor-loading">正在加载工作流…</div>}
+          {loading && <div className="editor-loading">{t("正在加载工作流…", "Loading workflow…")}</div>}
         </div>
         {isConfigPanelOpen && <ConfigPanel inputText={inputText} variablesText={variablesText} onInputChange={setInputText} resourceRevision={resourceRevision} />}
         <WorkflowAssistant
@@ -993,7 +995,7 @@ const WorkflowEditor = () => {
           initialRequestKey={location.state?.requestKey || location.key}
           getWorkflow={() => ({
             ...buildPayload(),
-            input: parseObject(inputText, '运行输入'),
+            input: parseObject(inputText, t("运行输入", "Run input")),
           })}
           getRevision={getAssistantRevision}
           onApply={applyGeneratedWorkflow}
@@ -1006,19 +1008,19 @@ const WorkflowEditor = () => {
           <div className="editor-execution-header">
             <button aria-expanded={resultOpen} onClick={handleToggleResult}>
               <FiChevronDown />
-              <span>执行结果</span>
+              <span>{t("执行结果", "Run results")}</span>
               <small className={`execution-status-${executionRecord.status}`}>
                 {executionRecord.status === 'running'
-                  ? '运行中'
+                  ? t("运行中", "Running")
                   : executionRecord.status === 'success'
-                    ? '已完成'
-                    : '执行失败'}
+                    ? t("已完成", "Completed")
+                    : t("执行失败", "Failed")}
               </small>
-              {executionRecord.simulated && <small>模拟预览</small>}
+              {executionRecord.simulated && <small>{t("模拟预览", "Preview")}</small>}
             </button>
             {executionId && (
               <Link to={`/executions/${executionId}`}>
-                查看完整记录
+                {t("查看完整记录", "View full record")}
                 <FiExternalLink />
               </Link>
             )}

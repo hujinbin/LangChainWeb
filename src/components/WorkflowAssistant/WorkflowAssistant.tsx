@@ -88,25 +88,24 @@ export default function WorkflowAssistant({
   propsRef.current = { getWorkflow, getRevision, onApply, disabled };
 
   useEffect(() => {
-    let active = true;
-    aiWorkflowAPI
-      .getModels()
-      .then((response) => {
-        if (!active) return;
-        const options = response.data?.text?.filter((value) =>
-          FLASH_MODEL_CATALOG.text.includes(value)
-        );
-        if (!options?.length) return;
+    if (!open) return;
+    let request = 0;
+    const refresh = () => {
+      const currentRequest = ++request;
+      aiWorkflowAPI.getModels().then(response => {
+        if (request !== currentRequest) return;
+        const options = response.data?.text || [];
         setModels(options);
-        setModel((current) =>
-          options.includes(current) ? current : options[0]
-        );
-      })
-      .catch(() => {});
-    return () => {
-      active = false;
+        setModel(current => options.includes(current) ? current : options[0] || '');
+      }).catch(() => {});
     };
-  }, []);
+    refresh();
+    window.addEventListener('focus', refresh);
+    return () => {
+      ++request;
+      window.removeEventListener('focus', refresh);
+    };
+  }, [open]);
 
   useEffect(() => {
     const activeRequest = activeRequestRef;
@@ -126,7 +125,7 @@ export default function WorkflowAssistant({
     const message = value.trim();
     if (
       !message ||
-      activeRequestRef.current ||
+      !model || activeRequestRef.current ||
       propsRef.current.disabled ||
       !ready
     )
@@ -407,18 +406,19 @@ export default function WorkflowAssistant({
         />
         <div className="assistant-options">
           <label>
-            <span>Flash 模型</span>
+            <span>文本模型</span>
             <select
-              aria-label="生成工作流的 Flash 模型"
+              aria-label="生成工作流的文本模型"
               value={model}
               onChange={(event) => setModel(event.target.value)}
               disabled={waiting || disabled}
             >
+              {!models.length && <option value="">本站暂无可用文本模型</option>}
               {models.map((value) => (
                 <option key={value} value={value}>
                   {value === 'agnes-3.0-flash'
                     ? 'Agnes 3.0 Flash'
-                    : 'Agnes 2.5 Flash'}
+                    : value === 'agnes-2.5-flash' ? 'Agnes 2.5 Flash' : value}
                 </option>
               ))}
             </select>
@@ -449,7 +449,7 @@ export default function WorkflowAssistant({
             <button
               className="btn btn-primary"
               type="submit"
-              disabled={!prompt.trim() || disabled || !ready}
+              disabled={!model || !prompt.trim() || disabled || !ready}
             >
               <FiArrowUp />
               生成工作流

@@ -97,6 +97,9 @@ const path = (id: string): string =>
   `/api/aiAgents/projects/${encodeURIComponent(id)}`;
 
 export const agentAPI = {
+  importTemplate: (templateId: string) => apiClient
+    .post<Envelope<{ id: string; kind: 'novel' | 'storyboard' | 'custom' }>>(`/api/aiAgents/templates/${encodeURIComponent(templateId)}/import`, {})
+    .then(unwrap),
   catalog: (signal?: AbortSignal): Promise<AgentCatalog> =>
     apiClient
       .get<Envelope<AgentCatalog>>('/api/aiAgents/catalog', { signal })

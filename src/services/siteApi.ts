@@ -9,6 +9,8 @@ export interface SiteConfig {
   seo?: { title?: string; description?: string; keywords?: string[] };
   theme?: string;
   announcement?: string;
+  planName?: string;
+  quotaDescription?: string;
   footerText?: string;
   contact?: { qq?: string; email?: string; wechatQrUrl?: string };
   registerEnabled?: boolean;
@@ -39,6 +41,8 @@ function normalizeSiteConfig(value: unknown): SiteConfig {
         : undefined,
     },
     theme: typeof row.theme === 'string' ? row.theme : undefined,
+    planName: typeof row.planName === 'string' ? row.planName : undefined,
+    quotaDescription: typeof row.quotaDescription === 'string' ? row.quotaDescription : undefined,
     announcement: typeof row.announcement === 'string' ? row.announcement : undefined,
     footerText: typeof row.footerText === 'string' ? row.footerText : undefined,
     contact: {

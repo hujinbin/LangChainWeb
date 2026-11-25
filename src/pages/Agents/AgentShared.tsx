@@ -23,6 +23,7 @@ const LABELS: Record<string, string> = {
   running: '生成中',
   cancelling: '正在停止',
   completed: '已完成',
+  succeeded: '已完成',
   failed: '未完成',
   cancelled: '已停止',
   interrupted: '已中断',

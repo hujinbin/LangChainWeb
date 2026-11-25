@@ -97,7 +97,10 @@ export interface AgentPreset {
 }
 
 export interface AgentCatalog {
-  agents: AgentPreset[];
+  templates?: Array<{ id: string; title: string; description: string; kind: 'novel' | 'storyboard' | 'custom' }>;
+  agents: (AgentPreset | (Omit<AgentPreset, 'id' | 'defaults' | 'limits'> & {
+    id: 'novel-writer'; defaults: import('./novel').NovelSettings;
+  }))[];
   models: { text: string[]; image: string[]; video: string[] };
 }
 

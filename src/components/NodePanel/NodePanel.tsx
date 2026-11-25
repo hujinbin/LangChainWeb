@@ -172,7 +172,6 @@ const NodePanel = ({
         )}
       </div>
       <div className="node-library-footer">
-        <span className="node-library-flash">FLASH ONLY</span>
         <p>点击添加，或拖入画布</p>
         <small>
           {source === 'local'

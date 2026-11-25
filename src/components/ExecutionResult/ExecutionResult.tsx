@@ -1,3 +1,4 @@
+import { useLabels } from '../../store/languageStore';
 import { asRecord } from '../../types/api';
 import type { Execution, NodeOutput as WorkflowNodeOutput } from '../../types/workflow';
 import { normalizeError } from '../../types/api';
@@ -105,6 +106,7 @@ function NodeOutput({
   output?: WorkflowNodeOutput;
   simulated: boolean;
 }) {
+  const t = useLabels();
   const [task, setTask] = useState<VideoTask | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -142,7 +144,7 @@ function NodeOutput({
       setTask(normalizeVideo(response));
     } catch (caughtError) {
       const err = normalizeError(caughtError);
-      setError(err.message || '查询视频任务失败');
+      setError(err.message || t("查询视频任务失败", "Could not check the video job"));
     } finally {
       setLoading(false);
     }
@@ -153,13 +155,13 @@ function NodeOutput({
       await navigator.clipboard.writeText(videoId);
       setCopied(true);
     } catch {
-      setError('复制失败，请手动选择任务 ID 复制');
+      setError(t("复制失败，请手动选择任务 ID 复制", "Copy failed. Select and copy the task ID."));
     }
   };
   return (
     <div className="result-node-output">
       {audioSrc && <WorkflowAsset url={audioSrc} kind="audio" />}
-      {childExecutions.length > 0 && <div className="result-child-tasks">{childExecutions.map((id, index) => <Link className="text-action" key={id} to={`/executions/${id}`}>查看子流程任务 {index + 1} <FiExternalLink /></Link>)}</div>}
+      {childExecutions.length > 0 && <div className="result-child-tasks">{childExecutions.map((id, index) => <Link className="text-action" key={id} to={`/executions/${id}`}>{t("查看子流程任务", "View subworkflow run")} {index + 1} <FiExternalLink /></Link>)}</div>}
       {output.text && <div className="result-text">{output.text}</div>}
       {imageUrls.length > 0 && (
         <div className="result-images">
@@ -174,7 +176,7 @@ function NodeOutput({
             <span
               className={`badge ${video.status === 'failed' ? 'failed' : video.status === 'completed' ? 'success' : 'running'}`}
             >
-              {LABELS[video.status || ''] || video.status || '视频任务'}
+              {LABELS[video.status || ''] || video.status || t("视频任务", "Video job")}
             </span>
             {!simulated && (
               <button
@@ -183,27 +185,26 @@ function NodeOutput({
                 disabled={loading}
               >
                 <FiRefreshCw className={loading ? 'spinning' : ''} />{' '}
-                {loading ? '查询中' : '查询任务'}
+                {loading ? t("查询中", "Checking") : t("查询任务", "Check job")}
               </button>
             )}
           </div>
           <div className="result-task-id">
-            <span>任务 ID</span>
+            <span>{t("任务 ID", "Task ID")}</span>
             <code>{videoId}</code>
             <button
               className="btn-icon"
-              title="复制任务 ID"
-              aria-label="复制任务 ID"
+              title={t("复制任务 ID", "Copy task ID")}
+              aria-label={t("复制任务 ID", "Copy task ID")}
               onClick={copyTaskId}
             >
               <FiCopy />
             </button>
-            {copied && <small>已复制</small>}
+            {copied && <small>{t("已复制", "Copied")}</small>}
           </div>
           {!videoSrc && video.status !== 'failed' && (
             <p className="result-task-hint">
-              任务已提交，可稍后查询。也可以将任务 ID
-              填入视频节点，继续等待结果。
+              {t("任务已提交，可稍后查询。也可以将任务 ID\r\n              填入视频节点，继续等待结果。", "Job submitted. Check back later, or paste the task ID into a video node to wait for the result.")}
             </p>
           )}
           {videoSrc && (
@@ -215,7 +216,7 @@ function NodeOutput({
                 target="_blank"
                 rel="noreferrer"
               >
-                打开视频 <FiExternalLink />
+                {t("打开视频", "Open video")} <FiExternalLink />
               </a>
             </>
           )}
@@ -230,7 +231,7 @@ function NodeOutput({
         output.searchResults.length > 0 && (
           <details className="result-json">
             <summary>
-              搜索参考资料 <FiChevronDown />
+              {t("搜索参考资料", "Search sources")} <FiChevronDown />
             </summary>
             <ul>
               {output.searchResults.map((item, index) =>
@@ -251,7 +252,7 @@ function NodeOutput({
         )}
       <details className="result-json">
         <summary>
-          查看输出数据 <FiChevronDown />
+          {t("查看输出数据", "View output")} <FiChevronDown />
         </summary>
         <pre>{JSON.stringify(output, null, 2)}</pre>
       </details>
@@ -260,6 +261,7 @@ function NodeOutput({
 }
 
 export default function ExecutionResult({ record }: { record: Execution | null }) {
+  const t = useLabels();
   if (!record) return null;
   const results = record.nodeResults || [];
   const StatusIcon =
@@ -269,17 +271,17 @@ export default function ExecutionResult({ record }: { record: Execution | null }
         ? FiClock
         : FiCheckCircle;
   return (
-    <section className="execution-result" aria-label="工作流执行结果">
+    <section className="execution-result" aria-label={t("工作流执行结果", "Workflow run results")}>
       <header className="result-summary">
         <div className={`result-status-icon ${record.status}`}>
           <StatusIcon />
         </div>
         <div>
-          <h3>{LABELS[record.status] || record.status || '运行结果'}</h3>
+          <h3>{LABELS[record.status] || record.status || t("运行结果", "Run results")}</h3>
           <p>
-            {results.length} 个节点 ·{' '}
-            {((record.durationMs || 0) / 1000).toFixed(2)} 秒
-            {record.simulated ? ' · 模拟预览' : ' · 真实执行'}
+            {results.length} {t("个节点 ·", "nodes ·")}{' '}
+            {((record.durationMs || 0) / 1000).toFixed(2)} {t("秒", "s")}
+            {record.simulated ? t(" · 模拟预览", " · Preview") : t(" · 真实执行", " · Live run")}
           </p>
         </div>
         <span className={`badge ${record.simulated ? 'simulated' : 'success'}`}>
@@ -309,7 +311,7 @@ export default function ExecutionResult({ record }: { record: Execution | null }
                   {String(index + 1).padStart(2, '0')}
                 </span>
                 <div>
-                  <strong>{node.nodeName || node.nodeId || '节点'}</strong>
+                  <strong>{node.nodeName || node.nodeId || t("节点", "Node")}</strong>
                   <small>{node.nodeType}</small>
                 </div>
                 <span className={`badge ${node.status}`}>
@@ -332,13 +334,13 @@ export default function ExecutionResult({ record }: { record: Execution | null }
       ) : (
         <div className="result-no-nodes">
           {record.status === 'running'
-            ? '节点正在执行，运行记录会自动刷新。'
-            : '这条历史记录没有逐节点日志。'}
+            ? t("节点正在执行，运行记录会自动刷新。", "Nodes are running. This record refreshes automatically.")
+            : t("这条历史记录没有逐节点日志。", "No node logs are available for this run.")}
         </div>
       )}
       <details className="result-json result-final">
         <summary>
-          工作流最终输出 <FiChevronDown />
+          {t("工作流最终输出", "Workflow output")} <FiChevronDown />
         </summary>
         <pre>{JSON.stringify(record.output ?? {}, null, 2)}</pre>
       </details>

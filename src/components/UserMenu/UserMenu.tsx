@@ -1,3 +1,4 @@
+import { useLabels } from '../../store/languageStore';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
@@ -9,8 +10,6 @@ import {
   FiLogOut,
   FiMail,
   FiMessageSquare,
-  FiMonitor,
-  FiMoon,
   FiSettings,
   FiStar,
   FiSun,
@@ -18,17 +17,11 @@ import {
 } from 'react-icons/fi';
 import useAuthStore from '../../store/authStore';
 import useThemeStore from '../../store/themeStore';
-import type { ThemeMode } from '../../store/themeStore';
+import { useThemeOptions } from '../AppearancePreferences';
 import { SITE } from '../../config/site';
 import './UserMenu.css';
 
 const CUSTOMER_SERVICE_QR = `${process.env.PUBLIC_URL}/customer-service-qr.png`;
-const THEME_OPTIONS: { mode: ThemeMode; label: string; icon: typeof FiSun }[] = [
-  { mode: 'auto', label: '跟随系统', icon: FiMonitor },
-  { mode: 'light', label: '浅色', icon: FiSun },
-  { mode: 'dark', label: '深色', icon: FiMoon },
-];
-
 function UserMenuAvatar({
   avatarUrl,
   initial,
@@ -53,6 +46,8 @@ function UserMenuAvatar({
 }
 
 export default function UserMenu() {
+  const t = useLabels();
+  const themeOptions = useThemeOptions();
   const { user, logout } = useAuthStore();
   const themeMode = useThemeStore((state) => state.mode);
   const setThemeMode = useThemeStore((state) => state.setMode);
@@ -64,11 +59,11 @@ export default function UserMenu() {
   const rootRef = useRef<HTMLDivElement>(null);
   const noticeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-  const displayName = user?.nickname || user?.mobile || '用户';
+  const displayName = user?.nickname || user?.mobile || t("用户", "User");
   const initial = displayName.slice(0, 1).toUpperCase();
   const avatarUrl = typeof user?.headImg === 'string' ? user.headImg : '';
   const themeLabel =
-    THEME_OPTIONS.find((option) => option.mode === themeMode)?.label || '跟随系统';
+    themeOptions.find((option) => option.mode === themeMode)?.label || t("跟随系统", "System");
 
   const closeMenu = () => {
     setOpen(false);
@@ -121,7 +116,7 @@ export default function UserMenu() {
         className="user-menu-trigger"
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label="账号菜单"
+        aria-label={t("账号菜单", "Account menu")}
         onClick={() => setOpen((value) => !value)}
       >
         <UserMenuAvatar avatarUrl={avatarUrl} initial={initial} />
@@ -129,20 +124,20 @@ export default function UserMenu() {
         <FiChevronDown className="user-menu-caret" aria-hidden="true" />
       </button>
       {open && (
-        <div className="user-menu-panel" role="menu" aria-label="账号菜单">
-          <p className="user-menu-group">个人</p>
+        <div className="user-menu-panel" role="menu" aria-label={t("账号菜单", "Account menu")}>
+          <p className="user-menu-group">{t("个人", "Account")}</p>
           <div className="user-menu-account">
             <UserMenuAvatar avatarUrl={avatarUrl} initial={initial} large />
             <span className="user-menu-account-name" title={displayName}>
               {displayName}
             </span>
-            <FiCheck aria-label="当前账号" />
+            <FiCheck aria-label={t("当前账号", "Current account")} />
           </div>
           <div className="user-menu-divider" />
           <Link to="/credits" role="menuitem" className="user-menu-item" onClick={closeMenu}>
             <FiGift />
-            <span>兑换码</span>
-            <small className="user-menu-hint">兑换套餐</small>
+            <span>{t("兑换码", "Redemption code")}</span>
+            <small className="user-menu-hint">{t("兑换套餐", "Redeem credits")}</small>
           </Link>
           <Link
             to="/achievements"
@@ -151,8 +146,8 @@ export default function UserMenu() {
             onClick={closeMenu}
           >
             <FiStar />
-            <span>成就计划</span>
-            <small className="user-menu-hint">去点亮</small>
+            <span>{t("成就计划", "Achievements")}</span>
+            <small className="user-menu-hint">{t("去点亮", "View progress")}</small>
           </Link>
           <Link
             to="/profile"
@@ -161,7 +156,7 @@ export default function UserMenu() {
             onClick={closeMenu}
           >
             <FiUser />
-            <span>个人主页</span>
+            <span>{t("个人主页", "Profile")}</span>
           </Link>
           <div
             className="user-menu-sub"
@@ -177,11 +172,11 @@ export default function UserMenu() {
               onClick={() => setHelpOpen((value) => !value)}
             >
               <FiMail />
-              <span>帮助与反馈</span>
+              <span>{t("帮助与反馈", "Help and feedback")}</span>
               <FiChevronRight className="user-menu-arrow" />
             </button>
             {helpOpen && (
-              <div className="user-menu-help" role="menu" aria-label="帮助与反馈">
+              <div className="user-menu-help" role="menu" aria-label={t("帮助与反馈", "Help and feedback")}>
                 <button
                   type="button"
                   role="menuitem"
@@ -189,7 +184,7 @@ export default function UserMenu() {
                   onClick={copyQqGroup}
                 >
                   <FiMessageSquare />
-                  <span>QQ 交流群</span>
+                  <span>{t("QQ 交流群", "QQ group")}</span>
                   <small className="user-menu-hint">{SITE.qqGroup}</small>
                 </button>
                 <Link
@@ -199,17 +194,17 @@ export default function UserMenu() {
                   onClick={closeMenu}
                 >
                   <FiHelpCircle />
-                  <span>帮助中心</span>
+                  <span>{t("帮助中心", "Help center")}</span>
                 </Link>
                 <div className="user-menu-divider" />
                 <p className="user-menu-help-title">
-                  <FiMessageSquare /> 扫码联系客服
+                  <FiMessageSquare /> {t("扫码联系客服", "Scan to contact support")}
                 </p>
                 <div className="user-menu-qr">
-                  <img src={CUSTOMER_SERVICE_QR} alt="客服微信二维码" />
+                  <img src={CUSTOMER_SERVICE_QR} alt={t("客服微信二维码", "WeChat support QR code")} />
                 </div>
                 <p className="user-menu-qr-caption">
-                  添加「流风绾月」办理充值或反馈问题
+                  {t("添加「流风绾月」办理充值或反馈问题", "Contact 流风绾月 for credit top-ups or feedback.")}
                 </p>
               </div>
             )}
@@ -228,15 +223,15 @@ export default function UserMenu() {
               onClick={() => setThemeOpen((value) => !value)}
             >
               <FiSun />
-              <span>主题</span>
+              <span>{t("主题", "Theme")}</span>
               <span className="user-menu-end">
                 <small className="user-menu-hint">{themeLabel}</small>
                 <FiChevronRight className="user-menu-arrow" />
               </span>
             </button>
             {themeOpen && (
-              <div className="user-menu-theme" role="menu" aria-label="主题">
-                {THEME_OPTIONS.map((option) => {
+              <div className="user-menu-theme" role="menu" aria-label={t("主题", "Theme")}>
+                {themeOptions.map((option) => {
                   const Icon = option.icon;
                   return (
                     <button
@@ -266,7 +261,7 @@ export default function UserMenu() {
             onClick={closeMenu}
           >
             <FiSettings />
-            <span>设置</span>
+            <span>{t("设置", "Settings")}</span>
           </Link>
           <div className="user-menu-divider" />
           <button
@@ -280,7 +275,7 @@ export default function UserMenu() {
             }}
           >
             <FiLogOut />
-            <span>退出登录</span>
+            <span>{t("退出登录", "Sign out")}</span>
           </button>
         </div>
       )}

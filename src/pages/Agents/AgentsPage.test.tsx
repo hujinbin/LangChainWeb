@@ -18,6 +18,7 @@ jest.mock('../../services/agentApi', () => ({
     catalog: jest.fn(),
     list: jest.fn(),
     create: jest.fn(),
+    importTemplate: jest.fn(),
     delete: jest.fn(),
   },
 }));
@@ -67,6 +68,7 @@ function renderPage() {
       <Routes>
         <Route path="/agents" element={<AgentsPage />} />
         <Route path="/agents/:id" element={<p>创作工作室</p>} />
+        <Route path="/novel/:id" element={<p>小说工作室</p>} />
         <Route path="/login" element={<p>登录页面</p>} />
       </Routes>
     </MemoryRouter>,
@@ -86,6 +88,16 @@ beforeEach(() => {
 });
 
 afterEach(cleanup);
+
+test('从模板市场导入小说后进入新建草稿', async () => {
+  api.catalog.mockResolvedValue({ ...catalog, templates: [{ id: 'novel-writer', kind: 'novel', title: '雾港来信', description: '三章悬疑短篇' }] });
+  api.importTemplate.mockResolvedValue({ id: 'new-book', kind: 'novel' });
+  renderPage();
+  fireEvent.click(await screen.findByRole('button', { name: '导入模板' }));
+  expect(api.importTemplate).toHaveBeenCalledWith('novel-writer');
+  expect(await screen.findByText('小说工作室')).toBeInTheDocument();
+  expect(screen.getByTestId('current-path')).toHaveTextContent('/novel/new-book');
+});
 
 test('访客可选择智能体并进入登录，不发送创建请求', () => {
   useAuthStore.setState({ isLoggedIn: false, token: '', user: null });

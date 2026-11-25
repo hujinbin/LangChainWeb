@@ -21,6 +21,7 @@ export interface KnowledgeBase extends KnowledgeBaseInput {
 export interface KnowledgeConfig {
   configured: boolean;
   modes?: string[];
+  defaultMode?: string;
   acceptedFileTypes?: string[];
   maxFileBytes?: number;
   defaults?: Partial<KnowledgeBaseInput>;

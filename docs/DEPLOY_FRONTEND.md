@@ -24,7 +24,7 @@ curl -fsS http://localhost/config.js
 
 通过已登记的站点域名打开首页，从导航进入「用量总览」「API 文档」或「代理商后台」。`/docs` 与 `/api-reference/openapi.yaml` 可直接浏览。`/partner/` 由本地静态服务器提供页面，浏览器通过同源 `/partner/api/` 连接代理商服务。首次开通由平台管理员在总后台登记域名并给本站账号分配代理商管理员或运营角色。
 
-同一份 Dockerfile 支持 `linux/amd64` 和 `linux/arm64`。可在本机只生成 OCI 文件进行检查：
+同一份 Dockerfile 支持 `linux/amd64` 和 `linux/arm64`。GitHub Actions 的 Frontend image 工作流使用 Buildx 和 QEMU，在手动触发或推送 `v*` 标签时将两种架构的镜像发布至 GHCR。可在本机只生成 OCI 文件进行检查：
 
 ```bash
 docker buildx build --platform linux/amd64,linux/arm64 --output type=oci,dest=langchainweb.oci .
