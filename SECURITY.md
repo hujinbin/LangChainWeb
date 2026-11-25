@@ -2,16 +2,16 @@
 
 ## 开源范围
 
-本仓库仅包含用户端前端代码，采用 MIT 许可证。后端服务与管理端不在此仓库中，也不随本仓库提供部署包。
+用户工作台和 `public/partner/` 下的代理商页面采用 MIT 许可证。业务 API、代理商会话服务与平台管理端由运营方私有部署。
 
 ## 运行时配置
 
 `public/config.js` 与容器生成的 `/config.js` 只允许包含公开信息：
 
-- 允许：`apiBaseUrl`、`siteId`、`adminPath`、品牌名、Logo、主题、帮助地址、交流群号。
+- 允许：`apiBaseUrl`、`siteId`、`partnerPath`、品牌名、Logo、主题、帮助地址、交流群号。
 - 禁止：API Secret、数据库口令、JWT 私钥、模型 API Key、管理员密码。
 
-浏览器端只保存登录 token；第三方开放 API 的 `clientSecret` 必须保存在调用方服务端。
+工作流用户登录与代理商后台会话独立。代理商页面使用同源 HttpOnly Cookie，开放 API 的 `clientSecret` 保存在调用方服务端。
 
 ## 部署建议
 

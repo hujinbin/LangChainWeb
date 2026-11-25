@@ -55,6 +55,7 @@ if (process.argv.includes('--build')) {
     .replace(/<div id="root">[\s\S]*?<\/div>/, `<div id="root">${intro(pathname)}</div>`);
   const appPages: [filename: string, pathname: string][] = [
     ['login/index.html', '/login'], ['workflows/index.html', '/workflows'],
+    ['docs/index.html', '/docs'], ['usage/index.html', '/usage'],
     ['executions/index.html', '/executions'], ['agents/index.html', '/agents'], ['app.html', '/workflows/new/edit'],
     ['404.html', '/not-found'],
   ];

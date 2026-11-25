@@ -50,9 +50,17 @@ function request(port: number, pathname: string, body?: string): Promise<Respons
 
 async function main(): Promise<void> {
   const original = process.env.REACT_APP_PROXY_TARGET;
+  const originalPartner = process.env.REACT_APP_PARTNER_PROXY_TARGET;
+  const partner = http.createServer((req, res) => {
+    res.end(JSON.stringify({ path: req.url, host: req.headers.host }));
+  });
   let forwarded = 0;
   const upstream = http.createServer((incoming, response) => {
     forwarded++;
+    if (incoming.url === '/api/user/login' || incoming.url === '/api/user/unrelated') {
+      response.end(String(incoming.headers['x-workflow-account'] || ''));
+      return;
+    }
     if (incoming.url === '/api/stream') {
       response.writeHead(200, { 'Content-Type': 'text/event-stream' });
       response.write('event: stage\ndata: 准备完成\n\n');
@@ -76,6 +84,7 @@ async function main(): Promise<void> {
   const proxy = http.createServer(app);
   try {
     const upstreamPort = await listen(upstream);
+    process.env.REACT_APP_PARTNER_PROXY_TARGET = `http://127.0.0.1:${await listen(partner)}`;
     process.env.REACT_APP_PROXY_TARGET = `http://127.0.0.1:${upstreamPort}`;
     // 从 CRA 实际读取的入口加载，确保极薄的 JavaScript 桥接也可正常执行。
     const configure = require('../src/setupProxy.js') as typeof setupProxy;
@@ -93,11 +102,29 @@ async function main(): Promise<void> {
     assert.ok(stream.body.includes('准备完成') && stream.body.includes('逐步回复'));
     assert.equal((await request(port, '/outputs/example.txt')).body, '生成素材');
     assert.equal((await request(port, '/unproxied')).status, 404);
-    assert.equal(forwarded, 3);
+    for (const path of ['/api/admin/login', '/api/partner-internal/v1/login', '/admin/static/js/main.js']) {
+      assert.equal((await request(port, path)).status, 404, path);
+    }
+    assert.equal((await request(port, '/admin/')).status, 302);
+    const consolePage = await request(port, '/partner/');
+    assert.equal(consolePage.status, 200);
+    assert.match(consolePage.contentType, /text\/html/);
+    assert.match(consolePage.body, /代理商/);
+    const asset = await request(port, '/partner/app.js');
+    assert.equal(asset.status, 200);
+    assert.match(asset.contentType, /javascript/);
+    const partnerSession = await request(port, '/partner/api/session');
+    assert.deepEqual(JSON.parse(partnerSession.body), { path: '/partner/api/session', host: `127.0.0.1:${port}` });
+    assert.equal((await request(port, '/api/user/login', '{}')).body, '1');
+    assert.equal((await request(port, '/api/user/unrelated')).body, '');
+    assert.equal(forwarded, 5);
     console.log('TypeScript 开发代理验证通过：真实入口、路径/参数、POST 正文、令牌、流式回复、素材与非代理路径。');
   } finally {
     if (original === undefined) delete process.env.REACT_APP_PROXY_TARGET;
     else process.env.REACT_APP_PROXY_TARGET = original;
+    if (originalPartner === undefined) delete process.env.REACT_APP_PARTNER_PROXY_TARGET;
+    else process.env.REACT_APP_PARTNER_PROXY_TARGET = originalPartner;
+    await close(partner);
     await close(proxy);
     await close(upstream);
   }

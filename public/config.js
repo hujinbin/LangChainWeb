@@ -9,7 +9,7 @@
 window.__JUE_CONFIG__ = window.__JUE_CONFIG__ || {
   apiBaseUrl: '',
   siteId: '',
-  adminPath: '/admin',
+  partnerPath: '/partner/',
   brandName: '',
   logoUrl: '',
   faviconUrl: '',

@@ -44,7 +44,7 @@ export default function Login() {
     setCaptchaLoading(true);
     setError('');
     try {
-      const response = await apiClient.post<unknown>('/api/user/getCode', {
+      const response = await apiClient.post<unknown>('/api/aiWorkflow/account/getCode', {
         mobile: form.mobile,
       });
       const data = asRecord(response.data);
@@ -71,7 +71,7 @@ export default function Login() {
     setLoading(true);
     try {
       const response = await apiClient.post<unknown>(
-        isRegister ? '/api/user/register' : '/api/user/login',
+        isRegister ? '/api/aiWorkflow/account/register' : '/api/aiWorkflow/account/login',
         {
           mobile: form.mobile,
           password: form.password,

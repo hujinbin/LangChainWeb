@@ -55,8 +55,12 @@
   height: 100%;
   display: flex;
   gap: 28px;
+  min-width: 0;
+  overflow-x: auto;
 }
 .nav-link {
+  flex-shrink: 0;
+  white-space: nowrap;
   display: flex;
   align-items: center;
   gap: 7px;

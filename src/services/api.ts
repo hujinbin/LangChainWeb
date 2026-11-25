@@ -442,7 +442,7 @@ export const aiWorkflowAPI = {
 export const userAPI = {
   info: () =>
     apiClient
-      .get<ApiEnvelope<unknown>>('/api/user/getUserInfo')
+      .get<ApiEnvelope<unknown>>('/api/aiWorkflow/account/getUserInfo')
       .then(unwrap)
       .then(
         (payload): ApiEnvelope<UserProfile> => ({
@@ -452,7 +452,7 @@ export const userAPI = {
       ),
   update: (data: { nickname?: string; headImg?: string }) =>
     apiClient
-      .post<ApiEnvelope<unknown>>('/api/user/editUserInfo', data)
+      .post<ApiEnvelope<unknown>>('/api/aiWorkflow/account/editUserInfo', data)
       .then(unwrap)
       .then(
         (payload): ApiEnvelope<UserProfile> => ({
@@ -462,7 +462,7 @@ export const userAPI = {
       ),
   changePassword: (data: { password?: string; newPassword: string }) =>
     apiClient
-      .post<ApiEnvelope<null>>('/api/user/changePassword', data)
+      .post<ApiEnvelope<null>>('/api/aiWorkflow/account/changePassword', data)
       .then(unwrap),
   uploadImage: (file: File) => {
     const form = new FormData();

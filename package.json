@@ -20,9 +20,9 @@
     "zustand": "^4.5.0"
   },
   "scripts": {
-    "predev": "tsx --tsconfig tsconfig.tools.json scripts/seo.ts",
-    "prestart": "tsx --tsconfig tsconfig.tools.json scripts/seo.ts",
-    "prebuild": "npm run typecheck && tsx --tsconfig tsconfig.tools.json scripts/seo.ts",
+    "predev": "node scripts/build-api-docs.cjs && tsx --tsconfig tsconfig.tools.json scripts/seo.ts",
+    "prestart": "node scripts/build-api-docs.cjs && tsx --tsconfig tsconfig.tools.json scripts/seo.ts",
+    "prebuild": "npm run typecheck && node scripts/build-api-docs.cjs && tsx --tsconfig tsconfig.tools.json scripts/seo.ts",
     "postbuild": "tsx --tsconfig tsconfig.tools.json scripts/seo.ts --build",
     "check:seo": "tsx --tsconfig tsconfig.tools.json scripts/check-seo.ts",
     "check:proxy": "tsx --tsconfig tsconfig.tools.json scripts/check-proxy.ts",
@@ -67,6 +67,7 @@
     "@types/uuid": "^9.0.8",
     "express": "^4.22.3",
     "http-proxy-middleware": "^2.0.12",
+    "markdown-it": "^14.3.3",
     "tsx": "^4.23.15",
     "typescript": "5.1.6"
   },

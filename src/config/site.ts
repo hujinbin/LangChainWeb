@@ -61,6 +61,8 @@ export function getPageMetadata(pathname: string) {
   else if (path === '/profile') label = '个人主页';
   else if (path === '/settings') label = '设置';
   else if (path === '/achievements') label = '成就计划';
+  else if (path === '/docs') label = 'API 文档';
+  else if (path === '/usage') label = '用量总览';
   else if (path === '/help') label = '帮助中心';
   else if (/^\/executions\/[^/]+$/.test(path)) label = '执行详情';
   else if (path === '/knowledge') label = '知识库';

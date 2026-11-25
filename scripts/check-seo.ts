@@ -19,7 +19,7 @@ const website = graph[0];
 assert(website !== null && typeof website === 'object' && 'name' in website && 'url' in website, '首页缺少网站结构化数据');
 assert.equal(website.name, SITE.name);
 assert.equal(website.url, SITE.url);
-for (const file of ['login/index.html', 'workflows/index.html', 'executions/index.html', 'agents/index.html', 'app.html', '404.html']) {
+for (const file of ['login/index.html', 'workflows/index.html', 'executions/index.html', 'agents/index.html', 'docs/index.html', 'usage/index.html', 'app.html', '404.html']) {
   const html = read(file);
   assert(html.includes('noindex, follow'), `${file}: missing static noindex`);
   assert(!html.includes('rel="canonical"'), `${file}: unexpected homepage canonical`);
@@ -34,4 +34,4 @@ assert.equal(JSON.parse(read('manifest.json')).short_name, SITE.name);
 for (const file of ['social-preview.png', 'brand-mark.svg', 'favicon.ico', 'logo192.png', 'logo512.png']) {
   assert(fs.statSync(path.join(directory, file)).size > 0);
 }
-console.log('SEO verified: static homepage, 6 noindex pages, structured data, sitemap and brand assets.');
+console.log('SEO verified: static homepage, 8 noindex pages, structured data, sitemap and brand assets.');

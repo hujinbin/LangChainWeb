@@ -1,4 +1,4 @@
-openapi: 3.0.3
+openapi: 3.1.0
 info:
   title: 织流 AI 开放 API
   version: 1.0.0
@@ -6,8 +6,8 @@ info:
     使用 clientId / clientSecret 换取 JWT 后调用工作流能力。
     clientSecret 只应保存在调用方服务端。
 servers:
-  - url: https://langchain.example.com
-    description: 替换为实际站点域名
+  - url: /
+    description: 当前部署站点
 tags:
   - name: Auth
   - name: Workflow
@@ -90,6 +90,7 @@ paths:
   /api/open/v1/workflows/{id}/run:
     post:
       tags: [Workflow]
+      description: requestId 或 Idempotency-Key 请求头必填。请求号按密钥保留 24 小时。
       summary: 触发工作流运行
       security: [{ bearerAuth: [] }]
       parameters:
@@ -106,11 +107,18 @@ paths:
             schema:
               type: object
               properties:
+                requestId: { type: string, minLength: 1, maxLength: 128 }
                 input: { type: object }
                 simulate: { type: boolean, default: false }
       responses:
         '200': { description: 运行完成 }
         '402': { description: 积分不足 }
+        '409': { description: 请求执行中或参数冲突 }
+        '429':
+          description: 达到密钥频率或并发上限
+          headers:
+            Retry-After:
+              schema: { type: integer }
         '404': { description: 工作流不存在 }
   /api/open/v1/executions/{id}:
     get:

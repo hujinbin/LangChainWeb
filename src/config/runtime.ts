@@ -2,7 +2,7 @@
 export interface RuntimeConfig {
   apiBaseUrl?: string;
   siteId?: string;
-  adminPath?: string;
+  partnerPath?: string;
   brandName?: string;
   logoUrl?: string;
   faviconUrl?: string;
@@ -38,8 +38,10 @@ export const API_BASE_URL =
 export const SITE_ID =
   typeof RUNTIME_CONFIG.siteId === 'string' ? RUNTIME_CONFIG.siteId.trim() : '';
 
-export const ADMIN_PATH =
-  (typeof RUNTIME_CONFIG.adminPath === 'string' && RUNTIME_CONFIG.adminPath.trim()) ||
-  '/admin';
+// Local aliases redirect to the canonical path so the partner cookie stays on /partner/.
+const partnerPath = typeof RUNTIME_CONFIG.partnerPath === 'string' ? RUNTIME_CONFIG.partnerPath.trim() : '';
+export const PARTNER_PATH =
+  /^\/(?!admin(?:\/|$)|api(?:\/|$))[a-zA-Z0-9_-]+(?:\/[a-zA-Z0-9_-]+)*\/?$/.test(partnerPath)
+    ? partnerPath.replace(/\/?$/, '/') : '/partner/';
 
 export const DEFAULT_THEME = RUNTIME_CONFIG.defaultTheme || 'auto';

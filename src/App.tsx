@@ -32,6 +32,8 @@ import {
   FiRefreshCw,
   FiDatabase,
   FiCpu,
+  FiBookOpen,
+  FiShield,
 } from 'react-icons/fi';
 import WorkflowList from './pages/WorkflowList/WorkflowList';
 import WorkflowEditor from './pages/WorkflowEditor/WorkflowEditor';
@@ -54,6 +56,9 @@ import Profile from './pages/UserCenter/Profile';
 import Settings from './pages/UserCenter/Settings';
 import Achievements from './pages/UserCenter/Achievements';
 import HelpCenter from './pages/HelpCenter/HelpCenter';
+import ApiDocs from './pages/Developer/ApiDocs';
+import UsageOverview from './pages/Developer/UsageOverview';
+import { PARTNER_PATH } from './config/runtime';
 import './App.css';
 
 export const STATUS_LABELS: Record<string, string> = {
@@ -582,6 +587,15 @@ function Navigation() {
         <NavLink to="/executions" className="nav-link">
           <FiClock /> 执行记录
         </NavLink>
+        <NavLink to="/usage" className="nav-link">
+          <FiActivity /> 用量总览
+        </NavLink>
+        <NavLink to="/docs" className="nav-link">
+          <FiBookOpen /> API 文档
+        </NavLink>
+        <a href={PARTNER_PATH} className="nav-link">
+          <FiShield /> 代理商后台
+        </a>
       </div>
       <div className="nav-user">
         <CreditBalanceLink className="nav-credit-link" />
@@ -608,10 +622,20 @@ export default function App() {
   }, [loadSite]);
   if (blocked) {
     return (
-      <main className="page-wrap empty-state">
-        <h1>站点暂不可用</h1>
-        <p>{blocked}</p>
-      </main>
+      <Router>
+        <PageMetadata />
+        <Routes>
+          <Route path="/docs" element={<ApiDocs />} />
+          <Route path="*" element={
+            <main className="page-wrap empty-state">
+              <h1>站点暂不可用</h1>
+              <p>{blocked}</p>
+              <Link to="/docs">API 文档</Link>
+              <a href={PARTNER_PATH}>代理商后台</a>
+            </main>
+          } />
+        </Routes>
+      </Router>
     );
   }
   return (
@@ -630,6 +654,8 @@ export default function App() {
             <Route path="/settings" element={<Settings />} />
             <Route path="/achievements" element={<Achievements />} />
             <Route path="/help" element={<HelpCenter />} />
+            <Route path="/docs" element={<ApiDocs />} />
+            <Route path="/usage" element={<UsageOverview />} />
             <Route path="/agents" element={<AgentsPage />} />
             <Route path="/agents/custom/new" element={<CustomAgentEditor />} />
             <Route path="/agents/custom/:id" element={<CustomAgentEditor />} />

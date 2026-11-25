@@ -1,0 +1,329 @@
+.developer-page {
+  max-width: 1440px;
+  margin: auto;
+  padding: clamp(20px, 4vw, 54px);
+}
+.developer-title,
+.dev-actions,
+.usage-heading,
+.usage-periods,
+.metric-tabs {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.developer-title,
+.usage-heading {
+  justify-content: space-between;
+}
+.developer-title {
+  margin-bottom: 28px;
+}
+.developer-title h1 {
+  font-size: clamp(28px, 3vw, 42px);
+  margin: 8px 0 0;
+  letter-spacing: -0.04em;
+}
+.dev-breadcrumb,
+.doc-admin,
+.dev-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.dev-breadcrumb {
+  color: var(--color-primary);
+  font-weight: 650;
+}
+.dev-actions select,
+.usage-periods input {
+  background: var(--surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 8px;
+}
+.doc-layout {
+  display: grid;
+  grid-template-columns: minmax(205px, 245px) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+.doc-menu,
+.doc-article,
+.usage-panel,
+.usage-stat {
+  background: var(--surface);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+}
+.doc-menu {
+  padding: 16px;
+  position: sticky;
+  top: 80px;
+}
+.doc-menu nav {
+  display: grid;
+  gap: 4px;
+  margin-top: 16px;
+}
+.doc-menu nav a,
+.doc-admin {
+  padding: 11px 12px;
+  border-radius: 7px;
+  color: var(--text-secondary);
+}
+.doc-menu nav a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.doc-menu nav a svg {
+  opacity: 0;
+}
+.doc-menu nav a[aria-current='page'] {
+  background: var(--bg-primary);
+  color: var(--color-primary);
+  font-weight: 700;
+}
+.doc-menu nav a[aria-current='page'] svg {
+  opacity: 1;
+}
+.doc-admin {
+  border-top: 1px solid var(--border-color);
+  margin-top: 16px;
+  border-radius: 0;
+}
+.dev-search {
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 8px;
+}
+.dev-search input {
+  min-width: 0;
+  width: 100%;
+  border: 0;
+  background: transparent;
+}
+.doc-article {
+  padding: clamp(18px, 4vw, 50px);
+  min-height: 360px;
+}
+.doc-article h2 {
+  font-size: clamp(23px, 3vw, 34px);
+  margin: 0 0 22px;
+}
+.doc-copy {
+  line-height: 1.85;
+  overflow-wrap: anywhere;
+  overflow-x: auto;
+}
+.doc-copy pre {
+  background: #172d26;
+  color: #e9f4ec;
+  padding: 16px 18px;
+  border-radius: 8px;
+  overflow: auto;
+  line-height: 1.65;
+}
+.doc-copy table,
+.usage-panel table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.doc-copy th,
+.doc-copy td,
+.usage-panel th,
+.usage-panel td {
+  text-align: start;
+  padding: 9px;
+  border-bottom: 1px solid var(--border-color);
+}
+.usage-stats {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+}
+.usage-stat,
+.usage-panel {
+  padding: clamp(14px, 2vw, 28px);
+}
+.usage-stat span,
+.usage-caption,
+.chart-dates {
+  color: var(--text-secondary);
+}
+.usage-stat strong {
+  display: block;
+  font-size: clamp(22px, 2.6vw, 38px);
+  margin-top: 10px;
+  font-variant-numeric: tabular-nums;
+}
+.usage-panel {
+  margin-top: 18px;
+  overflow: auto;
+}
+.usage-panel h2 {
+  font-size: 19px;
+  margin: 0 0 12px;
+}
+.activity-scroll {
+  overflow: auto;
+}
+.activity-grid {
+  display: grid;
+  grid-template-rows: repeat(7, 12px);
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  min-width: 570px;
+  gap: 3px;
+  margin-top: 14px;
+}
+.activity-grid span {
+  border-radius: 3px;
+  background: var(--border-color);
+}
+.activity-grid span[data-level='1'] {
+  background: #aad7ac;
+}
+.activity-grid span[data-level='2'] {
+  background: #70b98a;
+}
+.activity-grid span[data-level='3'] {
+  background: #399368;
+}
+.activity-grid span[data-level='4'] {
+  background: #186549;
+}
+.usage-periods,
+.metric-tabs {
+  gap: 5px;
+  margin-bottom: 12px;
+}
+.usage-periods button,
+.metric-tabs button {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 6px 10px;
+}
+.usage-panel button[aria-pressed='true'] {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: white;
+}
+.usage-chart {
+  width: 100%;
+  height: 145px;
+  display: block;
+}
+.chart-dates {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+}
+.usage-panel th,
+.usage-panel td {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.usage-panel p {
+  margin: 8px 0;
+}
+@media (max-width: 760px) {
+  .doc-layout {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .doc-menu {
+    position: static;
+  }
+  .doc-menu nav {
+    display: flex;
+    overflow-x: auto;
+  }
+  .doc-menu nav a {
+    white-space: nowrap;
+  }
+  .doc-admin {
+    display: none;
+  }
+  .usage-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .developer-page {
+    padding: 18px;
+  }
+  .dev-actions {
+    gap: 6px;
+  }
+}
+
+.doc-base-url {
+  display: block;
+  padding: 14px;
+  border-radius: 8px;
+  background: var(--bg-primary);
+  overflow-wrap: anywhere;
+}
+.doc-chapters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 175px), 1fr));
+  gap: 10px;
+  margin-top: 22px;
+}
+.doc-chapters a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--color-primary);
+}
+.doc-chapters a:hover {
+  background: var(--bg-primary);
+}
+
+.activity-calendar {
+  min-width: 620px;
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  gap: 5px 7px;
+}
+.activity-months {
+  grid-column: 2;
+  display: grid;
+  gap: 3px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  white-space: nowrap;
+}
+.activity-weekdays {
+  display: grid;
+  grid-auto-rows: 30px;
+  align-content: start;
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+.activity-calendar .activity-grid {
+  margin-top: 0;
+  min-width: 0;
+}
+.activity-key {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 8px;
+}
+.activity-key span {
+  background: var(--border-color);
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}

@@ -4,7 +4,7 @@
 
 ## 1. 创建密钥
 
-在站点后台 `AI 平台 → 开放 API → 创建密钥` 填写名称、权限范围与限流。创建成功后：
+在本站[代理商后台](/partner/#keys)的「API 密钥」页填写名称、权限范围、到期时间、IP 白名单、每分钟请求数与并发上限。创建成功后：
 
 - `clientId`：公开标识，可出现在日志中。
 - `clientSecret`：只显示一次，请立即保存到服务端环境变量或密钥管理系统。
@@ -46,7 +46,7 @@
 }
 ```
 
-Token 有效期 2 小时。`clientSecret` 校验使用常量时间比较，服务端只保存 SHA-256 摘要。
+Token 最长有效期为 2 小时，密钥较早到期时随密钥到期。轮换 Secret 后需要重新换取 Token。`clientSecret` 校验使用常量时间比较，服务端只保存 SHA-256 摘要。
 
 ## 3. 调用接口
 
@@ -78,7 +78,7 @@ Content-Type: application/json
 - `input`：工作流输入，最大 256KB。
 - `simulate`：`true` 时只做模拟校验，不调用模型、不计费。
 
-支持幂等：在运行请求中携带 `Idempotency-Key: <唯一字符串>`，10 分钟内相同密钥重复请求会返回首次结果。当前幂等缓存为单实例内存实现，多实例部署请使用共享存储。
+每次运行必须提供独立的请求号，可使用请求体 `requestId` 或请求头 `Idempotency-Key: <唯一字符串>`，24 小时内相同密钥与参数重复请求返回首次结果。相同请求正在运行或参数冲突时返回 409。
 
 ## 4. 错误码与限流
 
@@ -88,12 +88,16 @@ Content-Type: application/json
 | 401 | `OPEN_API_TOKEN_INVALID` | Token 无效或过期 |
 | 401 | `OPEN_API_INVALID_CLIENT` | clientId / clientSecret 不正确 |
 | 403 | `OPEN_API_SCOPE_DENIED` | 密钥缺少所需权限 |
+| 403 | `OPEN_API_IP_DENIED` | 来源 IP 未获授权 |
+| 401 | `OPEN_API_KEY_EXPIRED` | 密钥已过期 |
+| 409 | `OPEN_API_REQUEST_CONFLICT` | 请求号正在使用或参数冲突 |
+| 429 | `OPEN_API_CONCURRENCY_LIMIT` | 达到并发上限 |
 | 404 | `OPEN_API_WORKFLOW_NOT_FOUND` | 工作流不存在或不属于该账号 |
 | 402 | `INSUFFICIENT_CREDITS` | 积分不足 |
 | 429 | `OPEN_API_RATE_LIMITED` | 超过密钥限流 |
 | 500 | `OPEN_API_FAILED` | 服务端异常，附 `requestId` |
 
-默认限流 60 次/分钟/密钥，可在后台按密钥调整。每次调用都会写入 `open_api_audit`，保留 30 天。
+默认限流 60 次/分钟/密钥，默认并发 5 个运行，可在后台按密钥调整。429 响应通过 `Retry-After`（秒）提示重试时间。每次调用都会写入 `open_api_audit`，保留 30 天。
 
 ## 5. 调用方示例（Node.js）
 
@@ -132,13 +136,32 @@ async function main() {
 main().catch(console.error);
 ```
 
-## 6. 自有后端兼容契约
+## 6. Python 示例
+
+```python
+import os
+import requests
+
+url = os.environ["JUE_API_BASE"] + "/api/open/v1"
+response = requests.post(url + "/token", json={
+    "clientId": os.environ["JUE_CLIENT_ID"],
+    "clientSecret": os.environ["JUE_CLIENT_SECRET"]
+}, timeout=20)
+response.raise_for_status()
+headers = {"Authorization": "Bearer " + response.json()["data"]["access_token"]}
+models = requests.get(url + "/models", headers=headers, timeout=20)
+models.raise_for_status()
+print(models.json()["data"])
+```
+
+## 7. 自有后端兼容契约
 
 前端只依赖公开 HTTP 契约，自有后端需要实现：
 
 | 能力 | 契约 |
 | --- | --- |
 | 站点配置 | `GET /api/site/config` 返回 `{code:200,data:{siteId,name,logoUrl,seo,contact,registerEnabled}}`；域名未登记返回 403 + `errorCode=SITE_NOT_REGISTERED`；停用返回 `SITE_DISABLED` |
+| 工作流账号 | 登录、注册、验证码、资料与改密使用 `/api/aiWorkflow/account/` 前缀 |
 | 登录态 | 请求头携带 `token` 与 `Authorization`；401 时前端清理登录态 |
 | 工作流 | `/api/aiWorkflow` 下与 `src/services/api.ts` 一致的模型目录、工作流 CRUD、运行、执行记录与积分接口 |
 | 智能体 | `/api/aiAgents` 下的 catalog、projects、运行、取消、导出与资产读取 |
@@ -147,3 +170,60 @@ main().catch(console.error);
 | 开放 API | `/api/open/v1/token`、models、workflows、run、executions、credits |
 
 跨域部署时后端必须允许站点来源，并放行 `token`、`Authorization`、`X-Site-Id`、`Idempotency-Key` 请求头。
+
+本地接入时，将 `REACT_APP_PROXY_TARGET` 指向业务接口源站，将 `REACT_APP_PARTNER_PROXY_TARGET` 指向代理商服务，然后运行 `npm start`。浏览器继续使用同源访问地址。
+
+## 8. cURL 示例
+
+变量：
+
+```bash
+export JUE_API_BASE="https://langchain.example.com"
+export JUE_CLIENT_ID="jue_xxxxxxxxxxxxxxxxxxxx"
+export JUE_CLIENT_SECRET="创建时返回的 Secret"
+```
+
+### 换取 Token
+
+```bash
+curl -s -X POST "$JUE_API_BASE/api/open/v1/token" \
+  -H "Content-Type: application/json" \
+  -d "{\"grantType\":\"client_credentials\",\"clientId\":\"$JUE_CLIENT_ID\",\"clientSecret\":\"$JUE_CLIENT_SECRET\"}"
+```
+
+保存返回的 `access_token`：
+
+```bash
+export JUE_TOKEN="eyJhbGciOi..."
+```
+
+### 读取工作流
+
+```bash
+curl -s "$JUE_API_BASE/api/open/v1/workflows?page=1&pageSize=20" \
+  -H "Authorization: Bearer $JUE_TOKEN"
+```
+
+### 运行工作流
+
+```bash
+curl -s -X POST "$JUE_API_BASE/api/open/v1/workflows/<WORKFLOW_ID>/run" \
+  -H "Authorization: Bearer $JUE_TOKEN" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: demo-20260101-001" \
+  -d '{"input":{"topic":"秋季新品发布"},"simulate":false}'
+```
+
+### 查询执行记录
+
+```bash
+curl -s "$JUE_API_BASE/api/open/v1/executions/<EXECUTION_ID>" \
+  -H "Authorization: Bearer $JUE_TOKEN"
+```
+
+### 查询积分
+
+```bash
+curl -s "$JUE_API_BASE/api/open/v1/credits" \
+  -H "Authorization: Bearer $JUE_TOKEN"
+```
