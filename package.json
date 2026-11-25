@@ -20,21 +20,14 @@
     "zustand": "^4.5.0"
   },
   "scripts": {
-    "predev": "node scripts/build-api-docs.cjs && tsx --tsconfig tsconfig.tools.json scripts/seo.ts",
-    "prestart": "node scripts/build-api-docs.cjs && tsx --tsconfig tsconfig.tools.json scripts/seo.ts",
-    "prebuild": "npm run typecheck && node scripts/build-api-docs.cjs && tsx --tsconfig tsconfig.tools.json scripts/seo.ts",
-    "postbuild": "npm run build:partner && tsx --tsconfig tsconfig.tools.json scripts/seo.ts --build",
-    "build:partner": "tsx --tsconfig tsconfig.tools.json scripts/build-partner.ts",
+    "start": "tsx --tsconfig tsconfig.tools.json scripts/build.ts --prepare && react-scripts start",
+    "dev": "npm start",
+    "build": "npm run typecheck && tsx --tsconfig tsconfig.tools.json scripts/build.ts",
+    "test": "react-scripts test",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.tools.json",
     "check:seo": "tsx --tsconfig tsconfig.tools.json scripts/check-seo.ts",
     "check:proxy": "tsx --tsconfig tsconfig.tools.json scripts/check-proxy.ts",
-    "dev": "react-scripts start",
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject",
-    "typecheck": "npm run typecheck:app && npm run typecheck:tools",
-    "typecheck:app": "tsc --noEmit -p tsconfig.json",
-    "typecheck:tools": "tsc --noEmit -p tsconfig.tools.json"
+    "eject": "react-scripts eject"
   },
   "jest": {
     "moduleNameMapper": {

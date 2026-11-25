@@ -45,7 +45,7 @@ function intro(pathname: string): string {
     </main>`;
 }
 
-if (process.argv.includes('--build')) {
+export function writeBuiltPages() {
   const build = path.join(root, 'build');
   const original = fs.readFileSync(path.join(build, 'index.html'), 'utf8');
   // CRA removes HTML comments, so replace the metadata using the stable title
@@ -65,7 +65,9 @@ if (process.argv.includes('--build')) {
     fs.writeFileSync(destination, replacePage(pathname));
   }
   console.log('SEO: generated noindex app pages and 404.html.');
-} else {
+}
+
+export function writePublicMetadata() {
   const publicDir = path.join(root, 'public');
   fs.writeFileSync(path.join(publicDir, 'index.html'), `<!DOCTYPE html>
 <html lang="zh-CN">

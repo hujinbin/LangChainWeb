@@ -4,6 +4,8 @@
 
 ## 1. 部署方式
 
+已有静态网关时，首次在仓库根目录运行 `npm ci` 安装依赖。此后每次发布运行 `npm run build`，即可将生成的 `build/` 整体交给网关。
+
 ### 1.1 Docker（推荐）
 
 ```bash
@@ -32,11 +34,10 @@ docker buildx build --platform linux/amd64,linux/arm64 --output type=oci,dest=la
 ### 1.2 本地构建静态资源
 
 ```bash
-npm ci
 npm run build
 ```
 
-将 `build/` 上传到任意静态托管，将公开 `/api/` 与 `/outputs/` 转发至业务后端，`/partner/` 使用 `build/partner/` 目录，只有 `/partner/api/` 和 `/partner/healthz` 转发至代理商服务并保留原始 Host（含端口）。客户域名应屏蔽 `/api/admin/` 与 `/api/partner-internal/`。必须配置 SPA fallback 到 `index.html`。
+将 `build/` 的全部内容放在网关的静态站点根目录。工作台位于 `/`，API 文档位于 `/docs`，代理商后台使用 `build/partner/` 对应的 `/partner/`。将公开 `/api/` 与 `/outputs/` 转发至业务后端，将 `/partner/api/` 和 `/partner/healthz` 转发至代理商服务并保留原始 Host（含端口）。客户域名应屏蔽 `/api/admin/` 与 `/api/partner-internal/`。为前端路由配置 SPA fallback 到 `index.html`。
 
 ## 2. 运行时配置
 

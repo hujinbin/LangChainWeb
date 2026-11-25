@@ -23,18 +23,11 @@ export async function compilePartner(production: boolean): Promise<string> {
   return result.outputFiles[0].text;
 }
 
-async function buildPartner() {
+export async function buildPartner() {
   const bundle = await compilePartner(true);
   await mkdir(output, { recursive: true });
   await Promise.all([
     writeFile(path.join(output, 'app.js'), bundle),
     ...['index.html', 'console.css'].map(file => copyFile(path.join(root, 'public/partner', file), path.join(output, file))),
   ]);
-}
-
-if (require.main === module) {
-  buildPartner().catch(error => {
-    console.error(error);
-    process.exitCode = 1;
-  });
 }

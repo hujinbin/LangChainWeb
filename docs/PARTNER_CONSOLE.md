@@ -4,7 +4,9 @@
 
 ## 开发和部署
 
-在仓库根目录执行 `npm ci` 和 `npm start`，然后打开 `http://localhost:3000/partner/`。修改 TSX 后刷新开发页面即可读取最新代码。执行 `npm run build` 构建整站，或执行 `npm run build:partner` 单独生成代理商后台。两种方式的代理商静态产物都位于 `build/partner/`。让静态服务器将 `/partner/` 解析为该目录的 `index.html`，并按原路径提供其中的 CSS 和 JavaScript 文件。
+首次在仓库根目录运行 `npm ci` 安装依赖。本地开发时运行 `npm start`，打开 `http://localhost:3000/partner/`。修改 TSX 后刷新页面即可查看效果。
+
+发布时运行 `npm run build`，将 `build/` 的全部内容部署到现有静态网关。代理商后台位于 `build/partner/`，与工作台和 API 文档一同发布。网关应将 `/partner/` 解析为该目录的 `index.html`，并按原路径提供 CSS 和 JavaScript 文件。
 
 仅发布静态文件即可查看登录页。登录和管理操作需要运营方提供代理商 API，或由部署者配置兼容服务。网关应将同源 `/partner/api/*` 转发给该服务，保留请求路径和原始 Host（含非默认端口）。部署变量和上游配置见[前端部署指南](./DEPLOY_FRONTEND.md)。
 

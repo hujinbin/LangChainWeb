@@ -40,19 +40,26 @@ npm run dev
 
 修改开发代理配置后需重启开发服务。跨域直连时，后端服务需允许前端来源和鉴权请求头。
 
-## 检查与构建
+## 构建与发布
+
+首次在仓库根目录运行 `npm ci` 安装依赖。每次发布只需运行一条构建命令。
+
+```sh
+npm run build
+```
+
+将 `build/` 的全部内容部署到现有静态网关的站点根目录，即可从 `/` 打开工作台、从 `/partner/` 打开代理商后台、从 `/docs` 阅读 API 文档。静态托管需将前端路由回退到 `index.html`，将公开 `/api/` 与 `/outputs/` 转发到业务后端，将 `/partner/api/` 和 `/partner/healthz` 转发到代理商服务。运行时 `/config.js` 可为同一个构建指定 API 和品牌。
+
+### 可选检查
 
 ```sh
 npm run typecheck
 npm test -- --watchAll=false --runInBand
-npm run build
 npm run check:seo
 npm run check:proxy
 ```
 
-`typecheck` 同时执行前端和工具脚本的严格类型检查，生产构建也会先执行这两项检查。SEO 脚本与代理配置通过 `tsx` 运行，`tsx` 不替代 `tsc` 类型检查。`check:proxy` 仅使用本地测试服务器验证转发和流式回复，无需访问真实模型。
-
-构建产物位于 `build/`。静态托管需将前端路由回退到 `index.html`，将公开 `/api/` 与 `/outputs/` 转发到业务后端，`/partner/` 使用本地静态资源，`/partner/api/` 和 `/partner/healthz` 转发到独立代理商服务。运行时 `/config.js` 可为同一个构建产物指定 API 和品牌。
+`typecheck` 检查前端和工具脚本的类型，`check:seo` 检查已生成的 `build/`，`check:proxy` 使用本地测试服务器验证代理转发与流式响应。
 
 ## 开源与许可证
 
