@@ -5,6 +5,9 @@ import { emptyAgent } from './CustomAgentShared';
 import { customAgentAPI } from '../../services/customAgentApi';
 import useAuthStore from '../../store/authStore';
 import type { CustomAgent } from '../../types/customAgent';
+import { sendDraft } from '../../publishing/bridge';
+
+jest.mock('../../publishing/bridge', () => ({ sendDraft: jest.fn() }));
 
 jest.mock('../../services/customAgentApi', () => ({ customAgentAPI: { catalog: jest.fn(), create: jest.fn(), detail: jest.fn(), update: jest.fn(), publish: jest.fn(), unpublish: jest.fn(), chat: jest.fn(), conversation: jest.fn(), clearConversation: jest.fn(), memory: jest.fn(), clearMemory: jest.fn() } }));
 const api = jest.mocked(customAgentAPI);
@@ -25,7 +28,9 @@ beforeEach(() => {
 afterEach(() => useAuthStore.setState({ isLoggedIn: false, token: '', user: null }));
 
 test('先保存配置再调试，关联资源保留且使用服务端回复和调用记录', async () => {
+  const publish = jest.mocked(sendDraft).mockResolvedValue(0);
   renderEditor(); await screen.findByLabelText('智能体名称');
+  expect(screen.queryByRole('button', { name: '发送到发布助手' })).not.toBeInTheDocument();
   fireEvent.change(screen.getByLabelText('智能体名称'), { target: { value: '资料助手' } });
   fireEvent.change(screen.getByLabelText('人设与回复逻辑'), { target: { value: '先查资料再回答' } });
   fireEvent.click(screen.getByLabelText('当前时间读取时间'));
@@ -38,6 +43,9 @@ test('先保存配置再调试，关联资源保留且使用服务端回复和�
   expect(api.create.mock.invocationCallOrder[0]).toBeLessThan(api.chat.mock.invocationCallOrder[0]);
   expect(screen.getByRole('link', { name: '查看工作流记录' })).toHaveAttribute('href', '/executions/execution-1');
   expect(sessionStorage.getItem('custom-agent-conversation:user-1:agent-1')).toBe('conversation-1');
+  fireEvent.click(screen.getByRole('button', { name: '发送到发布助手' }));
+  expect(publish).toHaveBeenCalledWith({ title: '资料助手', body: '已经查到产品资料。', images: [], tags: [] }, expect.anything());
+  await screen.findByText(/草稿已传入/);
 });
 
 test('发布前保存最新版本，发布后可取消', async () => {

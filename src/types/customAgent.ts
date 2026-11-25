@@ -37,6 +37,7 @@ export interface CustomAgentConfig {
   filesEnabled: boolean;
 }
 export interface CustomAgent extends CustomAgentConfig {
+  outputType?: 'text' | 'image' | 'video';
   id: string;
   revision: number;
   status: 'draft' | 'published';

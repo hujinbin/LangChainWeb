@@ -1,0 +1,220 @@
+:root {
+  font-family: Inter, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+  color: #18352c;
+  background: #f2f5f2;
+  font-size: 14px;
+  color-scheme: light;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  width: 438px;
+  max-width: 100vw;
+}
+main {
+  padding: 17px 18px 20px;
+}
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+h1 {
+  font-size: 20px;
+  letter-spacing: -0.6px;
+}
+h2 {
+  font-size: 15px;
+}
+h3 {
+  font-size: 14px;
+}
+.mast,
+.actions,
+.queue,
+.attachment,
+.check {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+}
+.mast {
+  margin: 2px 0 16px;
+}
+.mast p,
+.muted,
+small {
+  color: #64766d;
+  font-size: 12px;
+  line-height: 1.55;
+}
+.mast .mark {
+  display: grid;
+  place-items: center;
+  background: #18573f;
+  color: #fff;
+  border-radius: 10px;
+  width: 39px;
+  height: 39px;
+  font-size: 21px;
+  font-weight: 750;
+}
+.mast button {
+  margin-left: auto;
+}
+.card {
+  background: #fff;
+  border: 1px solid #d6e1d9;
+  border-radius: 12px;
+  padding: 14px;
+  margin: 11px 0;
+}
+fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+label {
+  display: grid;
+  gap: 5px;
+  margin-top: 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+input,
+textarea,
+select,
+button {
+  font: inherit;
+}
+input:not([type='checkbox']),
+textarea,
+select {
+  width: 100%;
+  padding: 7px 8px;
+  border: 1px solid #cad8cf;
+  border-radius: 6px;
+  background: white;
+  color: inherit;
+  min-width: 0;
+}
+textarea {
+  resize: vertical;
+  line-height: 1.55;
+}
+button {
+  border: 1px solid transparent;
+  background: transparent;
+  color: #1a6247;
+  padding: 6px 9px;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+}
+button:hover:enabled {
+  background: #e8f2eb;
+}
+button:disabled,
+input:disabled,
+select:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+button.outline {
+  border-color: #bdd1c3;
+}
+button.primary {
+  background: #236649;
+  color: white;
+}
+button.primary:hover:enabled {
+  background: #194e37;
+}
+:focus-visible {
+  outline: 2px solid #22775a;
+  outline-offset: 2px;
+}
+.queue {
+  align-items: end;
+}
+.queue label {
+  flex: 1;
+  margin: 0;
+}
+.queue .delete {
+  color: #774942;
+}
+.actions {
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+.check {
+  display: flex;
+  font-weight: 400;
+}
+details {
+  margin-top: 11px;
+}
+summary {
+  color: #30634e;
+  cursor: pointer;
+}
+.files {
+  display: grid;
+  gap: 6px;
+}
+.files input {
+  font-size: 11px;
+}
+.attachment {
+  justify-content: space-between;
+  margin-top: 5px;
+}
+.attachment span {
+  overflow-wrap: anywhere;
+  font-size: 12px;
+}
+.empty p,
+.card > p,
+.result p,
+.files + .muted {
+  margin-top: 8px;
+}
+.error {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #e4bdb4;
+  color: #833629;
+  background: #fff4f0;
+  font-size: 13px;
+}
+.result {
+  border-top: 1px solid #d9e5dc;
+  padding-top: 10px;
+  margin-top: 12px;
+}
+.result ul {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+}
+.result li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  border-bottom: 1px solid #eef2ed;
+  padding: 6px 0;
+  gap: 3px;
+}
+.result small {
+  grid-column: 1 / -1;
+  overflow-wrap: anywhere;
+}
+.result li span {
+  font-size: 12px;
+  color: #356449;
+}

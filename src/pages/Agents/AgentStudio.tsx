@@ -19,6 +19,8 @@ import {
 } from 'react-icons/fi';
 import useAuthStore from '../../store/authStore';
 import { agentAPI, downloadBlob } from '../../services/agentApi';
+import SendToPublisher from '../../components/SendToPublisher';
+import { storyboardResultDraft } from '../../publishing/resultDrafts';
 import type {
   AgentCatalog,
   AgentDraft,
@@ -588,6 +590,7 @@ export default function AgentStudio(): React.JSX.Element {
     (result) =>
       result.status === 'completed' && !result.stale && !result.orphaned,
   ).length;
+  const publishingDraft = !dirty && !active && !busy ? storyboardResultDraft(project) : null;
   return (
     <main className="agent-studio">
       <header className="agent-studio-header">
@@ -1118,6 +1121,7 @@ export default function AgentStudio(): React.JSX.Element {
                 </span>
               </div>
               <div>
+                {publishingDraft && <SendToPublisher draft={publishingDraft} />}
                 {comic && (
                   <button
                     className="btn btn-primary"

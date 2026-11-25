@@ -3,8 +3,10 @@
 FROM --platform=$BUILDPLATFORM node:22-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
+COPY extension/package.json ./extension/
 RUN npm ci --no-audit --no-fund
 COPY . .
+ARG WXT_STUDIO_ORIGIN
 RUN npm run build
 
 FROM nginxinc/nginx-unprivileged:1.27-alpine AS runtime

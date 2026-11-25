@@ -13,6 +13,9 @@ import useAuthStore from '../../store/authStore';
 import type { AgentCatalog, AgentDraft, AgentProject } from '../../types/agent';
 import AgentStudio from './AgentStudio';
 import { AgentMedia } from './AgentShared';
+import { sendDraft } from '../../publishing/bridge';
+
+jest.mock('../../publishing/bridge', () => ({ sendDraft: jest.fn() }));
 
 jest.mock('../../services/agentApi', () => ({
   agentAPI: {
@@ -113,6 +116,20 @@ function renderStudio() {
     </MemoryRouter>,
   );
 }
+
+test('sends the finished life story and hides the action while editing its storyboard', async () => {
+  const videoUrl = 'https://example.test/finished.mp4';
+  const publish = jest.mocked(sendDraft).mockResolvedValue(0);
+  api.get.mockResolvedValue(makeProject({ draft, output: { videoUrl }, results: [
+    { sceneId: 'scene-1', status: 'completed', videoUrl: 'https://example.test/scene.mp4' },
+  ] }));
+  renderStudio();
+  fireEvent.click(await screen.findByRole('button', { name: '发送到发布助手' }));
+  expect(publish).toHaveBeenCalledWith({ title: draft.title, body: draft.summary, video: videoUrl, images: [], tags: [], cover: undefined }, expect.anything());
+  await screen.findByText(/草稿已传入/);
+  fireEvent.change(screen.getByLabelText('分镜作品标题'), { target: { value: '新标题' } });
+  expect(screen.queryByRole('button', { name: '发送到发布助手' })).not.toBeInTheDocument();
+});
 
 beforeEach(() => {
   jest.resetAllMocks();

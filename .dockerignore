@@ -7,6 +7,12 @@
 !src/**
 !public/
 !public/**
+!extension/
+!extension/**
+extension/.wxt/
+extension/.output/
+extension/node_modules/
+extension/.env*
 !scripts/
 !scripts/**
 !docs/

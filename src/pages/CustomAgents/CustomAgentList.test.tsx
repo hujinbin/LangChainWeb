@@ -4,6 +4,8 @@ import CustomAgentList from './CustomAgentList';
 import { customAgentAPI } from '../../services/customAgentApi';
 import { emptyAgent } from './CustomAgentShared';
 import useAuthStore from '../../store/authStore';
+import { aiWorkflowAPI } from '../../services/api';
+import type { Workflow } from '../../types/workflow';
 
 jest.mock('../../services/customAgentApi', () => ({ customAgentAPI: { list: jest.fn(), delete: jest.fn() } }));
 const api = jest.mocked(customAgentAPI);
@@ -33,4 +35,36 @@ test('列表失败不会伪造空成功，支持重试并过滤内部地址', as
   expect(screen.queryByText(/internal.example/)).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: '重试' }));
   await screen.findByRole('link', { name: /产品助手/ });
+});
+
+test('all pages are classified by actual linked nodes, including legacy nested workflows', async () => {
+  const base = { ...emptyAgent(), status: 'published' as const, revision: 1 };
+  const writer = { ...base, id: 'writer', name: '摄影与视频文案' };
+  const artist = { ...base, id: 'artist', name: '旅行助手', workflowIds: ['parent'] };
+  const declared = { ...base, id: 'declared', name: '电影工作室', outputType: 'video' as const };
+  api.list.mockImplementation(async ({ page } = {}) => ({
+    items: page === 1 ? [writer, declared] : [artist], page: Number(page), pageSize: 2, total: 3,
+  }));
+  const position = { x: 0, y: 0 };
+  const parent: Workflow = { _id: 'parent', nodes: [{ id: 'sub', type: 'subWorkflow', position, parameters: { workflowId: 'child' } }] };
+  const child: Workflow = { id: 'child', nodes: [
+    { id: 'image', type: 'imageGeneration', position }, { id: 'clip', type: 'videoGeneration', position },
+    { id: 'loop', type: 'subWorkflow', position, parameters: { workflowId: 'parent' } },
+  ] };
+  const graph = jest.spyOn(aiWorkflowAPI, 'list').mockImplementation(async ({ page } = {}) => ({
+    code: 200, data: page === 1 ? [parent] : [child],
+  }));
+  const view = (category: 'text' | 'image' | 'video') => <MemoryRouter><CustomAgentList category={category} /></MemoryRouter>;
+  const { rerender } = render(view('image'));
+  expect(await screen.findByRole('heading', { name: artist.name })).toBeInTheDocument();
+  expect(screen.queryByRole('heading', { name: writer.name })).not.toBeInTheDocument();
+  expect(screen.queryByRole('heading', { name: declared.name })).not.toBeInTheDocument();
+  rerender(view('video'));
+  expect(screen.getByRole('heading', { name: artist.name })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: declared.name })).toBeInTheDocument();
+  rerender(view('text'));
+  expect(screen.getByRole('heading', { name: writer.name })).toBeInTheDocument();
+  expect(screen.queryByRole('heading', { name: artist.name })).not.toBeInTheDocument();
+  expect(graph).toHaveBeenCalledTimes(2);
+  expect(api.list).toHaveBeenCalledTimes(2);
 });

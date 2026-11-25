@@ -7,7 +7,7 @@ AI 工作流可视化编排工具。通过自然语言生成工作流，在画�
 - 技术栈为 React 19、TypeScript、React Flow、Zustand、Axios、Create React App 5。
 - 访客可编排并保存本地草稿；登录后可同步和运行工作流。模型调用依赖后端服务与账号权限。
 
-项目使用严格 TypeScript，源码入口为 `src/App.tsx`，前端开发建议使用 Node.js 20+。
+项目使用严格 TypeScript，源码入口为 `src/App.tsx`，前端开发建议使用 Node.js 22.12+。
 
 ## 功能
 
@@ -19,6 +19,18 @@ AI 工作流可视化编排工具。通过自然语言生成工作流，在画�
 - 智能体支持 JSON、Markdown、HTML 与 ZIP 导出，工作流与智能体的模型选项随本站启用目录更新。
 
 - 登录后可在「用量总览」查看个人消费趋势。开放接口文档位于 `/docs`，代理商从同域 `/partner/` 登录独立后台，管理本站配置与 API 密钥、查看成员和用量。
+
+## 浏览器发布助手
+
+智能体目录可按文本、文生图、生视频筛选。打开已完成的工作流结果、漫画、视频或小说章节，点击「发送到发布助手」。草稿保存在当前 Chrome 浏览器，插件源码在 [extension](extension/)。
+
+1. 从本站 `/downloads/zhiflow-publisher.zip` 下载并解压。在 `chrome://extensions` 开启开发者模式，选择「加载已解压的扩展程序」，然后刷新工作台。开发时也可直接加载 `extension/.output/chrome-mv3/`。
+2. 在工具栏打开「织流发布助手」，检查标题、正文、标签及素材，选择目标平台并授予该平台的访问权限。
+3. 使用已登录的创作者账号进入文章、章节、图文或视频的编辑页，在插件内填充。默认在完整填充后自动保存草稿。查看逐项结果和平台保存回执，最后在平台页面手动确认发布。
+
+插件提供小红书、抖音、微信公众号、微信视频号、百家号、头条号、大鱼号、企鹅号、网易号、知乎、搜狐号、趣头条、番茄小说、晋江文学城、七猫、起点和咪咕的入口。可写字段取决于当前编辑器、账号权限和作品类型。找不到上传框、素材链接受限或没有草稿保存入口时，插件会提示需要手动完成的步骤。
+
+默认接入 `https://langchain.leheavengame.com` 和本机 HTTP 开发站点。自建站点在构建前设置 `WXT_STUDIO_ORIGIN` 为完整 HTTPS 来源（例如 `https://studio.example.com`）。使用 Docker 构建时通过同名 build arg 传入。插件使用浏览器现有登录态，草稿传输在本机完成。
 
 ## 本地开发
 
@@ -57,13 +69,14 @@ npm run typecheck
 npm test -- --watchAll=false --runInBand
 npm run check:seo
 npm run check:proxy
+node --import tsx --test extension/tests/editor.test.ts extension/tests/queue-policy.test.ts
 ```
 
 `typecheck` 检查前端和工具脚本的类型，`check:seo` 检查已生成的 `build/`，`check:proxy` 使用本地测试服务器验证代理转发与流式响应。
 
 ## 开源与许可证
 
-- 用户工作台与[代理商后台前端](./src/partner/)均采用 [MIT](./LICENSE) 许可证。代理商页面的开发与接入见[代理商前端说明](./docs/PARTNER_CONSOLE.md)。业务 API、会话服务和平台总后台由运营方私有部署。
+- 织流发布助手、用户工作台与[代理商后台前端](./src/partner/)均采用 [MIT](./LICENSE) 许可证。代理商页面的开发与接入见[代理商前端说明](./docs/PARTNER_CONSOLE.md)。业务 API、会话服务和平台总后台由运营方私有部署。
 - 部署说明见 [docs/DEPLOY_FRONTEND.md](./docs/DEPLOY_FRONTEND.md)，安全边界见 [SECURITY.md](./SECURITY.md)。
 - 运行时配置入口为 `public/config.js`（容器启动时根据环境变量重新生成），优先于构建期环境变量。
 - 开放 API 与自有后端兼容契约见 [docs/open-api/OPEN_API.md](./docs/open-api/OPEN_API.md)。

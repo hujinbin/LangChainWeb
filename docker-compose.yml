@@ -3,6 +3,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        WXT_STUDIO_ORIGIN: "${WXT_STUDIO_ORIGIN:-}"
     image: langchainweb:latest
     container_name: langchainweb
     restart: unless-stopped

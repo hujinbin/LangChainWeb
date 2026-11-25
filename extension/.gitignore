@@ -1,0 +1,5 @@
+.wxt/
+.output/
+.env
+.env.*
+node_modules/

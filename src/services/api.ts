@@ -326,9 +326,9 @@ export const aiWorkflowAPI = {
           data: mergeNodeTypes(payload.data),
         })
       ),
-  list: (params: QueryParams = {}) =>
+  list: (params: QueryParams = {}, options: RequestOptions = {}) =>
     apiClient
-      .get<ApiEnvelope<unknown>>('/api/aiWorkflow/list', { params })
+      .get<ApiEnvelope<unknown>>('/api/aiWorkflow/list', { params, signal: options.signal })
       .then(unwrap)
       .then(
         (payload): ApiEnvelope<Workflow[]> => ({

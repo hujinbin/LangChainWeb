@@ -104,11 +104,11 @@ export const agentAPI = {
     apiClient
       .get<Envelope<AgentCatalog>>('/api/aiAgents/catalog', { signal })
       .then(unwrap),
-  list: (page = 1, signal?: AbortSignal): Promise<AgentPage> =>
+  list: (page = 1, signal?: AbortSignal, agentId?: AgentKind): Promise<AgentPage> =>
     apiClient
       .get<
         Envelope<AgentPage>
-      >('/api/aiAgents/projects', { params: { page, pageSize: 20 }, signal })
+      >('/api/aiAgents/projects', { params: { page, pageSize: 20, agentId }, signal })
       .then(unwrap),
   create: (agentId: AgentKind, name?: string): Promise<AgentProject> =>
     apiClient

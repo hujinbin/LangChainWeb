@@ -3,6 +3,9 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { novelAPI } from '../../services/novelApi';
 import type { NovelProject } from '../../types/novel';
 import NovelStudio from './NovelStudio';
+import { sendDraft } from '../../publishing/bridge';
+
+jest.mock('../../publishing/bridge', () => ({ sendDraft: jest.fn() }));
 
 jest.mock('../../services/novelApi', () => ({ novelAPI: { get: jest.fn(), updateChapter: jest.fn(), generateChapter: jest.fn() } }));
 const api = jest.mocked(novelAPI, true);
@@ -18,6 +21,18 @@ function open() {
     <Routes><Route path="/novel/:id" element={<NovelStudio />} /></Routes>
   </MemoryRouter>);
 }
+
+test('sends the visible chapter including latest edits and omits an empty chapter', async () => {
+  const publish = jest.mocked(sendDraft).mockResolvedValue(0);
+  open();
+  const field = await screen.findByDisplayValue('原稿');
+  fireEvent.change(field, { target: { value: '新段落\n\n下一段' } });
+  fireEvent.click(screen.getByRole('button', { name: '发送到发布助手' }));
+  expect(publish).toHaveBeenCalledWith({ title: chapter.title, body: '新段落\n\n下一段', tags: ['悬疑'], images: [] }, expect.anything());
+  await screen.findByText(/草稿已传入/);
+  fireEvent.change(field, { target: { value: '' } });
+  expect(screen.queryByRole('button', { name: '发送到发布助手' })).not.toBeInTheDocument();
+});
 
 test('润色使用已保存版本，生成后在编辑器中显示新正文', async () => {
   api.generateChapter.mockResolvedValue({ ...project, revision: 4, chapters: [{ ...chapter, content: '新正文' }] });

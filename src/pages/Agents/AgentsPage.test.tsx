@@ -10,6 +10,7 @@ import {
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { agentAPI } from '../../services/agentApi';
 import useAuthStore from '../../store/authStore';
+import { useLanguage } from '../../store/languageStore';
 import type { AgentCatalog, AgentProject } from '../../types/agent';
 import AgentsPage from './AgentsPage';
 
@@ -88,6 +89,37 @@ beforeEach(() => {
 });
 
 afterEach(cleanup);
+
+test('output filters apply to presets, imported templates and server-paginated projects in both languages', async () => {
+  api.catalog.mockResolvedValue({ ...catalog, templates: [
+    { id: 'cloud-comic', kind: 'storyboard', title: '漫画模板', description: '' },
+    { id: 'life-story', kind: 'storyboard', title: '视频模板', description: '' },
+    { id: 'novel-writer', kind: 'novel', title: '小说模板', description: '' },
+    { id: 'customer-service', kind: 'custom', title: '客服模板', description: '' },
+  ] });
+  renderPage();
+  await screen.findByRole('heading', { name: '漫画模板' });
+  fireEvent.click(screen.getByRole('button', { name: '文生图' }));
+  expect(screen.getByRole('heading', { name: '云朵漫画' })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: '漫画模板' })).toBeInTheDocument();
+  expect(screen.queryByRole('heading', { name: '人生副本' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('heading', { name: '视频模板' })).not.toBeInTheDocument();
+  expect(api.list).toHaveBeenLastCalledWith(1, expect.anything(), 'cloud-comic');
+  act(() => useLanguage.getState().choose('en'));
+  try {
+    fireEvent.click(screen.getByRole('button', { name: 'Video generation' }));
+    expect(screen.getByRole('heading', { name: 'Life Story' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '视频模板' })).toBeInTheDocument();
+    expect(api.list).toHaveBeenLastCalledWith(1, expect.anything(), 'life-story');
+    fireEvent.click(screen.getByRole('button', { name: 'Text' }));
+    expect(screen.getByRole('button', { name: 'Text' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('heading', { name: '客服模板' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '小说模板' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: '漫画模板' })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'View my novels' })).toHaveAttribute('href', '/novel');
+    await screen.findByText(/Connected to/);
+  } finally { act(() => useLanguage.getState().choose('zh')); }
+});
 
 test('从模板市场导入小说后进入新建草稿', async () => {
   api.catalog.mockResolvedValue({ ...catalog, templates: [{ id: 'novel-writer', kind: 'novel', title: '雾港来信', description: '三章悬疑短篇' }] });

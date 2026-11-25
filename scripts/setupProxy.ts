@@ -25,6 +25,11 @@ export default function setupProxy(app: Express): void {
       timeout: 620000,
     })
   );
+  app.get('/downloads/zhiflow-publisher.zip', (_req, res) => {
+    res.sendFile(path.resolve(__dirname, '../extension/.output/zhiflow-publisher.zip'), error => {
+      if (error && !res.headersSent) res.status(404).send('请先运行 npm run build 生成插件安装包。');
+    });
+  });
   app.get(/^\/partner$/, (_req, res) => { res.redirect(308, '/partner/'); });
   app.use(['/partner/api', '/partner/healthz'], createProxyMiddleware({
     target: process.env.REACT_APP_PARTNER_PROXY_TARGET || 'http://127.0.0.1:4200',

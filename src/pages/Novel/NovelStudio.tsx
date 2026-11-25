@@ -1,5 +1,7 @@
 import { novelLabels } from './novelLabels';
 import { useLabels } from '../../store/languageStore';
+import SendToPublisher from '../../components/SendToPublisher';
+import { writingDraft } from '../../publishing/resultDrafts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
@@ -213,6 +215,9 @@ function Studio({ id }: { id: string }): React.JSX.Element {
   }
 
   const selected = project.chapters.find((chapter) => chapter.id === selectedId) || null;
+  const publishingDraft = selected && !active
+    ? writingDraft(draftTitle.trim() || project.name, draftContent, [project.genre])
+    : null;
 
   return (
     <main className="agent-page novel-page">
@@ -408,6 +413,7 @@ function Studio({ id }: { id: string }): React.JSX.Element {
                 onChange={(event) => editing(() => setDraftContent(event.target.value))}
               />
               <div className="novel-editor-foot">
+                {publishingDraft && <SendToPublisher draft={publishingDraft} />}
                 <span>
                   <FiEdit3 /> {draftContent.replace(/\s+/g, '').length} {t("字", "words")}
                   {saving ? t(" · 处理中", " · Working") : dirty ? t(" · 待保存", " · Unsaved") : ''}

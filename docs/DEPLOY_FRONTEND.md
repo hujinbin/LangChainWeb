@@ -4,7 +4,7 @@
 
 ## 1. 部署方式
 
-已有静态网关时，首次在仓库根目录运行 `npm ci` 安装依赖。此后每次发布运行 `npm run build`，即可将生成的 `build/` 整体交给网关。
+已有静态网关时，首次在仓库根目录运行 `npm ci` 安装依赖。此后每次发布运行 `npm run build`，即可将生成的 `build/` 整体交给网关。Chrome 发布助手安装包也在该目录下，站点下载路径为 `/downloads/zhiflow-publisher.zip`。自建工作台需在构建时指定 `WXT_STUDIO_ORIGIN` 为站点 HTTPS 来源，使用 Compose 时可在 `.env` 中填写。
 
 ### 1.1 Docker（推荐）
 

@@ -855,3 +855,8 @@
   padding: 6px;
   font: inherit;
 }
+
+.publisher-handoff { display: flex; flex-wrap: wrap; gap: .35rem .75rem; align-items: center; margin-block: .5rem; }
+.publisher-handoff [role="status"] { font-size: .875rem; line-height: 1.5; }
+.publisher-handoff [role="status"]:empty { display: none; }
+.publisher-handoff a { text-decoration: underline; }

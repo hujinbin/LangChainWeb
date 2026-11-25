@@ -1,3 +1,4 @@
+import { presetCategory, type CategoryFilter } from './agentCategories';
 import { useLabels } from '../../store/languageStore';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -37,6 +38,9 @@ export default function AgentsPage(): React.JSX.Element {
   const [deleting, setDeleting] = useState<AgentProject | null>(null);
   const [error, setError] = useState('');
   const [importing, setImporting] = useState('');
+  const [category, setCategory] = useState<CategoryFilter>('all');
+  const choices = { all: t('全部', 'All'), text: t('文本', 'Text'), image: t('文生图', 'Text to image'), video: t('生视频', 'Video generation') };
+  const templates = (catalog?.templates || []).filter(template => category === 'all' || category === presetCategory(template.id, template.outputType));
   const requestVersion = useRef(0);
   const load = useCallback(
     async (signal?: AbortSignal) => {
@@ -47,7 +51,8 @@ export default function AgentsPage(): React.JSX.Element {
       try {
         const [available, list] = await Promise.all([
           agentAPI.catalog(signal),
-          agentAPI.list(page, signal),
+          category === 'text' ? Promise.resolve({ items: [], total: 0 }) :
+            agentAPI.list(page, signal, category === 'image' ? 'cloud-comic' : category === 'video' ? 'life-story' : undefined),
         ]);
         if (signal?.aborted || version !== requestVersion.current) return;
         setCatalog(available);
@@ -61,7 +66,7 @@ export default function AgentsPage(): React.JSX.Element {
           setLoading(false);
       }
     },
-    [loggedIn, page],
+    [loggedIn, page, category],
   );
   useEffect(() => {
     const controller = new AbortController();
@@ -117,10 +122,19 @@ export default function AgentsPage(): React.JSX.Element {
           </button>
         </div>
       )}
-      <CustomAgentList />
-      {Boolean(catalog?.templates?.length) && loggedIn && <section className="agent-project-section" aria-label={t("智能体模板市场", "Agent template library")}>
+      <div className="agent-category-filter" role="group" aria-label={t('按创作类型筛选', 'Filter by output type')}>
+        {(Object.keys(choices) as CategoryFilter[]).map(value => (
+          <button key={value} type="button" className="btn btn-default" aria-pressed={category === value}
+            onClick={() => {
+              if (value === category) return;
+              setCategory(value); setPage(1); setProjects([]); setTotal(null);
+            }}>{choices[value]}</button>
+        ))}
+      </div>
+      <CustomAgentList category={category} />
+      {Boolean(templates.length) && loggedIn && <section className="agent-project-section" aria-label={t("智能体模板市场", "Agent template library")}>
         <div className="agent-section-heading"><div><h2>{t("模板市场", "Template library")}</h2><p>{t("将模板导入为自己的草稿，然后编辑创作要求或客服人设。", "Import a template to edit its creative brief or support persona.")}</p></div></div>
-        <div className="agent-project-grid">{catalog?.templates?.map(template => <article key={template.id} className="agent-project-card">
+        <div className="agent-project-grid">{templates.map(template => <article key={template.id} className="agent-project-card">
           <div className="agent-project-main"><h3>{template.title}</h3><p>{template.description}</p>
             <button className="btn btn-default" disabled={Boolean(importing)} onClick={async () => {
               setImporting(template.id); setError('');
@@ -134,7 +148,7 @@ export default function AgentsPage(): React.JSX.Element {
         </article>)}</div>
       </section>}
       <section className="agent-presets" aria-label={t("选择创作智能体", "Choose an agent")}>
-        <article className="agent-preset comic">
+        {(category === 'all' || category === 'image') && <article className="agent-preset comic">
           <AgentArtwork kind="comic" />
           <div className="agent-preset-body">
             <span className="agent-kicker">
@@ -159,8 +173,8 @@ export default function AgentsPage(): React.JSX.Element {
               <FiArrowUpRight />
             </button>
           </div>
-        </article>
-        <article className="agent-preset life">
+        </article>}
+        {(category === 'all' || category === 'video') && <article className="agent-preset life">
           <AgentArtwork kind="life" />
           <div className="agent-preset-body">
             <span className="agent-kicker">
@@ -185,8 +199,8 @@ export default function AgentsPage(): React.JSX.Element {
               <FiArrowUpRight />
             </button>
           </div>
-        </article>
-        <article className="agent-preset novel">
+        </article>}
+        {(category === 'all' || category === 'text') && <article className="agent-preset novel">
           <span className="agent-preset-novel-art" aria-hidden="true">
             <FiBookOpen />
           </span>
@@ -212,8 +226,9 @@ export default function AgentsPage(): React.JSX.Element {
               <FiArrowUpRight />
             </button>
           </div>
-        </article>
+        </article>}
       </section>
+      {category === 'text' ? <section className="agent-project-section"><div className="agent-section-heading"><h2>{t('我的创作', 'My projects')}</h2><Link to="/novel">{t('查看我的小说', 'View my novels')} <FiArrowUpRight /></Link></div></section> :
       <section className="agent-project-section" aria-label={t("我的智能体作品", "My agent projects")}>
         <div className="agent-section-heading">
           <div>
@@ -221,7 +236,7 @@ export default function AgentsPage(): React.JSX.Element {
             <p>
               {total === null
                 ? t("每个想法，都有自己的工作室。", "Return to any project to continue editing.")
-                : `${total} 个创作项目，随时回来继续。`}
+                : t(`${total} 个创作项目，随时回来继续。`, `${total} projects, ready to continue.`)}
             </p>
           </div>
           {loggedIn && (
@@ -330,7 +345,7 @@ export default function AgentsPage(): React.JSX.Element {
             </button>
           </div>
         )}
-      </section>
+      </section>}
       {deleting && (
         <KnowledgeModal
           title={t("删除这个创作项目？", "Delete this project?")}

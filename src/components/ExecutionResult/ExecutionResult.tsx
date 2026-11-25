@@ -16,6 +16,8 @@ import {
 import { mediaAPI } from '../../services/api';
 import BillingUsage from '../BillingUsage/BillingUsage';
 import WorkflowAsset, { isWorkflowAsset } from './WorkflowAsset';
+import SendToPublisher from '../SendToPublisher';
+import { completedVideoDraft, isCompletedLiveRun, workflowResultDraft } from '../../publishing/resultDrafts';
 import './ExecutionResult.css';
 
 interface VideoTask {
@@ -102,9 +104,13 @@ function normalizeVideo(data: unknown): VideoTask {
 function NodeOutput({
   output,
   simulated,
+  allowPublishing,
+  title,
 }: {
   output?: WorkflowNodeOutput;
   simulated: boolean;
+  allowPublishing: boolean;
+  title: string;
 }) {
   const t = useLabels();
   const [task, setTask] = useState<VideoTask | null>(null);
@@ -121,6 +127,7 @@ function NodeOutput({
   const videoId = output.videoId;
   const videoSrc = mediaUrl(video.videoUrl);
   const audioSrc = mediaUrl(output.audioUrl);
+  const queriedDraft = allowPublishing && task?.status === 'completed' ? completedVideoDraft(title, task.videoUrl) : null;
   const childExecutions = [output, ...(Array.isArray(output.items) ? output.items : [])].map(item => asRecord(item).executionId).filter((value): value is string => typeof value === 'string' && /^[a-f\d]{24}$/i.test(value));
   const imageUrls = [
     ...new Set(
@@ -210,6 +217,7 @@ function NodeOutput({
           {videoSrc && (
             <>
               <video src={videoSrc} controls preload="metadata" />
+              {queriedDraft && <SendToPublisher draft={queriedDraft} />}
               <a
                 className="text-action"
                 href={videoSrc}
@@ -264,6 +272,7 @@ export default function ExecutionResult({ record }: { record: Execution | null }
   const t = useLabels();
   if (!record) return null;
   const results = record.nodeResults || [];
+  const publishingDraft = workflowResultDraft(record, t('工作流作品', 'Workflow output'));
   const StatusIcon =
     record.status === 'failed'
       ? FiAlertCircle
@@ -288,6 +297,7 @@ export default function ExecutionResult({ record }: { record: Execution | null }
           {record.simulated ? 'SIMULATION' : 'LIVE RUN'}
         </span>
       </header>
+      {publishingDraft && <SendToPublisher draft={publishingDraft} />}
       <BillingUsage billing={record.billing} simulated={record.simulated} />
       {(record.error || record.error_msg) && (
         <div className="result-inline-error" role="alert">
@@ -326,7 +336,9 @@ export default function ExecutionResult({ record }: { record: Execution | null }
                 {node.error && (
                   <div className={node.status === 'skipped' ? 'result-skip-hint' : 'result-inline-error'}>{node.error}</div>
                 )}
-                <NodeOutput output={node.output} simulated={record.simulated} />
+                <NodeOutput output={node.output} simulated={record.simulated}
+                  allowPublishing={isCompletedLiveRun(record) && ['completed', 'success'].includes(node.status)}
+                  title={record.workflowName || node.nodeName || t('生成视频', 'Generated video')} />
               </div>
             </details>
           ))}
