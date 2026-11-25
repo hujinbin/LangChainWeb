@@ -1,4 +1,4 @@
-import { presetCategory, type CategoryFilter } from './agentCategories';
+import { type CategoryFilter } from './agentCategories';
 import { useLabels } from '../../store/languageStore';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -37,10 +37,8 @@ export default function AgentsPage(): React.JSX.Element {
   const [creating, setCreating] = useState<AgentKind | null>(null);
   const [deleting, setDeleting] = useState<AgentProject | null>(null);
   const [error, setError] = useState('');
-  const [importing, setImporting] = useState('');
   const [category, setCategory] = useState<CategoryFilter>('all');
   const choices = { all: t('全部', 'All'), text: t('文本', 'Text'), image: t('文生图', 'Text to image'), video: t('生视频', 'Video generation') };
-  const templates = (catalog?.templates || []).filter(template => category === 'all' || category === presetCategory(template.id, template.outputType));
   const requestVersion = useRef(0);
   const load = useCallback(
     async (signal?: AbortSignal) => {
@@ -132,21 +130,6 @@ export default function AgentsPage(): React.JSX.Element {
         ))}
       </div>
       <CustomAgentList category={category} />
-      {Boolean(templates.length) && loggedIn && <section className="agent-project-section" aria-label={t("智能体模板市场", "Agent template library")}>
-        <div className="agent-section-heading"><div><h2>{t("模板市场", "Template library")}</h2><p>{t("将模板导入为自己的草稿，然后编辑创作要求或客服人设。", "Import a template to edit its creative brief or support persona.")}</p></div></div>
-        <div className="agent-project-grid">{templates.map(template => <article key={template.id} className="agent-project-card">
-          <div className="agent-project-main"><h3>{template.title}</h3><p>{template.description}</p>
-            <button className="btn btn-default" disabled={Boolean(importing)} onClick={async () => {
-              setImporting(template.id); setError('');
-              try {
-                const draft = await agentAPI.importTemplate(template.id);
-                const base = draft.kind === 'novel' ? '/novel' : draft.kind === 'custom' ? '/agents/custom' : '/agents';
-                navigate(`${base}/${draft.id}`);
-              } catch (failure) { setError(errorMessage(failure)); } finally { setImporting(''); }
-            }}><FiPlus />{importing === template.id ? t("正在导入…", "Importing…") : t("导入模板", "Import template")}</button>
-          </div>
-        </article>)}</div>
-      </section>}
       <section className="agent-presets" aria-label={t("选择创作智能体", "Choose an agent")}>
         {(category === 'all' || category === 'image') && <article className="agent-preset comic">
           <AgentArtwork kind="comic" />

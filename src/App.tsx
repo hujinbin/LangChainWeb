@@ -15,6 +15,7 @@ import {
   Link,
   useNavigate,
   useParams,
+  useLocation,
 } from 'react-router-dom';
 import {
   FiGrid,
@@ -643,6 +644,13 @@ function Navigation() {
   );
 }
 
+// 登录页为独立全屏布局，不展示全局导航。
+function AppNavigation() {
+  const { pathname } = useLocation();
+  if (pathname === '/login') return null;
+  return <Navigation />;
+}
+
 export default function App() {
   const t = useLabels();
   const blocked = useSiteStore((state) => state.blocked);
@@ -673,7 +681,7 @@ export default function App() {
     <Router>
       <PageMetadata />
       <div className="app-shell">
-        <Navigation />
+        <AppNavigation />
         <div className="app-content">
           <Routes>
             <Route path="/login" element={<Login />} />

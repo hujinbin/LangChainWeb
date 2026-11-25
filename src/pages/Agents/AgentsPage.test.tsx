@@ -19,7 +19,6 @@ jest.mock('../../services/agentApi', () => ({
     catalog: jest.fn(),
     list: jest.fn(),
     create: jest.fn(),
-    importTemplate: jest.fn(),
     delete: jest.fn(),
   },
 }));
@@ -90,45 +89,23 @@ beforeEach(() => {
 
 afterEach(cleanup);
 
-test('output filters apply to presets, imported templates and server-paginated projects in both languages', async () => {
-  api.catalog.mockResolvedValue({ ...catalog, templates: [
-    { id: 'cloud-comic', kind: 'storyboard', title: '漫画模板', description: '' },
-    { id: 'life-story', kind: 'storyboard', title: '视频模板', description: '' },
-    { id: 'novel-writer', kind: 'novel', title: '小说模板', description: '' },
-    { id: 'customer-service', kind: 'custom', title: '客服模板', description: '' },
-  ] });
+test('output filters apply to presets and server-paginated projects in both languages', async () => {
   renderPage();
-  await screen.findByRole('heading', { name: '漫画模板' });
+  await screen.findByRole('heading', { name: '云朵漫画' });
   fireEvent.click(screen.getByRole('button', { name: '文生图' }));
   expect(screen.getByRole('heading', { name: '云朵漫画' })).toBeInTheDocument();
-  expect(screen.getByRole('heading', { name: '漫画模板' })).toBeInTheDocument();
   expect(screen.queryByRole('heading', { name: '人生副本' })).not.toBeInTheDocument();
-  expect(screen.queryByRole('heading', { name: '视频模板' })).not.toBeInTheDocument();
   expect(api.list).toHaveBeenLastCalledWith(1, expect.anything(), 'cloud-comic');
   act(() => useLanguage.getState().choose('en'));
   try {
     fireEvent.click(screen.getByRole('button', { name: 'Video generation' }));
     expect(screen.getByRole('heading', { name: 'Life Story' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: '视频模板' })).toBeInTheDocument();
     expect(api.list).toHaveBeenLastCalledWith(1, expect.anything(), 'life-story');
     fireEvent.click(screen.getByRole('button', { name: 'Text' }));
     expect(screen.getByRole('button', { name: 'Text' })).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByRole('heading', { name: '客服模板' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: '小说模板' })).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: '漫画模板' })).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'View my novels' })).toHaveAttribute('href', '/novel');
     await screen.findByText(/Connected to/);
   } finally { act(() => useLanguage.getState().choose('zh')); }
-});
-
-test('从模板市场导入小说后进入新建草稿', async () => {
-  api.catalog.mockResolvedValue({ ...catalog, templates: [{ id: 'novel-writer', kind: 'novel', title: '雾港来信', description: '三章悬疑短篇' }] });
-  api.importTemplate.mockResolvedValue({ id: 'new-book', kind: 'novel' });
-  renderPage();
-  fireEvent.click(await screen.findByRole('button', { name: '导入模板' }));
-  expect(api.importTemplate).toHaveBeenCalledWith('novel-writer');
-  expect(await screen.findByText('小说工作室')).toBeInTheDocument();
-  expect(screen.getByTestId('current-path')).toHaveTextContent('/novel/new-book');
 });
 
 test('访客可选择智能体并进入登录，不发送创建请求', () => {
